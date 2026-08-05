@@ -117,14 +117,31 @@ export const PAYMENT_STATUSES = [
 export function parseValidity(validityStr) {
   if (!validityStr) return { startDate: null, endDate: null, daysRemaining: null, totalDays: null, status: 'unknown' }
 
-  // Match YYYY-MM-DD or DD-MM-YYYY dates
-  const dates = String(validityStr).match(/\d{4}-\d{2}-\d{2}/g) || String(validityStr).match(/\d{2}[-/]\d{2}[-/]\d{4}/g)
-  if (!dates || dates.length === 0) {
+  const str = String(validityStr).trim()
+  // Match YYYY-MM-DD
+  let rawDates = str.match(/\d{4}-\d{2}-\d{2}/g)
+
+  // If no YYYY-MM-DD found, try DD-MM-YYYY or DD/MM/YYYY
+  if (!rawDates) {
+    const ddmmyyyy = str.match(/\d{2}[-/]\d{2}[-/]\d{4}/g)
+    if (ddmmyyyy) {
+      rawDates = ddmmyyyy.map(d => {
+        const parts = d.split(/[-/]/)
+        return `${parts[2]}-${parts[1]}-${parts[0]}` // convert to YYYY-MM-DD
+      })
+    }
+  }
+
+  if (!rawDates || rawDates.length === 0) {
     return { startDate: null, endDate: null, daysRemaining: null, totalDays: null, status: 'unknown' }
   }
 
-  const startDate = new Date(dates[0])
-  const endDate   = dates.length > 1 ? new Date(dates[1]) : new Date(dates[0])
+  const startDate = new Date(rawDates[0])
+  const endDate   = rawDates.length > 1 ? new Date(rawDates[1]) : new Date(rawDates[0])
+
+  if (isNaN(endDate.getTime())) {
+    return { startDate: null, endDate: null, daysRemaining: null, totalDays: null, status: 'unknown' }
+  }
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -144,7 +161,7 @@ export function parseValidity(validityStr) {
     status = 'expiring_soon'
   }
 
-  return { startDate, endDate, daysRemaining, totalDays, status, dates }
+  return { startDate, endDate, daysRemaining, totalDays, status, dates: rawDates }
 }
 
 // ──────────────────────────────────────────────
