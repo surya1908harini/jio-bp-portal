@@ -96,6 +96,30 @@ export function formatDate(dateStr) {
 }
 
 // ──────────────────────────────────────────────
+// Derive financial year from date (auto-detect)
+// ──────────────────────────────────────────────
+export function getFinancialYear(date = new Date()) {
+  const d  = new Date(date)
+  const m  = d.getMonth() // 0-indexed; April = 3
+  const y  = d.getFullYear()
+  const fy = m >= 3 ? y : y - 1
+  return `${fy}-${String(fy + 1).slice(2)}`
+}
+
+// Current FY auto-detected
+export const CURRENT_FY = getFinancialYear()
+
+export const FINANCIAL_YEARS = ['2023-24', '2024-25', '2025-26', '2026-27']
+
+export const JMS_STATUSES = ['Pending A1', 'Pending A2', 'Pending QSD', 'Pending A3', 'Released by A3']
+export const PAYMENT_STATUSES = [
+  'Pending',
+  'GST Payment Only Received',
+  'Net Amount Received',
+  'Full Payment Received',
+]
+
+// ──────────────────────────────────────────────
 // Parse contract validity & calculate days remaining
 // ──────────────────────────────────────────────
 export function parseValidity(validityStr) {
