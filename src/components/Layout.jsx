@@ -83,9 +83,7 @@ export default function Layout() {
       <div className="flex items-center justify-between px-4 h-16 border-b border-slate-800 shrink-0">
         {!collapsed && (
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-jio-blue-600 via-jio-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-xs tracking-wider shadow-lg border border-jio-blue-400/30">
-              MMC
-            </div>
+            <img src="/mmc_logo.jpg" alt="MMC Logo" className="w-8 h-8 rounded-xl object-cover ring-1 ring-jio-blue-400/50 shadow-md" />
             <div>
               <p className="text-sm font-bold text-white leading-tight tracking-wide">MMC</p>
               <p className="text-[10px] text-slate-400 leading-tight">MM Contractor</p>
@@ -117,9 +115,7 @@ export default function Layout() {
       <div className="p-3 border-t border-slate-800 shrink-0">
         {!collapsed && (
           <div className="flex items-center gap-2.5 mb-2 px-2">
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isAdmin ? 'bg-gradient-to-br from-jio-red-600 to-rose-800 shadow-md border border-jio-red-500/40' : 'bg-jio-blue-700'}`}>
-              {isAdmin ? <Shield size={16} className="text-white" /> : <User size={15} className="text-white" />}
-            </div>
+            <img src="/mmc_logo.jpg" alt="MMC" className={`w-8 h-8 rounded-xl object-cover ring-2 ${isAdmin ? 'ring-jio-red-500/60' : 'ring-jio-blue-500/60'}`} />
             <div className="min-w-0">
               <p className="text-xs font-medium text-white truncate">{user?.email}</p>
               <div className="flex items-center gap-1.5 mt-0.5">
@@ -156,13 +152,36 @@ export default function Layout() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Desktop Header */}
+        <header className="hidden md:flex items-center justify-between px-6 h-16 bg-slate-900/80 border-b border-slate-800 shrink-0 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <img src="/mmc_logo.jpg" alt="MMC Logo" className="w-8 h-8 rounded-xl object-cover ring-1 ring-jio-blue-400/40" />
+            <div>
+              <p className="text-sm font-bold text-white tracking-wide">MMC</p>
+              <p className="text-[10px] text-slate-400">MM Contractor Portal</p>
+            </div>
+          </div>
+
+          {isAdmin && (
+            <div className="flex items-center gap-3 bg-slate-800/80 border border-jio-red-500/40 rounded-xl px-3 py-1.5 shadow-lg">
+              <img src="/mmc_logo.jpg" alt="MMC Admin Logo" className="w-7 h-7 rounded-lg object-cover ring-2 ring-jio-red-500/60" />
+              <div>
+                <p className="text-xs font-bold text-white leading-tight flex items-center gap-1">
+                  <Shield size={12} className="text-jio-red-400" /> MMC ADMIN
+                </p>
+                <p className="text-[10px] text-slate-400 leading-tight">{user?.email}</p>
+              </div>
+            </div>
+          )}
+        </header>
+
         {/* Mobile header */}
         <header className="md:hidden flex items-center justify-between px-4 h-14 bg-slate-900 border-b border-slate-800">
           <button onClick={() => setMobileOpen(true)} className="text-slate-400 hover:text-white">
             <Menu size={20} />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-jio-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-[10px]">MMC</div>
+            <img src="/mmc_logo.jpg" alt="MMC Logo" className="w-6 h-6 rounded-lg object-cover" />
             <p className="text-sm font-bold text-white">MMC</p>
           </div>
           <div className="w-5" />
