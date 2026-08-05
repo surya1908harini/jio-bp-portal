@@ -82,46 +82,18 @@ export function formatINR(amount) {
 // ──────────────────────────────────────────────
 export function formatDate(dateStr) {
   if (!dateStr) return '—'
-  const str = String(dateStr).trim()
-  const d = new Date(str)
-  if (isNaN(d.getTime())) return dateStr
-  const day   = String(d.getDate()).padStart(2, '0')
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const year  = d.getFullYear()
-  return `${day}/${month}/${year}`
+  try {
+    const str = String(dateStr).trim()
+    const d = new Date(str)
+    if (isNaN(d.getTime())) return dateStr
+    const day   = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year  = d.getFullYear()
+    return `${day}/${month}/${year}`
+  } catch (err) {
+    return String(dateStr)
+  }
 }
-
-export function formatValidityRange(validityStr) {
-  if (!validityStr) return '—'
-  const { dates } = parseValidity(validityStr)
-  if (!dates || dates.length === 0) return validityStr
-  const formatted = dates.map(d => formatDate(d))
-  return formatted.length > 1 ? `${formatted[0]} - ${formatted[1]}` : formatted[0]
-}
-
-// ──────────────────────────────────────────────
-// Derive financial year from date (auto-detect)
-// ──────────────────────────────────────────────
-export function getFinancialYear(date = new Date()) {
-  const d  = new Date(date)
-  const m  = d.getMonth() // 0-indexed; April = 3
-  const y  = d.getFullYear()
-  const fy = m >= 3 ? y : y - 1
-  return `${fy}-${String(fy + 1).slice(2)}`
-}
-
-// Current FY auto-detected
-export const CURRENT_FY = getFinancialYear()
-
-export const FINANCIAL_YEARS = ['2023-24', '2024-25', '2025-26', '2026-27']
-
-export const JMS_STATUSES = ['Pending A1', 'Pending A2', 'Pending QSD', 'Pending A3', 'Released by A3']
-export const PAYMENT_STATUSES = [
-  'Pending',
-  'GST Payment Only Received',
-  'Net Amount Received',
-  'Full Payment Received',
-]
 
 // ──────────────────────────────────────────────
 // Parse contract validity & calculate days remaining
@@ -129,51 +101,67 @@ export const PAYMENT_STATUSES = [
 export function parseValidity(validityStr) {
   if (!validityStr) return { startDate: null, endDate: null, daysRemaining: null, totalDays: null, status: 'unknown' }
 
-  const str = String(validityStr).trim()
-  // Match YYYY-MM-DD
-  let rawDates = str.match(/\d{4}-\d{2}-\d{2}/g)
+  try {
+    const str = String(validityStr).trim()
+    // Match YYYY-MM-DD
+    let rawDates = str.match(/\d{4}-\d{2}-\d{2}/g)
 
-  // If no YYYY-MM-DD found, try DD-MM-YYYY or DD/MM/YYYY
-  if (!rawDates) {
-    const ddmmyyyy = str.match(/\d{2}[-/]\d{2}[-/]\d{4}/g)
-    if (ddmmyyyy) {
-      rawDates = ddmmyyyy.map(d => {
-        const parts = d.split(/[-/]/)
-        return `${parts[2]}-${parts[1]}-${parts[0]}` // convert to YYYY-MM-DD
-      })
+    // If no YYYY-MM-DD found, try DD-MM-YYYY or DD/MM/YYYY
+    if (!rawDates) {
+      const ddmmyyyy = str.match(/\d{2}[-/]\d{2}[-/]\d{4}/g)
+      if (ddmmyyyy) {
+        rawDates = ddmmyyyy.map(d => {
+          const parts = d.split(/[-/]/)
+          return `${parts[2]}-${parts[1]}-${parts[0]}` // convert to YYYY-MM-DD
+        })
+      }
     }
-  }
 
-  if (!rawDates || rawDates.length === 0) {
+    if (!rawDates || rawDates.length === 0) {
+      return { startDate: null, endDate: null, daysRemaining: null, totalDays: null, status: 'unknown' }
+    }
+
+    const startDate = new Date(rawDates[0])
+    const endDate   = rawDates.length > 1 ? new Date(rawDates[1]) : new Date(rawDates[0])
+
+    if (isNaN(endDate.getTime())) {
+      return { startDate: null, endDate: null, daysRemaining: null, totalDays: null, status: 'unknown' }
+    }
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const diffMs = endDate.getTime() - today.getTime()
+    const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+
+    const durationMs = endDate.getTime() - startDate.getTime()
+    const totalDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24))
+
+    let status = 'active'
+    if (daysRemaining < 0) {
+      status = 'expired'
+    } else if (daysRemaining <= 30) {
+      status = 'critical'
+    } else if (daysRemaining <= 90) {
+      status = 'expiring_soon'
+    }
+
+    return { startDate, endDate, daysRemaining, totalDays, status, dates: rawDates }
+  } catch (err) {
     return { startDate: null, endDate: null, daysRemaining: null, totalDays: null, status: 'unknown' }
   }
+}
 
-  const startDate = new Date(rawDates[0])
-  const endDate   = rawDates.length > 1 ? new Date(rawDates[1]) : new Date(rawDates[0])
-
-  if (isNaN(endDate.getTime())) {
-    return { startDate: null, endDate: null, daysRemaining: null, totalDays: null, status: 'unknown' }
+export function formatValidityRange(validityStr) {
+  if (!validityStr) return '—'
+  try {
+    const { dates } = parseValidity(validityStr)
+    if (!dates || dates.length === 0) return String(validityStr)
+    const formatted = dates.map(d => formatDate(d))
+    return formatted.length > 1 ? `${formatted[0]} - ${formatted[1]}` : formatted[0]
+  } catch (err) {
+    return String(validityStr)
   }
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const diffMs = endDate.getTime() - today.getTime()
-  const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-
-  const durationMs = endDate.getTime() - startDate.getTime()
-  const totalDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24))
-
-  let status = 'active'
-  if (daysRemaining < 0) {
-    status = 'expired'
-  } else if (daysRemaining <= 30) {
-    status = 'critical'
-  } else if (daysRemaining <= 90) {
-    status = 'expiring_soon'
-  }
-
-  return { startDate, endDate, daysRemaining, totalDays, status, dates: rawDates }
 }
 
 // ──────────────────────────────────────────────
@@ -181,12 +169,16 @@ export function parseValidity(validityStr) {
 // ──────────────────────────────────────────────
 export function getBudgetRecordFy(r) {
   if (!r) return '2024-25'
-  const { endDate, startDate } = parseValidity(r.validity_of_contract)
-  if (endDate && !isNaN(endDate.getTime())) {
-    return getFinancialYear(endDate)
-  }
-  if (startDate && !isNaN(startDate.getTime())) {
-    return getFinancialYear(startDate)
+  try {
+    const { endDate, startDate } = parseValidity(r.validity_of_contract)
+    if (endDate && !isNaN(endDate.getTime())) {
+      return getFinancialYear(endDate)
+    }
+    if (startDate && !isNaN(startDate.getTime())) {
+      return getFinancialYear(startDate)
+    }
+  } catch (e) {
+    // fallback
   }
   return r.financial_year || '2024-25'
 }
