@@ -55,32 +55,32 @@ export default function DashboardPage() {
     return r.inv_date ? getFinancialYear(r.inv_date) : r.financial_year || CURRENT_FY
   }
 
-  // Filter lists strictly for current FY
+  // Filter lists strictly for current FY (FY 2026-27)
   const currentJmsList    = jmsList.filter(j => getJmsFy(j) === CURRENT_FY)
   const currentInvList    = invoiceList.filter(i => getInvFy(i) === CURRENT_FY)
   const currentBudgetList = budgetList.filter(b => b.financial_year === CURRENT_FY || !b.financial_year)
 
-  const pendingJms   = jmsList.filter(j => !['Released by A3','Invoiced'].includes(j.status)).length
-  const a3Released   = jmsList.filter(j => j.status === 'Released by A3' || j.status === 'Invoiced' || j.status === 'Pending A3' || j.status === 'A3').length
-  const fullPaid     = invoiceList.filter(i => i.payment_status === 'Full Payment Received').length
-  const totalInvAmt  = invoiceList.reduce((s, i) => s + (i.grand_total || 0), 0)
-  const totalBudget  = budgetList.reduce((s, b) => s + (b.fo_total_budget || 0), 0)
-  const totalConsumed= budgetList.reduce((s, b) => s + (b.total_consumed || 0), 0)
+  const pendingJms   = currentJmsList.filter(j => !['Released by A3','Invoiced'].includes(j.status)).length
+  const a3Released   = currentJmsList.filter(j => j.status === 'Released by A3' || j.status === 'Invoiced' || j.status === 'Pending A3' || j.status === 'A3').length
+  const fullPaid     = currentInvList.filter(i => i.payment_status === 'Full Payment Received').length
+  const totalInvAmt  = currentInvList.reduce((s, i) => s + (i.grand_total || 0), 0)
+  const totalBudget  = currentBudgetList.reduce((s, b) => s + (b.fo_total_budget || 0), 0)
+  const totalConsumed= currentBudgetList.reduce((s, b) => s + (b.total_consumed || 0), 0)
   const utilization  = totalBudget > 0 ? Math.round((totalConsumed / totalBudget) * 100) : 0
 
-  // Status distribution for overall JMS records
+  // Status distribution strictly for CURRENT_FY
   const statusDist = [
-    { name: 'Pending A1', label: 'Pending A1', count: jmsList.filter(j => j.status === 'Pending A1' || j.status === 'Pending' || j.status === 'A1').length },
-    { name: 'Pending A2', label: 'Pending A2', count: jmsList.filter(j => j.status === 'Pending A2' || j.status === 'A2').length },
-    { name: 'Pending QSD', label: 'Pending QSD', count: jmsList.filter(j => j.status === 'Pending QSD' || j.status === 'QSD').length },
-    { name: 'Pending A3', label: 'Pending A3', count: jmsList.filter(j => j.status === 'Pending A3' || j.status === 'A3').length },
-    { name: 'Released by A3', label: 'Released', count: jmsList.filter(j => j.status === 'Released by A3' || j.status === 'Invoiced').length },
+    { name: 'Pending A1', label: 'Pending A1', count: currentJmsList.filter(j => j.status === 'Pending A1' || j.status === 'Pending' || j.status === 'A1').length },
+    { name: 'Pending A2', label: 'Pending A2', count: currentJmsList.filter(j => j.status === 'Pending A2' || j.status === 'A2').length },
+    { name: 'Pending QSD', label: 'Pending QSD', count: currentJmsList.filter(j => j.status === 'Pending QSD' || j.status === 'QSD').length },
+    { name: 'Pending A3', label: 'Pending A3', count: currentJmsList.filter(j => j.status === 'Pending A3' || j.status === 'A3').length },
+    { name: 'Released by A3', label: 'Released', count: currentJmsList.filter(j => j.status === 'Released by A3' || j.status === 'Invoiced').length },
   ]
 
   const BAR_COLORS = ['#f59e0b','#a855f7','#06b6d4','#3b82f6','#10b981']
 
-  // Latest 8 JMS records
-  const recentJms = [...jmsList].sort((a, b) => {
+  // Latest 8 JMS records for CURRENT_FY
+  const recentJms = [...currentJmsList].sort((a, b) => {
     const da = a.jms_create_date || a.inv_date || a.a1_release_date || a.created_at || ''
     const db = b.jms_create_date || b.inv_date || b.a1_release_date || b.created_at || ''
     return db.localeCompare(da)
@@ -105,14 +105,14 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI Grid - OVERALL COUNTS, LINKS TO CURRENT FY RECORDS */}
+      {/* KPI Grid - CURRENT FY METRICS ONLY */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-        <KpiCard icon={FileText}    label="Total JMS"        value={jmsList.length}        sub="View JMS Details"     color="blue"   to={`/jms/${CURRENT_FY}?slot=all`} />
-        <KpiCard icon={Clock}       label="Pending Approval" value={pendingJms}             sub="Pending A1/A2/QSD/A3"  color="amber"  to={`/jms/${CURRENT_FY}?slot=pending_a1`} />
-        <KpiCard icon={CheckCircle} label="Released by A3"   value={a3Released}             sub="Ready to invoice"     color="green"  to={`/jms/${CURRENT_FY}?slot=released_a3`} />
-        <KpiCard icon={Receipt}     label="Invoices"         value={invoiceList.length}     sub={`Paid: ${fullPaid}`}  color="cyan"   to={`/invoices/${CURRENT_FY}?slot=all`} />
-        <KpiCard icon={TrendingUp}  label="Invoice Value"    value={formatINR(totalInvAmt)} sub="View Invoices"        color="purple" to={`/invoices/${CURRENT_FY}?slot=all`} />
-        <KpiCard icon={PieChart}    label="Budget Used"      value={`${utilization}%`}     sub={formatINR(totalConsumed)} color="red" to={`/budget/${CURRENT_FY}`} />
+        <KpiCard icon={FileText}    label="Total JMS"        value={currentJmsList.length} sub={`FY ${CURRENT_FY}`}   color="blue"   to={`/jms/${CURRENT_FY}?slot=all`} />
+        <KpiCard icon={Clock}       label="Pending Approval" value={pendingJms}           sub="Pending A1/A2/QSD/A3"  color="amber"  to={`/jms/${CURRENT_FY}?slot=pending_a1`} />
+        <KpiCard icon={CheckCircle} label="Released by A3"   value={a3Released}           sub="Ready to invoice"     color="green"  to={`/jms/${CURRENT_FY}?slot=released_a3`} />
+        <KpiCard icon={Receipt}     label="Invoices"         value={currentInvList.length} sub={`Paid: ${fullPaid}`}  color="cyan"   to={`/invoices/${CURRENT_FY}?slot=all`} />
+        <KpiCard icon={TrendingUp}  label="Invoice Value"    value={formatINR(totalInvAmt)} sub={`FY ${CURRENT_FY}`} color="purple" to={`/invoices/${CURRENT_FY}?slot=all`} />
+        <KpiCard icon={PieChart}    label="Budget Used"      value={`${utilization}%`}   sub={formatINR(totalConsumed)} color="red" to={`/budget/${CURRENT_FY}`} />
       </div>
 
       {/* Charts row */}
