@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
-import { Plus, Download, Upload, Pencil, Trash2, PieChart, TrendingUp } from 'lucide-react'
+import { Plus, Download, Upload, Pencil, Trash2, PieChart, TrendingUp, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { budgetDb } from '../lib/db'
-import { formatINR, exportToExcel, CURRENT_FY } from '../lib/utils'
+import { formatINR, exportToExcel, CURRENT_FY, parseValidity, getBudgetRecordFy } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
@@ -66,42 +66,69 @@ function StatCard({ label, value, sub, color = 'slate' }) {
 export default function BudgetPage() {
   const { user, isAdmin } = useAuth()
   const qc = useQueryClient()
-  // Fiscal year tab handling
   const { fy } = useParams()
   const activeFy = fy || CURRENT_FY
 
-  const [formOpen, setFormOpen] = useState(false)
+  const [formOpen, setFormOpen]       = useState(false)
   const [importOpen, setImportOpen] = useState(false)
-  const [editRow, setEditRow] = useState(null)
-  const [form, setForm] = useState(EMPTY_FORM)
+  const [editRow, setEditRow]       = useState(null)
+  const [form, setForm]             = useState(EMPTY_FORM)
   const [selectedRow, setSelectedRow] = useState(null)
+  const [activeSlot, setActiveSlot]  = useState('all')
 
-  const { data: records = [], isLoading } = useQuery({
-    queryKey: ['budget', activeFy],
-    queryFn: () => activeFy === 'overall' ? budgetDb.listAll() : budgetDb.list(activeFy),
+  const VALIDITY_SLOTS = [
+    { key: 'all',           label: 'All Work Orders' },
+    { key: 'active',        label: 'Active (> 90 Days)' },
+    { key: 'expiring_soon', label: 'Expiring Soon (≤ 90 Days)' },
+    { key: 'critical',      label: 'Critical (≤ 30 Days)' },
+    { key: 'expired',       label: 'Expired' },
+  ]
+
+  const { data: allRecords = [], isLoading } = useQuery({
+    queryKey: ['budget', 'all'],
+    queryFn: () => budgetDb.listAll(),
   })
 
-  // Sort records: Current FY budget records on top, followed by latest FYs
+  const fyRecords = useMemo(() => {
+    if (activeFy === 'overall') return allRecords
+    return allRecords.filter(r => getBudgetRecordFy(r) === activeFy)
+  }, [allRecords, activeFy])
+
+  const filteredRecords = useMemo(() => {
+    return fyRecords.filter(r => {
+      const { daysRemaining } = parseValidity(r.validity_of_contract)
+      if (activeSlot === 'all')           return true
+      if (activeSlot === 'active')        return daysRemaining === null || daysRemaining > 90
+      if (activeSlot === 'expiring_soon') return daysRemaining !== null && daysRemaining <= 90 && daysRemaining > 0
+      if (activeSlot === 'critical')      return daysRemaining !== null && daysRemaining <= 30 && daysRemaining > 0
+      if (activeSlot === 'expired')       return daysRemaining !== null && daysRemaining <= 0
+      return true
+    })
+  }, [fyRecords, activeSlot])
+
   const sortedRecords = useMemo(() => {
-    return [...records].sort((a, b) => {
-      const fyA = a.financial_year || ''
-      const fyB = b.financial_year || ''
+    return [...filteredRecords].sort((a, b) => {
+      const fyA = getBudgetRecordFy(a)
+      const fyB = getBudgetRecordFy(b)
       if (fyA === CURRENT_FY && fyB !== CURRENT_FY) return -1
       if (fyB === CURRENT_FY && fyA !== CURRENT_FY) return 1
       return fyB.localeCompare(fyA)
     })
-  }, [records])
+  }, [filteredRecords])
 
-
-  // Overall stats
-  const totalBudget    = records.reduce((s, r) => s + (r.fo_total_budget    || 0), 0)
-  const totalConsumed  = records.reduce((s, r) => s + (r.total_consumed     || 0), 0)
-  const totalA3        = records.reduce((s, r) => s + (r.a3_released_amount || 0), 0)
-  const totalPending   = records.reduce((s, r) => s + (r.pending_amount     || 0), 0)
-  const totalInvoiced  = records.reduce((s, r) => s + (r.invoiced_amount    || 0), 0)
+  const totalBudget    = fyRecords.reduce((s, r) => s + (r.fo_total_budget    || 0), 0)
+  const totalConsumed  = fyRecords.reduce((s, r) => s + (r.total_consumed     || 0), 0)
   const totalBalance   = totalBudget - totalConsumed
-  const overallUtil    = totalBudget > 0 ? Math.round((totalConsumed / totalBudget) * 100) : 0
-  const overdraftCount = records.filter(r => (r.balance_available || 0) < 0).length
+
+  const activeCount    = fyRecords.filter(r => (parseValidity(r.validity_of_contract).daysRemaining ?? 999) > 90).length
+  const expiringCount  = fyRecords.filter(r => {
+    const d = parseValidity(r.validity_of_contract).daysRemaining
+    return d !== null && d <= 90 && d > 0
+  }).length
+  const expiredCount   = fyRecords.filter(r => {
+    const d = parseValidity(r.validity_of_contract).daysRemaining
+    return d !== null && d <= 0
+  }).length
 
   const saveMutation = useMutation({
     mutationFn: (payload) => editRow
@@ -144,36 +171,50 @@ export default function BudgetPage() {
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
   const handleDelete = (id) => { if (window.confirm('Delete this budget entry?')) deleteMutation.mutate(id) }
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
-  const handleExport = () => { exportToExcel(records, `Budget_${activeFy}.xlsx`, 'Budget'); toast.success('Excel downloaded') }
+  const handleExport = () => { exportToExcel(fyRecords, `Budget_${activeFy}.xlsx`, 'Budget'); toast.success('Excel downloaded') }
 
   const columns = [
     { key: 'operation',           header: 'Operation' },
     { key: 'description',         header: 'Description' },
     { key: 'arc_number',          header: 'ARC Number' },
     { key: 'work_order_number',   header: 'Work Order No',     render: r => <span className="font-semibold text-white">{r.work_order_number}</span> },
-    { key: 'validity_of_contract',header: 'Validity' },
+    {
+      key: 'validity_of_contract', header: 'Validity (Days Remaining)',
+      render: r => {
+        const { daysRemaining, status } = parseValidity(r.validity_of_contract)
+        const badgeColor =
+          status === 'expired'       ? 'bg-jio-red-950/80 text-jio-red-400 border-jio-red-700/60' :
+          status === 'critical'      ? 'bg-amber-950/80 text-amber-400 border-amber-700/60' :
+          status === 'expiring_soon' ? 'bg-amber-950/60 text-amber-300 border-amber-800/40' :
+          'bg-emerald-950/80 text-emerald-400 border-emerald-700/60'
+
+        const badgeText =
+          daysRemaining === null ? '' :
+          daysRemaining < 0      ? `Expired (${Math.abs(daysRemaining)}d ago)` :
+          daysRemaining === 0    ? `Expires Today` :
+          `${daysRemaining} days remaining`
+
+        return (
+          <div className="space-y-1 min-w-[170px]">
+            <div className="text-white text-xs font-mono font-medium">{r.validity_of_contract || '—'}</div>
+            {daysRemaining !== null && (
+              <div className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-md border ${badgeColor}`}>
+                <Clock size={11} />
+                <span>{badgeText}</span>
+              </div>
+            )}
+          </div>
+        )
+      }
+    },
     { key: 'fo_total_budget',     header: 'FO Total Budget',   render: r => <span className="text-blue-400 font-semibold">{formatINR(r.fo_total_budget)}</span> },
     {
       key: 'total_consumed',      header: 'Budget Consumed',
       render: r => (
         <div className="space-y-1 min-w-[160px]">
           <div className="text-jio-red-400 font-medium text-xs">{formatINR(r.total_consumed)}</div>
-          <div className="text-[10px] text-slate-500 space-y-0.5">
-            <div className="flex justify-between gap-3"><span>A3 Released:</span><span className="text-emerald-400">{formatINR(r.a3_released_amount)}</span></div>
-            <div className="flex justify-between gap-3"><span>Pending:</span><span className="text-amber-400">{formatINR(r.pending_amount)}</span></div>
-            <div className="flex justify-between gap-3"><span>Invoiced:</span><span className="text-cyan-400">{formatINR(r.invoiced_amount)}</span></div>
-          </div>
           <UtilBar consumed={r.total_consumed} total={r.fo_total_budget} />
         </div>
-      )
-    },
-    {
-      key: 'balance_available',   header: 'Balance Available',
-      render: r => (
-        <span className={`font-semibold text-sm ${(r.balance_available || 0) < 0 ? 'text-jio-red-400' : 'text-emerald-400'}`}>
-          {formatINR(r.balance_available)}
-          {(r.balance_available || 0) < 0 && <span className="text-[10px] ml-1 text-jio-red-500">(Overdraft)</span>}
-        </span>
       )
     },
     {
@@ -197,58 +238,53 @@ export default function BudgetPage() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="section-header">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Budget Status</h1>
-          <p className="text-sm text-slate-400 mt-0.5">Overall Contract Budget Tracking · {records.length} work orders</p>
+          <p className="text-sm text-slate-400">
+            {activeFy === 'overall' ? 'Overall Contract Budget Tracking' : `FY ${activeFy} Budget Tracking`}
+            <span className="ml-2 font-semibold text-slate-300">· {fyRecords.length} work orders</span>
+          </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={handleExport} className="btn-ghost"><Download size={15} /> Export</button>
+        <div className="flex items-center gap-3">
+          <button onClick={handleExport} className="btn-ghost flex items-center gap-2">
+            <Download size={16} /> Export
+          </button>
           {isAdmin && (
             <>
-              <button onClick={() => setImportOpen(true)} className="btn-ghost"><Upload size={15} /> Import</button>
-              <button onClick={openAdd} className="btn-primary"><Plus size={15} /> Add Budget Entry</button>
+              <button onClick={() => setImportOpen(true)} className="btn-ghost flex items-center gap-2">
+                <Upload size={16} /> Import
+              </button>
+              <button onClick={openAdd} className="btn-primary flex items-center gap-2">
+                <Plus size={16} /> Add Budget Entry
+              </button>
             </>
           )}
         </div>
       </div>
-      {/* FY Tabs */}
+
       <FyTabs basePath="/budget" />
 
-      {/* ═══ OVERALL SUMMARY ══════════════════════════════ */}
-      <div className="glass-card p-5">
-        <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-          <TrendingUp size={15} className="text-jio-blue-400" /> Overall Budget Summary
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
-          <StatCard label="Work Orders"     value={records.length}            color="blue"   />
-          <StatCard label="FO Total Budget" value={formatINR(totalBudget)}   color="blue"   />
-          <StatCard label="Total Consumed"  value={formatINR(totalConsumed)} color="red"    />
-          <StatCard label="Balance Available" value={formatINR(totalBalance)} color={totalBalance < 0 ? 'red' : 'green'} />
-          <StatCard label="A3 Released"     value={formatINR(totalA3)}       color="green"  />
-          <StatCard label="Pending Stage"   value={formatINR(totalPending)}  color="amber"  />
-          <StatCard label="Invoiced Amount" value={formatINR(totalInvoiced)} color="cyan"   />
-        </div>
+      {/* Budget Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <StatCard label="Work Orders"    value={fyRecords.length} sub={activeFy === 'overall' ? 'Overall' : `FY ${activeFy}`} color="blue" />
+        <StatCard label="FO Total Budget"value={formatINR(totalBudget)}   color="blue" />
+        <StatCard label="Total Consumed" value={formatINR(totalConsumed)} color="red" />
+        <StatCard label="Balance Avail"  value={formatINR(totalBalance)}  color={totalBalance < 0 ? 'red' : 'green'} />
+        <StatCard label="Active (>90d)"  value={activeCount}              sub="Valid contracts" color="green" />
+        <StatCard label="Expiring (≤90d)"value={expiringCount}            sub="Requires renewal" color="amber" />
+        <StatCard label="Expired"        value={expiredCount}             sub="Validity ended" color="red" />
+      </div>
 
-        <div className="rounded-xl border border-slate-700/40 bg-slate-800/40 p-4">
-          <div className="flex justify-between text-xs text-slate-400 mb-1.5">
-            <span>Utilization: {overallUtil}% consumed</span>
-            <span>{100 - overallUtil}% available</span>
-          </div>
-          <div className="w-full h-3.5 bg-slate-700 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-700" style={{
-              width: `${Math.min(overallUtil, 100)}%`,
-              background: overallUtil > 85 ? 'linear-gradient(90deg,#E30613,#88040b)' : overallUtil > 60 ? 'linear-gradient(90deg,#f59e0b,#d97706)' : 'linear-gradient(90deg,#0052A5,#003163)'
-            }} />
-          </div>
-        </div>
+      {/* Contract Validity Days Categorization Filter */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <SlotTabs slots={VALIDITY_SLOTS} activeSlot={activeSlot} onChange={setActiveSlot} />
       </div>
 
       {/* Table */}
       <div className="glass-card p-4">
         <DataTable columns={columns} data={sortedRecords} loading={isLoading}
-          emptyMessage="No budget entries found" onRowClick={(row) => setSelectedRow(row)} />
+          emptyMessage="No budget entries found for selected criteria" onRowClick={(row) => setSelectedRow(row)} />
       </div>
 
       {/* Modal */}

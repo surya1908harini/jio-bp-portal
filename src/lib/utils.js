@@ -110,3 +110,55 @@ export const PAYMENT_STATUSES = [
   'Net Amount Received',
   'Full Payment Received',
 ]
+
+// ──────────────────────────────────────────────
+// Parse contract validity & calculate days remaining
+// ──────────────────────────────────────────────
+export function parseValidity(validityStr) {
+  if (!validityStr) return { startDate: null, endDate: null, daysRemaining: null, totalDays: null, status: 'unknown' }
+
+  // Match YYYY-MM-DD or DD-MM-YYYY dates
+  const dates = String(validityStr).match(/\d{4}-\d{2}-\d{2}/g) || String(validityStr).match(/\d{2}[-/]\d{2}[-/]\d{4}/g)
+  if (!dates || dates.length === 0) {
+    return { startDate: null, endDate: null, daysRemaining: null, totalDays: null, status: 'unknown' }
+  }
+
+  const startDate = new Date(dates[0])
+  const endDate   = dates.length > 1 ? new Date(dates[1]) : new Date(dates[0])
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const diffMs = endDate.getTime() - today.getTime()
+  const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+
+  const durationMs = endDate.getTime() - startDate.getTime()
+  const totalDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24))
+
+  let status = 'active'
+  if (daysRemaining < 0) {
+    status = 'expired'
+  } else if (daysRemaining <= 30) {
+    status = 'critical'
+  } else if (daysRemaining <= 90) {
+    status = 'expiring_soon'
+  }
+
+  return { startDate, endDate, daysRemaining, totalDays, status, dates }
+}
+
+// ──────────────────────────────────────────────
+// Derive financial year for budget entries from validity end date
+// ──────────────────────────────────────────────
+export function getBudgetRecordFy(r) {
+  if (!r) return '2024-25'
+  const { endDate, startDate } = parseValidity(r.validity_of_contract)
+  if (endDate && !isNaN(endDate.getTime())) {
+    return getFinancialYear(endDate)
+  }
+  if (startDate && !isNaN(startDate.getTime())) {
+    return getFinancialYear(startDate)
+  }
+  return r.financial_year || '2024-25'
+}
+
