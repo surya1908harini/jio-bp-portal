@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar } from 'lucide-react'
@@ -15,7 +15,7 @@ import SlotTabs from '../components/SlotTabs'
 const EMPTY_FORM = {
   jms_no: '', period_of_work: '', work_order_number: '', arc_number: '',
   net_amount: '', jms_create_date: '', site: '', ro_code: '', work_description: '',
-  status: 'Pending',
+  status: 'Pending A1',
   a1_name: '', a1_release_date: '', a2_name: '', a2_release_date: '',
   qsd_name: '', qsd_release_date: '', a3_name: '',
   inv_number: '', inv_date: '', inv_posting_date: '', payment_date: '',
@@ -54,12 +54,15 @@ const IMPORT_MAP = {
 }
 
 const STATUS_CSS = {
-  Pending: 'badge-pending', A1: 'badge-a1', A2: 'badge-a2',
-  QSD: 'badge-qsd', A3: 'badge-a3', Invoiced: 'badge-invoiced',
+  'Pending A1': 'badge-pending', 'Pending': 'badge-pending', 'A1': 'badge-pending',
+  'Pending A2': 'badge-a2', 'A2': 'badge-a2',
+  'Pending QSD': 'badge-qsd', 'QSD': 'badge-qsd',
+  'Pending A3': 'badge-a3', 'A3': 'badge-a3',
+  'Released by A3': 'badge-invoiced', 'Invoiced': 'badge-invoiced',
 }
 
 function StatusBadge({ status }) {
-  return <span className={`badge ${STATUS_CSS[status] || 'badge-pending'}`}>{status || 'Pending'}</span>
+  return <span className={`badge ${STATUS_CSS[status] || 'badge-pending'}`}>{status || 'Pending A1'}</span>
 }
 
 function StatCard({ label, value, color = 'slate' }) {
@@ -85,15 +88,15 @@ export default function JmsPage() {
   const activeFy = fy || 'overall'
   const { user, isAdmin } = useAuth()
   const qc = useQueryClient()
+
   // Slot filtering for JMS statuses
   const JMS_SLOTS = [
     { key: 'all', label: 'All' },
-    { key: 'pending', label: 'Pending' },
-    { key: 'a1', label: 'A1' },
-    { key: 'a2', label: 'A2' },
-    { key: 'qsd', label: 'QSD' },
-    { key: 'a3', label: 'A3' },
-    { key: 'invoiced', label: 'Released by A3' },
+    { key: 'pending_a1', label: 'Pending A1' },
+    { key: 'pending_a2', label: 'Pending A2' },
+    { key: 'pending_qsd', label: 'Pending QSD' },
+    { key: 'pending_a3', label: 'Pending A3' },
+    { key: 'released_a3', label: 'Released by A3' },
   ]
   const [activeSlot, setActiveSlot] = useState('all')
 
@@ -118,19 +121,30 @@ export default function JmsPage() {
   }
 
   // Active records for table
-  // Apply FY filter first
   const fyRecords = activeFy === 'overall' ? allRecords : allRecords.filter(r => getRecordFy(r) === activeFy)
+
   // Apply slot filter based on status
   const records = fyRecords.filter(r => {
     if (activeSlot === 'all') return true
-    if (activeSlot === 'pending') return r.status === 'Pending'
-    if (activeSlot === 'a1') return r.status === 'A1'
-    if (activeSlot === 'a2') return r.status === 'A2'
-    if (activeSlot === 'qsd') return r.status === 'QSD'
-    if (activeSlot === 'a3') return r.status === 'A3'
-    if (activeSlot === 'invoiced') return r.status === 'Invoiced'
+    if (activeSlot === 'pending_a1') return r.status === 'Pending A1' || r.status === 'Pending' || r.status === 'A1'
+    if (activeSlot === 'pending_a2') return r.status === 'Pending A2' || r.status === 'A2'
+    if (activeSlot === 'pending_qsd') return r.status === 'Pending QSD' || r.status === 'QSD'
+    if (activeSlot === 'pending_a3') return r.status === 'Pending A3' || r.status === 'A3'
+    if (activeSlot === 'released_a3') return r.status === 'Released by A3' || r.status === 'Invoiced'
     return true
   })
+
+  // Sort records: Newest on top by JMS Date (or fallback date), then JMS No
+  const sortedRecords = useMemo(() => {
+    return [...records].sort((a, b) => {
+      const dateA = a.jms_create_date || a.inv_date || a.a1_release_date || a.created_at || ''
+      const dateB = b.jms_create_date || b.inv_date || b.a1_release_date || b.created_at || ''
+      if (dateA !== dateB) {
+        return dateB.localeCompare(dateA)
+      }
+      return String(b.jms_no || '').localeCompare(String(a.jms_no || ''), undefined, { numeric: true })
+    })
+  }, [records])
 
   // Per-FY stats for Overall View
   const fyStats = FINANCIAL_YEARS.map(f => {
@@ -139,9 +153,9 @@ export default function JmsPage() {
       fy: f,
       total:    rows.length,
       amount:   rows.reduce((s, r) => s + (r.net_amount || 0), 0),
-      pending:  rows.filter(r => !['A3','Invoiced'].includes(r.status)).length,
-      a3:       rows.filter(r => r.status === 'A3').length,
-      invoiced: rows.filter(r => r.status === 'Invoiced').length,
+      pending:  rows.filter(r => !['Released by A3','Invoiced'].includes(r.status)).length,
+      a3:       rows.filter(r => r.status === 'Pending A3' || r.status === 'A3').length,
+      invoiced: rows.filter(r => r.status === 'Released by A3' || r.status === 'Invoiced').length,
     }
   })
 
@@ -177,9 +191,9 @@ export default function JmsPage() {
       // Ensure status is valid
       if (rec.status) {
         const normalized = JMS_STATUSES.find(s => s.toLowerCase() === String(rec.status).toLowerCase())
-        rec.status = normalized || 'Pending'
+        rec.status = normalized || 'Pending A1'
       } else {
-        rec.status = 'Pending'
+        rec.status = 'Pending A1'
       }
       rec.financial_year = getRecordFy(rec)
       return rec
@@ -197,7 +211,7 @@ export default function JmsPage() {
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
   const handleDelete = (id) => { if (window.confirm('Delete this JMS record?')) deleteMutation.mutate(id) }
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
-  const handleExport = () => { exportToExcel(records, `JMS_${activeFy}.xlsx`, 'JMS Records'); toast.success('Excel downloaded') }
+  const handleExport = () => { exportToExcel(sortedRecords, `JMS_${activeFy}.xlsx`, 'JMS Records'); toast.success('Excel downloaded') }
 
   const columns = [
         { key: 'jms_no',           header: 'JMS No',        render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
@@ -239,7 +253,7 @@ export default function JmsPage() {
         <div>
           <h1 className="text-2xl font-bold text-white">JMS Details</h1>
           <p className="text-sm text-slate-400 mt-0.5">
-            Job Measurement Sheet · {activeFy === 'overall' ? 'All Financial Years' : `FY ${activeFy}`} · {records.length} records
+            Job Measurement Sheet · {activeFy === 'overall' ? 'All Financial Years' : `FY ${activeFy}`} · {sortedRecords.length} records
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -260,7 +274,7 @@ export default function JmsPage() {
             <Filter size={12} className="text-jio-blue-400" /> Split FY By:
           </span>
           <div className="px-3 py-1.5 rounded-lg font-semibold text-slate-300 flex items-center gap-1">
-            <Calendar size={12} /> JMS Create Date
+            <Calendar size={12} /> JMS Date
           </div>
         </div>
       </div>
@@ -320,22 +334,21 @@ export default function JmsPage() {
           <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
             <TrendingUp size={15} className="text-jio-blue-400" /> FY {activeFy} Summary
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <StatCard label="Total JMS"     value={records.length}            color="blue"   />
-            <StatCard label="Pending"        value={byStatus['Pending'] || 0}  color="amber"  />
-            <StatCard label="A1 Stage"       value={byStatus['A1'] || 0}       color="blue"   />
-            <StatCard label="A2 Stage"       value={byStatus['A2'] || 0}       color="purple" />
-            <StatCard label="QSD Stage"      value={byStatus['QSD'] || 0}      color="cyan"   />
-            <StatCard label="A3 Released"    value={byStatus['A3'] || 0}       color="green"  />
-            <StatCard label="Invoiced"       value={byStatus['Invoiced'] || 0} color="cyan"   />
-            <StatCard label="Total Net Amt"  value={formatINR(totalNetAmount)}  color="green"  />
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            <StatCard label="Total JMS"     value={sortedRecords.length}      color="blue"   />
+            <StatCard label="Pending A1"     value={(byStatus['Pending A1'] || 0) + (byStatus['Pending'] || 0) + (byStatus['A1'] || 0)} color="amber" />
+            <StatCard label="Pending A2"     value={(byStatus['Pending A2'] || 0) + (byStatus['A2'] || 0)} color="purple" />
+            <StatCard label="Pending QSD"    value={(byStatus['Pending QSD'] || 0) + (byStatus['QSD'] || 0)} color="cyan" />
+            <StatCard label="Pending A3"     value={(byStatus['Pending A3'] || 0) + (byStatus['A3'] || 0)} color="blue" />
+            <StatCard label="Released by A3" value={(byStatus['Released by A3'] || 0) + (byStatus['Invoiced'] || 0)} color="green" />
+            <StatCard label="Total Net Amt"  value={formatINR(totalNetAmount)} color="green"  />
           </div>
         </div>
       )}
 
       {/* Table */}
       <div className="glass-card p-4">
-        <DataTable columns={columns} data={records} loading={isLoading}
+        <DataTable columns={columns} data={sortedRecords} loading={isLoading}
           emptyMessage={activeFy === 'overall' ? 'No JMS records found' : `No JMS records for FY ${activeFy}`} />
       </div>
 

@@ -63,7 +63,7 @@ export const jmsDb = {
       supabase
         .from('jms_records')
         .select('*')
-        .order('financial_year')
+        .order('created_at', { ascending: false })
     )
   },
 
@@ -124,7 +124,7 @@ export const invoiceDb = {
       supabase
         .from('invoice_records')
         .select('*')
-        .order('financial_year')
+        .order('created_at', { ascending: false })
     )
   },
 

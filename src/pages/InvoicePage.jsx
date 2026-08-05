@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar } from 'lucide-react'
+import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar, Calculator } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { invoiceDb } from '../lib/db'
@@ -85,6 +85,7 @@ export default function InvoicePage() {
   const activeFy = fy || 'overall'
   const { user, isAdmin } = useAuth()
   const qc = useQueryClient()
+
   // Slot filtering for invoice payment statuses
   const INVOICE_SLOTS = [
     { key: 'all', label: 'All' },
@@ -99,6 +100,7 @@ export default function InvoicePage() {
   const [importOpen, setImportOpen] = useState(false)
   const [editRow, setEditRow] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [taxMode, setTaxMode] = useState('CGST_SGST') // 'CGST_SGST' or 'IGST'
 
   const { data: allRecords = [], isLoading } = useQuery({
     queryKey: ['invoices', 'all'],
@@ -114,8 +116,8 @@ export default function InvoicePage() {
   }
 
   // Active records for table
-  // Apply FY filter first
   const fyRecords = activeFy === 'overall' ? allRecords : allRecords.filter(r => getRecordFy(r) === activeFy)
+
   // Apply slot (payment status) filter
   const records = fyRecords.filter(r => {
     if (activeSlot === 'all') return true
@@ -125,6 +127,55 @@ export default function InvoicePage() {
     if (activeSlot === 'sd') return (r.sd_retention && r.sd_retention > 0) && r.payment_status !== 'Full Payment Received'
     return true
   })
+
+  // Sort records: Newest on top by Invoice Date, then Invoice Number
+  const sortedRecords = useMemo(() => {
+    return [...records].sort((a, b) => {
+      const dateA = a.inv_date || a.amount_received_date || a.created_at || ''
+      const dateB = b.inv_date || b.amount_received_date || b.created_at || ''
+      if (dateA !== dateB) {
+        return dateB.localeCompare(dateA) // newest date first
+      }
+      return String(b.inv_number || '').localeCompare(String(a.inv_number || ''), undefined, { numeric: true })
+    })
+  }, [records])
+
+  // Auto-calculate GST and Grand Total from Total
+  const updateCalculations = (newForm, currentTaxMode) => {
+    const totalVal = parseFloat(newForm.total) || 0
+    if (totalVal > 0) {
+      if (currentTaxMode === 'IGST') {
+        const igstVal = Math.round(totalVal * 0.18 * 100) / 100
+        newForm.igst = igstVal
+        newForm.cgst = 0
+        newForm.sgst = 0
+        newForm.grand_total = Math.round((totalVal + igstVal) * 100) / 100
+      } else {
+        const halfGst = Math.round(totalVal * 0.09 * 100) / 100
+        newForm.cgst = halfGst
+        newForm.sgst = halfGst
+        newForm.igst = 0
+        newForm.grand_total = Math.round((totalVal + halfGst * 2) * 100) / 100
+      }
+    }
+    return newForm
+  }
+
+  const handleFieldChange = (e) => {
+    const { name, value } = e.target
+    setForm(prev => {
+      const next = { ...prev, [name]: value }
+      if (name === 'total') {
+        return updateCalculations(next, taxMode)
+      }
+      return next
+    })
+  }
+
+  const handleTaxModeChange = (mode) => {
+    setTaxMode(mode)
+    setForm(prev => updateCalculations({ ...prev }, mode))
+  }
 
   // Per-FY stats
   const fyStats = FINANCIAL_YEARS.map(f => {
@@ -185,13 +236,25 @@ export default function InvoicePage() {
     return count
   }
 
-  const openEdit = (row) => { setEditRow(row); setForm({ ...EMPTY_FORM, ...row }); setFormOpen(true) }
-  const openAdd  = ()    => { setEditRow(null); setForm(EMPTY_FORM); setFormOpen(true) }
-  const handleClose  = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
-  const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+  const openEdit = (row) => {
+    setEditRow(row)
+    const initialMode = (row.igst && Number(row.igst) > 0) ? 'IGST' : 'CGST_SGST'
+    setTaxMode(initialMode)
+    setForm({ ...EMPTY_FORM, ...row })
+    setFormOpen(true)
+  }
+
+  const openAdd = () => {
+    setEditRow(null)
+    setTaxMode('CGST_SGST')
+    setForm(EMPTY_FORM)
+    setFormOpen(true)
+  }
+
+  const handleClose = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
   const handleDelete = (id) => { if (window.confirm('Delete this invoice?')) deleteMutation.mutate(id) }
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
-  const handleExport = () => { exportToExcel(records, `Invoices_${activeFy}.xlsx`, 'Invoices'); toast.success('Excel downloaded') }
+  const handleExport = () => { exportToExcel(sortedRecords, `Invoices_${activeFy}.xlsx`, 'Invoices'); toast.success('Excel downloaded') }
 
   const FORM_FIELDS = [
     { name: 'inv_date', label: 'Invoice Date', type: 'date' },
@@ -199,10 +262,14 @@ export default function InvoicePage() {
     { name: 'gst_no', label: 'GST Number' }, { name: 'inv_number', label: 'Invoice Number' },
     { name: 'sac_code', label: 'SAC Code' }, { name: 'site', label: 'Site' },
     { name: 'type_of_ro', label: 'Type of RO' }, { name: 'ro_code', label: 'RO Code' },
-    { name: 'hb_rb', label: 'HB/RB' }, { name: 'total', label: 'Total', type: 'number' },
-    { name: 'igst', label: 'IGST', type: 'number' }, { name: 'cgst', label: 'CGST', type: 'number' },
-    { name: 'sgst', label: 'SGST', type: 'number' }, { name: 'grand_total', label: 'Grand Total', type: 'number' },
-    { name: 'tds', label: 'TDS', type: 'number' }, { name: 'gst_amount_deduction', label: 'GST Amt & Deduction', type: 'number' },
+    { name: 'hb_rb', label: 'HB/RB' },
+    { name: 'total', label: 'Total Value (Before Tax)', type: 'number' },
+    { name: 'igst', label: 'IGST (18%)', type: 'number' },
+    { name: 'cgst', label: 'CGST (9%)', type: 'number' },
+    { name: 'sgst', label: 'SGST (9%)', type: 'number' },
+    { name: 'grand_total', label: 'Grand Total', type: 'number' },
+    { name: 'tds', label: 'TDS', type: 'number' },
+    { name: 'gst_amount_deduction', label: 'GST Amt & Deduction', type: 'number' },
     { name: 'gst_tds_2pct_iocl', label: 'GST TDS 2% IOCL', type: 'number' },
     { name: 'sd_retention', label: 'SD / Retention', type: 'number' },
     { name: 'tcs_credit_note', label: 'TCS / Credit Note', type: 'number' },
@@ -356,26 +423,57 @@ export default function InvoicePage() {
       )}
 
       <div className="glass-card p-4">
-        <DataTable columns={columns} data={records} loading={isLoading}
+        <DataTable columns={columns} data={sortedRecords} loading={isLoading}
           emptyMessage={activeFy === 'overall' ? 'No invoices found' : `No invoices for FY ${activeFy}`} />
       </div>
 
       <Modal open={formOpen} onClose={handleClose} title={editRow ? 'Edit Invoice' : 'Add Invoice'}>
         <form onSubmit={handleSubmit} className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {/* Tax Calculation Selection Box */}
+          <div className="col-span-2 md:col-span-3 bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between flex-wrap gap-2">
+            <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <Calculator size={14} className="text-jio-blue-400" /> Tax Calculation Mode (Auto-Calculates GST & Grand Total from Total Value):
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => handleTaxModeChange('CGST_SGST')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  taxMode === 'CGST_SGST'
+                    ? 'bg-jio-blue-600 text-white shadow-md'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                }`}
+              >
+                CGST + SGST (9% + 9%)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTaxModeChange('IGST')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  taxMode === 'IGST'
+                    ? 'bg-jio-blue-600 text-white shadow-md'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                }`}
+              >
+                IGST (18%)
+              </button>
+            </div>
+          </div>
+
           {FORM_FIELDS.map(f => (
             <div key={f.name}>
               <label className="block text-xs font-medium text-slate-400 mb-1">{f.label}</label>
               <input type={f.type || 'text'} name={f.name} value={form[f.name] || ''}
-                onChange={handleChange} className="input-field" step={f.type === 'number' ? '0.01' : undefined} />
+                onChange={handleFieldChange} className="input-field" step={f.type === 'number' ? '0.01' : undefined} />
             </div>
           ))}
           <div className="col-span-2 md:col-span-3">
             <label className="block text-xs font-medium text-slate-400 mb-1">Work Description</label>
-            <textarea name="work_description" value={form.work_description || ''} onChange={handleChange} rows={2} className="input-field resize-none" />
+            <textarea name="work_description" value={form.work_description || ''} onChange={handleFieldChange} rows={2} className="input-field resize-none" />
           </div>
           <div className="col-span-2 md:col-span-3">
             <label className="block text-xs font-medium text-slate-400 mb-1">Payment Status</label>
-            <select name="payment_status" value={form.payment_status} onChange={handleChange} className="select-field w-auto">
+            <select name="payment_status" value={form.payment_status} onChange={handleFieldChange} className="select-field w-auto">
               {PAYMENT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
