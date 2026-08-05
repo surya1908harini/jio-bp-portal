@@ -185,8 +185,21 @@ export default function BudgetPage() {
     {
       key: 'validity_of_contract', header: 'Validity (Days Remaining)',
       render: r => {
-        const { daysRemaining, status } = parseValidity(r.validity_of_contract)
-        const formattedValidity = formatValidityRange(r.validity_of_contract)
+        if (!r) return '—'
+        const valStr = r.validity_of_contract || ''
+        let daysRemaining = null
+        let status = 'unknown'
+        let formattedValidity = valStr
+
+        try {
+          const res = parseValidity(valStr)
+          daysRemaining = res.daysRemaining
+          status = res.status
+          formattedValidity = formatValidityRange(valStr)
+        } catch (e) {
+          // fallback gracefully
+        }
+
         const badgeColor =
           status === 'expired'       ? 'bg-jio-red-950/80 text-jio-red-400 border-jio-red-700/60' :
           status === 'critical'      ? 'bg-amber-950/80 text-amber-400 border-amber-700/60' :
@@ -194,7 +207,7 @@ export default function BudgetPage() {
           'bg-emerald-950/80 text-emerald-400 border-emerald-700/60'
 
         const badgeText =
-          daysRemaining === null ? '' :
+          daysRemaining === null || daysRemaining === undefined ? '' :
           daysRemaining < 0      ? `Expired (${Math.abs(daysRemaining)}d ago)` :
           daysRemaining === 0    ? `Expires Today` :
           `${daysRemaining} days remaining`
@@ -202,7 +215,7 @@ export default function BudgetPage() {
         return (
           <div className="space-y-1 min-w-[170px]">
             <div className="text-white text-xs font-mono font-medium">{formattedValidity || '—'}</div>
-            {daysRemaining !== null && (
+            {daysRemaining !== null && daysRemaining !== undefined && (
               <div className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-md border ${badgeColor}`}>
                 <Clock size={11} />
                 <span>{badgeText}</span>

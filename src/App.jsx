@@ -7,6 +7,7 @@ import JmsPage from './pages/JmsPage'
 import InvoicePage from './pages/InvoicePage'
 import BudgetPage from './pages/BudgetPage'
 import AdminPage from './pages/AdminPage'
+import ErrorBoundary from './components/ErrorBoundary'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -24,30 +25,32 @@ export default function App() {
   const { user } = useAuth()
 
   return (
-    <Routes>
-      <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+    <ErrorBoundary>
+      <Routes>
+        <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
 
-      <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
 
-        {/* JMS */}
-        <Route path="jms"          element={<JmsPage />} />
-        <Route path="jms/:fy"      element={<JmsPage />} />
+          {/* JMS */}
+          <Route path="jms"          element={<JmsPage />} />
+          <Route path="jms/:fy"      element={<JmsPage />} />
 
-        {/* Invoices */}
-        <Route path="invoices"     element={<InvoicePage />} />
-        <Route path="invoices/:fy" element={<InvoicePage />} />
+          {/* Invoices */}
+          <Route path="invoices"     element={<InvoicePage />} />
+          <Route path="invoices/:fy" element={<InvoicePage />} />
 
-        {/* Budget */}
-        <Route path="budget"       element={<BudgetPage />} />
-        <Route path="budget/:fy"   element={<BudgetPage />} />
+          {/* Budget */}
+          <Route path="budget"       element={<BudgetPage />} />
+          <Route path="budget/:fy"   element={<BudgetPage />} />
 
-        {/* Admin */}
-        <Route path="admin"        element={<AdminRoute><AdminPage /></AdminRoute>} />
-      </Route>
+          {/* Admin */}
+          <Route path="admin"        element={<AdminRoute><AdminPage /></AdminRoute>} />
+        </Route>
 
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </ErrorBoundary>
   )
 }
