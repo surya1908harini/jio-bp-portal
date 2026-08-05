@@ -107,11 +107,11 @@ export default function DashboardPage() {
 
       {/* KPI Grid - CURRENT FY METRICS */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-        <KpiCard icon={FileText}    label="Total JMS"        value={currentJmsList.length} sub={`FY ${CURRENT_FY}`}   color="blue"   to={`/jms/${CURRENT_FY}`} />
-        <KpiCard icon={Clock}       label="Pending Approval" value={pendingJms}           sub="Pending A1/A2/QSD/A3"  color="amber"  to={`/jms/${CURRENT_FY}`} />
-        <KpiCard icon={CheckCircle} label="Released by A3"   value={a3Released}           sub="Ready to invoice"     color="green"  to={`/jms/${CURRENT_FY}`} />
-        <KpiCard icon={Receipt}     label="Invoices"         value={currentInvList.length} sub={`Paid: ${fullPaid}`}  color="cyan"   to={`/invoices/${CURRENT_FY}`} />
-        <KpiCard icon={TrendingUp}  label="Invoice Value"    value={formatINR(totalInvAmt)} sub={`FY ${CURRENT_FY}`} color="purple" to={`/invoices/${CURRENT_FY}`} />
+        <KpiCard icon={FileText}    label="Total JMS"        value={currentJmsList.length} sub={`FY ${CURRENT_FY}`}   color="blue"   to={`/jms/${CURRENT_FY}?slot=all`} />
+        <KpiCard icon={Clock}       label="Pending Approval" value={pendingJms}           sub="Pending A1/A2/QSD/A3"  color="amber"  to={`/jms/${CURRENT_FY}?slot=pending_a1`} />
+        <KpiCard icon={CheckCircle} label="Released by A3"   value={a3Released}           sub="Ready to invoice"     color="green"  to={`/jms/${CURRENT_FY}?slot=released_a3`} />
+        <KpiCard icon={Receipt}     label="Invoices"         value={currentInvList.length} sub={`Paid: ${fullPaid}`}  color="cyan"   to={`/invoices/${CURRENT_FY}?slot=all`} />
+        <KpiCard icon={TrendingUp}  label="Invoice Value"    value={formatINR(totalInvAmt)} sub={`FY ${CURRENT_FY}`} color="purple" to={`/invoices/${CURRENT_FY}?slot=all`} />
         <KpiCard icon={PieChart}    label="Budget Used"      value={`${utilization}%`}   sub={formatINR(totalConsumed)} color="red" to={`/budget/${CURRENT_FY}`} />
       </div>
 

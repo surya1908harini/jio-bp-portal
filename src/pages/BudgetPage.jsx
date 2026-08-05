@@ -68,7 +68,7 @@ export default function BudgetPage() {
   const qc = useQueryClient()
   // Fiscal year tab handling
   const { fy } = useParams()
-  const activeFy = fy || 'overall'
+  const activeFy = fy || CURRENT_FY
 
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)

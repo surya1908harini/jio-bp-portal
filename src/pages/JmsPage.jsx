@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { jmsDb } from '../lib/db'
-import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS, JMS_STATUSES, getFinancialYear } from '../lib/utils'
+import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS, JMS_STATUSES, CURRENT_FY, getFinancialYear } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
@@ -125,7 +125,10 @@ function StatCard({ label, value, color = 'slate' }) {
 
 export default function JmsPage() {
   const { fy } = useParams()
-  const activeFy = fy || 'overall'
+  const activeFy = fy || CURRENT_FY
+  const [searchParams] = useSearchParams()
+  const initialSlot = searchParams.get('slot') || 'all'
+
   const { user, isAdmin } = useAuth()
   const qc = useQueryClient()
 
@@ -138,7 +141,7 @@ export default function JmsPage() {
     { key: 'pending_a3', label: 'Pending A3' },
     { key: 'released_a3', label: 'Released by A3' },
   ]
-  const [activeSlot, setActiveSlot] = useState('all')
+  const [activeSlot, setActiveSlot] = useState(initialSlot)
 
   const [formOpen,   setFormOpen]   = useState(false)
   const [importOpen, setImportOpen] = useState(false)

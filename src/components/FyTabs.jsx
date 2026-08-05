@@ -1,10 +1,10 @@
 import { Link, useParams } from 'react-router-dom'
-import { FINANCIAL_YEARS } from '../lib/utils'
+import { FINANCIAL_YEARS, CURRENT_FY } from '../lib/utils'
 
 export default function FyTabs({ basePath }) {
   const { fy } = useParams()
-  // Default to 'overall' if no fy is specified in the URL
-  const activeFy = fy || 'overall'
+  // Default to CURRENT_FY if no fy is specified in the URL
+  const activeFy = fy || CURRENT_FY
 
   return (
     <div className="flex gap-1 p-1 bg-slate-900 rounded-xl w-fit">

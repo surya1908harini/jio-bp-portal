@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar, Calculator } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { invoiceDb } from '../lib/db'
-import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS, PAYMENT_STATUSES, getFinancialYear } from '../lib/utils'
+import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS, PAYMENT_STATUSES, CURRENT_FY, getFinancialYear } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
@@ -82,7 +82,10 @@ function StatCard({ label, value, color = 'slate' }) {
 
 export default function InvoicePage() {
   const { fy } = useParams()
-  const activeFy = fy || 'overall'
+  const activeFy = fy || CURRENT_FY
+  const [searchParams] = useSearchParams()
+  const initialSlot = searchParams.get('slot') || 'all'
+
   const { user, isAdmin } = useAuth()
   const qc = useQueryClient()
 
@@ -94,7 +97,7 @@ export default function InvoicePage() {
     { key: 'full', label: 'Full Payment Received' },
     { key: 'sd', label: 'Pending SD Amount' },
   ]
-  const [activeSlot, setActiveSlot] = useState('all')
+  const [activeSlot, setActiveSlot] = useState(initialSlot)
 
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
