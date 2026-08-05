@@ -1,5 +1,5 @@
 import Modal from './Modal';
-import { formatINR } from '../lib/utils';
+import { formatINR, formatValidityRange } from '../lib/utils';
 
 function SummaryRow({ label, value, color = 'text-white' }) {
   return (
@@ -56,7 +56,7 @@ export default function SummaryModal({ row, onClose }) {
             </div>
           </div>
           <SummaryRow label="ARC Number" value={arc_number} />
-          <SummaryRow label="Validity" value={validity_of_contract} />
+          <SummaryRow label="Validity" value={formatValidityRange(validity_of_contract)} />
           {description && (
             <div className="mt-2 px-3 py-2 rounded-lg bg-slate-900/50 border border-slate-700/30">
               <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Description</p>

@@ -78,13 +78,25 @@ export function formatINR(amount) {
 }
 
 // ──────────────────────────────────────────────
-// Format date display
+// Format date display (DD/MM/YYYY)
 // ──────────────────────────────────────────────
 export function formatDate(dateStr) {
   if (!dateStr) return '—'
-  const d = new Date(dateStr)
-  if (isNaN(d)) return dateStr
-  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+  const str = String(dateStr).trim()
+  const d = new Date(str)
+  if (isNaN(d.getTime())) return dateStr
+  const day   = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year  = d.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
+export function formatValidityRange(validityStr) {
+  if (!validityStr) return '—'
+  const { dates } = parseValidity(validityStr)
+  if (!dates || dates.length === 0) return validityStr
+  const formatted = dates.map(d => formatDate(d))
+  return formatted.length > 1 ? `${formatted[0]} - ${formatted[1]}` : formatted[0]
 }
 
 // ──────────────────────────────────────────────

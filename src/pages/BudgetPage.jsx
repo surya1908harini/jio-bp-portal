@@ -131,9 +131,13 @@ export default function BudgetPage() {
   }).length
 
   const saveMutation = useMutation({
-    mutationFn: (payload) => editRow
-      ? budgetDb.update(editRow.id, payload)
-      : budgetDb.create({ ...payload, fy: activeFy }, user?.id),
+    mutationFn: (payload) => {
+      const { fy, ...cleanPayload } = payload
+      const fyVal = activeFy === 'overall' ? CURRENT_FY : activeFy
+      return editRow
+        ? budgetDb.update(editRow.id, cleanPayload)
+        : budgetDb.create({ ...cleanPayload, financial_year: fyVal }, user?.id)
+    },
     onSuccess: () => { qc.invalidateQueries(['budget']); toast.success(editRow ? 'Budget updated ✓' : 'Budget created ✓'); handleClose() },
     onError:   (e) => toast.error(e?.message || 'Save failed'),
   })
@@ -182,6 +186,7 @@ export default function BudgetPage() {
       key: 'validity_of_contract', header: 'Validity (Days Remaining)',
       render: r => {
         const { daysRemaining, status } = parseValidity(r.validity_of_contract)
+        const formattedValidity = formatValidityRange(r.validity_of_contract)
         const badgeColor =
           status === 'expired'       ? 'bg-jio-red-950/80 text-jio-red-400 border-jio-red-700/60' :
           status === 'critical'      ? 'bg-amber-950/80 text-amber-400 border-amber-700/60' :
@@ -196,7 +201,7 @@ export default function BudgetPage() {
 
         return (
           <div className="space-y-1 min-w-[170px]">
-            <div className="text-white text-xs font-mono font-medium">{r.validity_of_contract || '—'}</div>
+            <div className="text-white text-xs font-mono font-medium">{formattedValidity || '—'}</div>
             {daysRemaining !== null && (
               <div className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-md border ${badgeColor}`}>
                 <Clock size={11} />

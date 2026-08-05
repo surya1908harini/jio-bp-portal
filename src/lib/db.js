@@ -10,6 +10,7 @@ import { FINANCIAL_YEARS } from './utils'
 function clean(obj) {
   const result = {}
   for (const [k, v] of Object.entries(obj)) {
+    if (k === 'fy') continue // ignore invalid 'fy' property not present in schema
     if (v === '' || v === null || v === undefined) continue
     if (v instanceof Date) {
       result[k] = v.toISOString().split('T')[0]
