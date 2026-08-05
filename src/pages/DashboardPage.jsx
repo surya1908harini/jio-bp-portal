@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
-import { formatINR, formatDate, CURRENT_FY, JMS_STATUSES, getFinancialYear } from '../lib/utils'
+import { formatINR, formatDate, CURRENT_FY, JMS_STATUSES, getFinancialYear, getBudgetRecordFy } from '../lib/utils'
 import { FileText, Receipt, PieChart, Clock, CheckCircle, TrendingUp, Calendar, ArrowRight } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
@@ -67,7 +67,7 @@ export default function DashboardPage() {
   // Filter lists strictly for current FY
   const currentJmsList    = jmsList.filter(j => getJmsFy(j) === CURRENT_FY)
   const currentInvList    = invoiceList.filter(i => getInvFy(i) === CURRENT_FY)
-  const currentBudgetList = budgetList.filter(b => b.financial_year === CURRENT_FY || !b.financial_year)
+  const currentBudgetList = budgetList.filter(b => getBudgetRecordFy(b) === CURRENT_FY)
 
   const pendingJms   = currentJmsList.filter(j => !['Released by A3','Invoiced'].includes(j.status)).length
   const a3Released   = currentJmsList.filter(j => j.status === 'Released by A3' || j.status === 'Invoiced' || j.status === 'Pending A3' || j.status === 'A3').length
