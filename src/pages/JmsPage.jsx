@@ -69,22 +69,13 @@ const STATUS_TO_DB = {
 
 function getDbStatus(status) {
   if (!status) return 'A1'
-  const str = String(status).trim()
-  const map = {
-    'pending a1': 'A1',
-    'pending a2': 'A2',
-    'pending qsd': 'QSD',
-    'pending a3': 'A3',
-    'released by a3': 'Invoiced',
-    'released': 'Invoiced',
-    'invoiced': 'Invoiced',
-    'pending': 'A1',
-    'a1': 'A1',
-    'a2': 'A2',
-    'qsd': 'QSD',
-    'a3': 'A3',
-  }
-  return map[str.toLowerCase()] || STATUS_TO_DB[str] || 'A1'
+  const str = String(status).trim().toLowerCase()
+  if (str.includes('invoiced') || str.includes('released')) return 'Invoiced'
+  if (str.includes('a2')) return 'A2'
+  if (str.includes('qsd')) return 'QSD'
+  if (str.includes('a3')) return 'A3'
+  if (str.includes('a1') || str.includes('pending')) return 'A1'
+  return 'A1'
 }
 
 const STATUS_DISPLAY = {
