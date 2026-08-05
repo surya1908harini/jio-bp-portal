@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
-import { formatINR, formatDate, CURRENT_FY, JMS_STATUSES, getFinancialYear } from '../lib/utils'
+import { formatINR, formatDate, CURRENT_FY, getFinancialYear } from '../lib/utils'
 import { FileText, Receipt, PieChart, Clock, CheckCircle, TrendingUp, Calendar, ArrowRight } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
@@ -45,16 +45,7 @@ export default function DashboardPage() {
   const { data: invoiceList = [] } = useQuery({ queryKey: ['invoices', 'all'], queryFn: () => invoiceDb.listAll() })
   const { data: budgetList = [] }  = useQuery({ queryKey: ['budget', 'all'],   queryFn: () => budgetDb.listAll() })
 
-  // Helper to determine FY
-  const getJmsFy = (r) => {
-    const d = r.jms_create_date || r.inv_date || r.a1_release_date || r.created_at
-    return d ? getFinancialYear(d) : r.financial_year || CURRENT_FY
-  }
-
-  const getInvFy = (r) => {
-    return r.inv_date ? getFinancialYear(r.inv_date) : r.financial_year || CURRENT_FY
-  }
-
+  // Overall metrics calculation across all records
   const pendingJms   = jmsList.filter(j => !['Released by A3','Invoiced'].includes(j.status)).length
   const a3Released   = jmsList.filter(j => j.status === 'Released by A3' || j.status === 'Invoiced' || j.status === 'Pending A3' || j.status === 'A3').length
   const fullPaid     = invoiceList.filter(i => i.payment_status === 'Full Payment Received').length
@@ -100,7 +91,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI Grid - OVERALL METRICS, LINKS TO CURRENT FY RECORDS IN JMS/INVOICE/BUDGET DETAILS */}
+      {/* KPI Grid - OVERALL METRICS, LINKS TO CURRENT FY RECORDS IN DETAILS */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         <KpiCard icon={FileText}    label="Total JMS"        value={jmsList.length}        sub="View JMS Details"     color="blue"   to={`/jms/${CURRENT_FY}?slot=all`} />
         <KpiCard icon={Clock}       label="Pending Approval" value={pendingJms}             sub="Pending A1/A2/QSD/A3"  color="amber"  to={`/jms/${CURRENT_FY}?slot=pending_a1`} />
@@ -117,7 +108,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-semibold text-white">JMS Approval Status Distribution</h2>
-              <p className="text-xs text-slate-500">FY {CURRENT_FY} counts across all stages (Click to view JMS)</p>
+              <p className="text-xs text-slate-500">Overall counts across all stages (Click to view JMS)</p>
             </div>
             <ArrowRight size={16} className="text-slate-400" />
           </div>
@@ -140,8 +131,8 @@ export default function DashboardPage() {
         <div className="glass-card p-5 cursor-pointer hover:border-jio-blue-500/50 transition-all" onClick={() => navigate(`/budget/${CURRENT_FY}`)}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-sm font-semibold text-white">Budget Utilization (FY {CURRENT_FY})</h2>
-              <p className="text-xs text-slate-500">Current financial year work orders (Click to view Budget)</p>
+              <h2 className="text-sm font-semibold text-white">Overall Budget Utilization</h2>
+              <p className="text-xs text-slate-500">Across all active work orders (Click to view Budget)</p>
             </div>
             <ArrowRight size={16} className="text-slate-400" />
           </div>
@@ -178,10 +169,10 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {currentBudgetList.length > 0 && (
+          {budgetList.length > 0 && (
             <div className="mt-4 space-y-2">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Top Work Orders (FY {CURRENT_FY})</p>
-              {currentBudgetList.slice(0, 4).map((b, i) => (
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Top Work Orders</p>
+              {budgetList.slice(0, 4).map((b, i) => (
                 <div key={i} className="flex items-center justify-between text-xs hover:text-jio-blue-400">
                   <span className="text-slate-400 truncate max-w-[60%]">{b.work_order_number || 'N/A'}</span>
                   <span className="text-white font-medium">{formatINR(b.total_consumed)}</span>
@@ -199,8 +190,8 @@ export default function DashboardPage() {
             <h2 className="text-sm font-semibold text-white">Recent JMS Records</h2>
             <p className="text-xs text-slate-500">Latest entries across all financial years (Click any row to open JMS page)</p>
           </div>
-          <Link to="/jms" className="text-xs text-jio-blue-400 hover:text-jio-blue-300 font-semibold flex items-center gap-1">
-            View All JMS <ArrowRight size={13} />
+          <Link to={`/jms/${CURRENT_FY}`} className="text-xs text-jio-blue-400 hover:text-jio-blue-300 font-semibold flex items-center gap-1">
+            View Current FY JMS <ArrowRight size={13} />
           </Link>
         </div>
 
@@ -217,7 +208,7 @@ export default function DashboardPage() {
               </thead>
               <tbody>
                 {recentJms.map(j => (
-                  <tr key={j.id} className="cursor-pointer hover:bg-slate-800/80 transition-colors" onClick={() => navigate('/jms')}>
+                  <tr key={j.id} className="cursor-pointer hover:bg-slate-800/80 transition-colors" onClick={() => navigate(`/jms/${CURRENT_FY}`)}>
                     <td className="text-white font-medium">{j.jms_no}</td>
                     <td>{j.work_order_number || '—'}</td>
                     <td>{formatDate(j.jms_create_date || j.inv_date || j.a1_release_date)}</td>
@@ -233,4 +224,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-
