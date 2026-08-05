@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { Plus, Download, Upload, Pencil, Trash2, PieChart, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { budgetDb } from '../lib/db'
-import { formatINR, exportToExcel, getFinancialYear } from '../lib/utils'
+import { formatINR, exportToExcel, CURRENT_FY } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
@@ -80,7 +80,17 @@ export default function BudgetPage() {
     queryKey: ['budget', activeFy],
     queryFn: () => activeFy === 'overall' ? budgetDb.listAll() : budgetDb.list(activeFy),
   })
-  const displayedRecords = records
+
+  // Sort records: Current FY budget records on top, followed by latest FYs
+  const sortedRecords = useMemo(() => {
+    return [...records].sort((a, b) => {
+      const fyA = a.financial_year || ''
+      const fyB = b.financial_year || ''
+      if (fyA === CURRENT_FY && fyB !== CURRENT_FY) return -1
+      if (fyB === CURRENT_FY && fyA !== CURRENT_FY) return 1
+      return fyB.localeCompare(fyA)
+    })
+  }, [records])
 
 
   // Overall stats
@@ -237,7 +247,7 @@ export default function BudgetPage() {
 
       {/* Table */}
       <div className="glass-card p-4">
-        <DataTable columns={columns} data={displayedRecords} loading={isLoading}
+        <DataTable columns={columns} data={sortedRecords} loading={isLoading}
           emptyMessage="No budget entries found" onRowClick={(row) => setSelectedRow(row)} />
       </div>
 

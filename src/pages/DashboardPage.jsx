@@ -55,31 +55,32 @@ export default function DashboardPage() {
     return r.inv_date ? getFinancialYear(r.inv_date) : r.financial_year || CURRENT_FY
   }
 
-  // Filter lists for current FY
-  const currentJmsList = jmsList.filter(j => getJmsFy(j) === CURRENT_FY)
-  const currentInvList = invoiceList.filter(i => getInvFy(i) === CURRENT_FY)
+  // Filter lists strictly for current FY
+  const currentJmsList    = jmsList.filter(j => getJmsFy(j) === CURRENT_FY)
+  const currentInvList    = invoiceList.filter(i => getInvFy(i) === CURRENT_FY)
+  const currentBudgetList = budgetList.filter(b => b.financial_year === CURRENT_FY || !b.financial_year)
 
-  const pendingJms   = jmsList.filter(j => !['Released by A3','Invoiced'].includes(j.status)).length
-  const a3Released   = jmsList.filter(j => r => r.status === 'Released by A3' || r.status === 'Invoiced' || r.status === 'Pending A3' || r.status === 'A3').length
-  const fullPaid     = invoiceList.filter(i => i.payment_status === 'Full Payment Received').length
-  const totalInvAmt  = invoiceList.reduce((s, i) => s + (i.grand_total || 0), 0)
-  const totalBudget  = budgetList.reduce((s, b) => s + (b.fo_total_budget || 0), 0)
-  const totalConsumed= budgetList.reduce((s, b) => s + (b.total_consumed || 0), 0)
+  const pendingJms   = currentJmsList.filter(j => !['Released by A3','Invoiced'].includes(j.status)).length
+  const a3Released   = currentJmsList.filter(j => j.status === 'Released by A3' || j.status === 'Invoiced' || j.status === 'Pending A3' || j.status === 'A3').length
+  const fullPaid     = currentInvList.filter(i => i.payment_status === 'Full Payment Received').length
+  const totalInvAmt  = currentInvList.reduce((s, i) => s + (i.grand_total || 0), 0)
+  const totalBudget  = currentBudgetList.reduce((s, b) => s + (b.fo_total_budget || 0), 0)
+  const totalConsumed= currentBudgetList.reduce((s, b) => s + (b.total_consumed || 0), 0)
   const utilization  = totalBudget > 0 ? Math.round((totalConsumed / totalBudget) * 100) : 0
 
-  // Status distribution with updated names
+  // Status distribution for CURRENT_FY
   const statusDist = [
-    { name: 'Pending A1', label: 'Pending A1', count: jmsList.filter(j => j.status === 'Pending A1' || j.status === 'Pending' || j.status === 'A1').length },
-    { name: 'Pending A2', label: 'Pending A2', count: jmsList.filter(j => j.status === 'Pending A2' || j.status === 'A2').length },
-    { name: 'Pending QSD', label: 'Pending QSD', count: jmsList.filter(j => j.status === 'Pending QSD' || j.status === 'QSD').length },
-    { name: 'Pending A3', label: 'Pending A3', count: jmsList.filter(j => j.status === 'Pending A3' || j.status === 'A3').length },
-    { name: 'Released by A3', label: 'Released', count: jmsList.filter(j => j.status === 'Released by A3' || j.status === 'Invoiced').length },
+    { name: 'Pending A1', label: 'Pending A1', count: currentJmsList.filter(j => j.status === 'Pending A1' || j.status === 'Pending' || j.status === 'A1').length },
+    { name: 'Pending A2', label: 'Pending A2', count: currentJmsList.filter(j => j.status === 'Pending A2' || j.status === 'A2').length },
+    { name: 'Pending QSD', label: 'Pending QSD', count: currentJmsList.filter(j => j.status === 'Pending QSD' || j.status === 'QSD').length },
+    { name: 'Pending A3', label: 'Pending A3', count: currentJmsList.filter(j => j.status === 'Pending A3' || j.status === 'A3').length },
+    { name: 'Released by A3', label: 'Released', count: currentJmsList.filter(j => j.status === 'Released by A3' || j.status === 'Invoiced').length },
   ]
 
   const BAR_COLORS = ['#f59e0b','#a855f7','#06b6d4','#3b82f6','#10b981']
 
-  // Latest 8 JMS records
-  const recentJms = [...jmsList].sort((a, b) => {
+  // Latest 8 JMS records for CURRENT_FY
+  const recentJms = [...currentJmsList].sort((a, b) => {
     const da = a.jms_create_date || a.inv_date || a.a1_release_date || a.created_at || ''
     const db = b.jms_create_date || b.inv_date || b.a1_release_date || b.created_at || ''
     return db.localeCompare(da)
@@ -104,24 +105,24 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI Grid - ALL LINKED TO DETAILS PAGES */}
+      {/* KPI Grid - CURRENT FY METRICS */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-        <KpiCard icon={FileText}    label="Total JMS"        value={jmsList.length}      sub="View JMS Details"     color="blue"   to="/jms" />
-        <KpiCard icon={Clock}       label="Pending Approval" value={pendingJms}           sub="Pending A1/A2/QSD/A3"  color="amber"  to="/jms" />
-        <KpiCard icon={CheckCircle} label="Released by A3"   value={a3Released}           sub="Ready to invoice"     color="green"  to="/jms" />
-        <KpiCard icon={Receipt}     label="Invoices"         value={invoiceList.length}   sub={`Paid: ${fullPaid}`}  color="cyan"   to="/invoices" />
-        <KpiCard icon={TrendingUp}  label="Invoice Value"    value={formatINR(totalInvAmt)} sub="View Invoices"      color="purple" to="/invoices" />
-        <KpiCard icon={PieChart}    label="Budget Used"      value={`${utilization}%`}   sub={formatINR(totalConsumed)} color="red" to="/budget" />
+        <KpiCard icon={FileText}    label="Total JMS"        value={currentJmsList.length} sub={`FY ${CURRENT_FY}`}   color="blue"   to={`/jms/${CURRENT_FY}`} />
+        <KpiCard icon={Clock}       label="Pending Approval" value={pendingJms}           sub="Pending A1/A2/QSD/A3"  color="amber"  to={`/jms/${CURRENT_FY}`} />
+        <KpiCard icon={CheckCircle} label="Released by A3"   value={a3Released}           sub="Ready to invoice"     color="green"  to={`/jms/${CURRENT_FY}`} />
+        <KpiCard icon={Receipt}     label="Invoices"         value={currentInvList.length} sub={`Paid: ${fullPaid}`}  color="cyan"   to={`/invoices/${CURRENT_FY}`} />
+        <KpiCard icon={TrendingUp}  label="Invoice Value"    value={formatINR(totalInvAmt)} sub={`FY ${CURRENT_FY}`} color="purple" to={`/invoices/${CURRENT_FY}`} />
+        <KpiCard icon={PieChart}    label="Budget Used"      value={`${utilization}%`}   sub={formatINR(totalConsumed)} color="red" to={`/budget/${CURRENT_FY}`} />
       </div>
 
       {/* Charts row */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {/* JMS Status distribution */}
-        <div className="glass-card p-5 cursor-pointer hover:border-jio-blue-500/50 transition-all" onClick={() => navigate('/jms')}>
+        <div className="glass-card p-5 cursor-pointer hover:border-jio-blue-500/50 transition-all" onClick={() => navigate(`/jms/${CURRENT_FY}`)}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-semibold text-white">JMS Approval Status Distribution</h2>
-              <p className="text-xs text-slate-500">Overall counts across all stages (Click to view JMS)</p>
+              <p className="text-xs text-slate-500">FY {CURRENT_FY} counts across all stages (Click to view JMS)</p>
             </div>
             <ArrowRight size={16} className="text-slate-400" />
           </div>
@@ -141,11 +142,11 @@ export default function DashboardPage() {
         </div>
 
         {/* Budget Utilization */}
-        <div className="glass-card p-5 cursor-pointer hover:border-jio-blue-500/50 transition-all" onClick={() => navigate('/budget')}>
+        <div className="glass-card p-5 cursor-pointer hover:border-jio-blue-500/50 transition-all" onClick={() => navigate(`/budget/${CURRENT_FY}`)}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-sm font-semibold text-white">Overall Budget Utilization</h2>
-              <p className="text-xs text-slate-500">Across all active work orders (Click to view Budget)</p>
+              <h2 className="text-sm font-semibold text-white">Budget Utilization (FY {CURRENT_FY})</h2>
+              <p className="text-xs text-slate-500">Current financial year work orders (Click to view Budget)</p>
             </div>
             <ArrowRight size={16} className="text-slate-400" />
           </div>
@@ -182,10 +183,10 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {budgetList.length > 0 && (
+          {currentBudgetList.length > 0 && (
             <div className="mt-4 space-y-2">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Top Work Orders</p>
-              {budgetList.slice(0, 4).map((b, i) => (
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Top Work Orders (FY {CURRENT_FY})</p>
+              {currentBudgetList.slice(0, 4).map((b, i) => (
                 <div key={i} className="flex items-center justify-between text-xs hover:text-jio-blue-400">
                   <span className="text-slate-400 truncate max-w-[60%]">{b.work_order_number || 'N/A'}</span>
                   <span className="text-white font-medium">{formatINR(b.total_consumed)}</span>

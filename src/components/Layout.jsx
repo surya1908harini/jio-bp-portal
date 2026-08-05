@@ -82,10 +82,12 @@ export default function Layout() {
       {/* Logo */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-slate-800 shrink-0">
         {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-jio flex items-center justify-center text-white font-black text-sm">J</div>
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-jio-blue-600 via-jio-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-xs tracking-wider shadow-lg border border-jio-blue-400/30">
+              MMC
+            </div>
             <div>
-              <p className="text-xs font-bold text-white leading-tight">Jio-bp Portal</p>
+              <p className="text-sm font-bold text-white leading-tight tracking-wide">MMC</p>
               <p className="text-[10px] text-slate-400 leading-tight">MM Contractor</p>
             </div>
           </div>
@@ -114,15 +116,17 @@ export default function Layout() {
       {/* User footer */}
       <div className="p-3 border-t border-slate-800 shrink-0">
         {!collapsed && (
-          <div className="flex items-center gap-2 mb-2 px-2">
-            <div className="w-7 h-7 rounded-full bg-jio-blue-700 flex items-center justify-center">
-              {isAdmin ? <Shield size={14} className="text-white" /> : <User size={14} className="text-white" />}
+          <div className="flex items-center gap-2.5 mb-2 px-2">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isAdmin ? 'bg-gradient-to-br from-jio-red-600 to-rose-800 shadow-md border border-jio-red-500/40' : 'bg-jio-blue-700'}`}>
+              {isAdmin ? <Shield size={16} className="text-white" /> : <User size={15} className="text-white" />}
             </div>
             <div className="min-w-0">
               <p className="text-xs font-medium text-white truncate">{user?.email}</p>
-              <span className={`text-[10px] font-semibold uppercase ${isAdmin ? 'text-jio-red-400' : 'text-jio-blue-400'}`}>
-                {role ?? 'user'}
-              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${isAdmin ? 'bg-jio-red-950/80 text-jio-red-400 border border-jio-red-700/50' : 'bg-jio-blue-950/80 text-jio-blue-400 border border-jio-blue-700/50'}`}>
+                  {isAdmin ? 'MMC Admin' : (role ?? 'user')}
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -157,7 +161,10 @@ export default function Layout() {
           <button onClick={() => setMobileOpen(true)} className="text-slate-400 hover:text-white">
             <Menu size={20} />
           </button>
-          <p className="text-sm font-bold text-white">Jio-bp Portal</p>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-jio-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-[10px]">MMC</div>
+            <p className="text-sm font-bold text-white">MMC</p>
+          </div>
           <div className="w-5" />
         </header>
 
