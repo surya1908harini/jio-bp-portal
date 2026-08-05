@@ -53,6 +53,34 @@ const IMPORT_MAP = {
   'Payment Date': 'payment_date', 'payment_date': 'payment_date',
 }
 
+const STATUS_TO_DB = {
+  'Pending A1': 'A1',
+  'Pending A2': 'A2',
+  'Pending QSD': 'QSD',
+  'Pending A3': 'A3',
+  'Released by A3': 'Invoiced',
+  'Pending': 'Pending',
+  'A1': 'A1',
+  'A2': 'A2',
+  'QSD': 'QSD',
+  'A3': 'A3',
+  'Invoiced': 'Invoiced',
+}
+
+const STATUS_DISPLAY = {
+  'Pending': 'Pending A1',
+  'A1': 'Pending A1',
+  'Pending A1': 'Pending A1',
+  'A2': 'Pending A2',
+  'Pending A2': 'Pending A2',
+  'QSD': 'Pending QSD',
+  'Pending QSD': 'Pending QSD',
+  'A3': 'Pending A3',
+  'Pending A3': 'Pending A3',
+  'Invoiced': 'Released by A3',
+  'Released by A3': 'Released by A3',
+}
+
 const STATUS_CSS = {
   'Pending A1': 'badge-pending', 'Pending': 'badge-pending', 'A1': 'badge-pending',
   'Pending A2': 'badge-a2', 'A2': 'badge-a2',
@@ -62,7 +90,8 @@ const STATUS_CSS = {
 }
 
 function StatusBadge({ status }) {
-  return <span className={`badge ${STATUS_CSS[status] || 'badge-pending'}`}>{status || 'Pending A1'}</span>
+  const displayLabel = STATUS_DISPLAY[status] || status || 'Pending A1'
+  return <span className={`badge ${STATUS_CSS[status] || STATUS_CSS[displayLabel] || 'badge-pending'}`}>{displayLabel}</span>
 }
 
 function StatCard({ label, value, color = 'slate' }) {
@@ -161,12 +190,18 @@ export default function JmsPage() {
 
   // Current records stats (for specific FY view)
   const totalNetAmount = records.reduce((s, r) => s + (r.net_amount || 0), 0)
-  const byStatus = JMS_STATUSES.reduce((acc, s) => ({ ...acc, [s]: records.filter(r => r.status === s).length }), {})
+  const byStatus = JMS_STATUSES.reduce((acc, s) => ({ ...acc, [s]: records.filter(r => (STATUS_DISPLAY[r.status] || r.status) === s).length }), {})
 
   const saveMutation = useMutation({
-    mutationFn: (payload) => editRow
-      ? jmsDb.update(editRow.id, payload)
-      : jmsDb.create({ ...payload, financial_year: getRecordFy(payload) }, user?.id),
+    mutationFn: (payload) => {
+      // Convert UI status to database-compatible value before sending to Supabase
+      const dbStatus = STATUS_TO_DB[payload.status] || payload.status || 'A1'
+      const cleanPayload = { ...payload, status: dbStatus }
+
+      return editRow
+        ? jmsDb.update(editRow.id, cleanPayload)
+        : jmsDb.create({ ...cleanPayload, financial_year: getRecordFy(cleanPayload) }, user?.id)
+    },
     onSuccess: () => {
       qc.invalidateQueries(['jms'])
       toast.success(editRow ? 'JMS updated ✓' : 'JMS created ✓')
@@ -188,12 +223,12 @@ export default function JmsPage() {
         const dbKey = IMPORT_MAP[k] ?? IMPORT_MAP[k.trim()]
         if (dbKey && v !== '' && v !== null && v !== undefined) rec[dbKey] = v
       }
-      // Ensure status is valid
+      // Ensure status is valid for database constraint
       if (rec.status) {
-        const normalized = JMS_STATUSES.find(s => s.toLowerCase() === String(rec.status).toLowerCase())
-        rec.status = normalized || 'Pending A1'
+        const uiStatus = JMS_STATUSES.find(s => s.toLowerCase() === String(rec.status).toLowerCase()) || rec.status
+        rec.status = STATUS_TO_DB[uiStatus] || STATUS_TO_DB[rec.status] || 'A1'
       } else {
-        rec.status = 'Pending A1'
+        rec.status = 'A1'
       }
       rec.financial_year = getRecordFy(rec)
       return rec
@@ -205,7 +240,12 @@ export default function JmsPage() {
     return count
   }
 
-  const openEdit = (row) => { setEditRow(row); setForm({ ...EMPTY_FORM, ...row }); setFormOpen(true) }
+  const openEdit = (row) => {
+    setEditRow(row)
+    const uiStatus = STATUS_DISPLAY[row.status] || row.status || 'Pending A1'
+    setForm({ ...EMPTY_FORM, ...row, status: uiStatus })
+    setFormOpen(true)
+  }
   const openAdd  = ()    => { setEditRow(null); setForm(EMPTY_FORM); setFormOpen(true) }
   const handleClose  = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
