@@ -212,8 +212,12 @@ export const budgetDb = {
     if (error) throw error
   },
 
-  bulkInsert: async (rows, userId) => {
-    const cleaned = rows.map(r => clean({ ...r, created_by: userId }))
+  bulkInsert: async (rows, userId, activeFy) => {
+    const cleaned = rows.map(r => {
+      const { fy, ...rest } = r
+      const fyVal = r.financial_year || (activeFy && activeFy !== 'overall' ? activeFy : undefined)
+      return clean({ ...rest, ...(fyVal ? { financial_year: fyVal } : {}), created_by: userId })
+    })
     const { error } = await supabase.from('budget_records').insert(cleaned)
     if (error) throw error
     return cleaned.length

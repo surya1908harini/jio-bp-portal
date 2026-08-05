@@ -132,8 +132,16 @@ export default function InvoicePage() {
   })
 
   // Sort records: Newest on top by Invoice Date, then Invoice Number
+  // Sort records: Current FY on top, then newest date first
   const sortedRecords = useMemo(() => {
     return [...records].sort((a, b) => {
+      const fyA = getRecordFy(a)
+      const fyB = getRecordFy(b)
+      if (fyA !== fyB) {
+        if (fyA === CURRENT_FY) return -1
+        if (fyB === CURRENT_FY) return 1
+        return fyB.localeCompare(fyA)
+      }
       const dateA = a.inv_date || a.amount_received_date || a.created_at || ''
       const dateB = b.inv_date || b.amount_received_date || b.created_at || ''
       if (dateA !== dateB) {

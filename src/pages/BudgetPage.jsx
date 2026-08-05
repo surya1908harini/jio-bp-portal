@@ -110,9 +110,18 @@ export default function BudgetPage() {
     return [...filteredRecords].sort((a, b) => {
       const fyA = getBudgetRecordFy(a)
       const fyB = getBudgetRecordFy(b)
-      if (fyA === CURRENT_FY && fyB !== CURRENT_FY) return -1
-      if (fyB === CURRENT_FY && fyA !== CURRENT_FY) return 1
-      return fyB.localeCompare(fyA)
+      if (fyA !== fyB) {
+        if (fyA === CURRENT_FY) return -1
+        if (fyB === CURRENT_FY) return 1
+        return fyB.localeCompare(fyA)
+      }
+      // Sort by validity end date descending (newest validity contract on top)
+      const resA = parseValidity(a.validity_of_contract)
+      const resB = parseValidity(b.validity_of_contract)
+      const tA = resA.endDate ? resA.endDate.getTime() : 0
+      const tB = resB.endDate ? resB.endDate.getTime() : 0
+      if (tA !== tB) return tB - tA
+      return String(b.work_order_number || '').localeCompare(String(a.work_order_number || ''), undefined, { numeric: true })
     })
   }, [filteredRecords])
 
@@ -133,10 +142,12 @@ export default function BudgetPage() {
   const saveMutation = useMutation({
     mutationFn: (payload) => {
       const { fy, ...cleanPayload } = payload
-      const fyVal = activeFy === 'overall' ? CURRENT_FY : activeFy
+      const derivedFy = getBudgetRecordFy(cleanPayload)
+      const fyVal = derivedFy || (activeFy === 'overall' ? CURRENT_FY : activeFy)
+      const dataToSave = { ...cleanPayload, financial_year: fyVal }
       return editRow
-        ? budgetDb.update(editRow.id, cleanPayload)
-        : budgetDb.create({ ...cleanPayload, financial_year: fyVal }, user?.id)
+        ? budgetDb.update(editRow.id, dataToSave)
+        : budgetDb.create(dataToSave, user?.id)
     },
     onSuccess: () => { qc.invalidateQueries(['budget']); toast.success(editRow ? 'Budget updated ✓' : 'Budget created ✓'); handleClose() },
     onError:   (e) => toast.error(e?.message || 'Save failed'),
@@ -159,6 +170,9 @@ export default function BudgetPage() {
       for (const [k, v] of Object.entries(raw)) {
         const dbKey = IMPORT_MAP[k] ?? IMPORT_MAP[k.trim()]
         if (dbKey && v !== '' && v !== null && v !== undefined) rec[dbKey] = v
+      }
+      if (rec.validity_of_contract) {
+        rec.financial_year = getBudgetRecordFy(rec)
       }
       return rec
     }).filter(r => r.work_order_number)

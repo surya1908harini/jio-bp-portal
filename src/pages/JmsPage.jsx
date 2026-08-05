@@ -177,9 +177,16 @@ export default function JmsPage() {
     return true
   })
 
-  // Sort records: Newest on top by JMS Date (or fallback date), then JMS No
+  // Sort records: Current FY on top, then newest on top by JMS Date (or fallback date), then JMS No
   const sortedRecords = useMemo(() => {
     return [...records].sort((a, b) => {
+      const fyA = getRecordFy(a)
+      const fyB = getRecordFy(b)
+      if (fyA !== fyB) {
+        if (fyA === CURRENT_FY) return -1
+        if (fyB === CURRENT_FY) return 1
+        return fyB.localeCompare(fyA)
+      }
       const dateA = a.jms_create_date || a.inv_date || a.a1_release_date || a.created_at || ''
       const dateB = b.jms_create_date || b.inv_date || b.a1_release_date || b.created_at || ''
       if (dateA !== dateB) {
