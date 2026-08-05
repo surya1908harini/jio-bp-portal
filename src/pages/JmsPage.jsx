@@ -67,6 +67,26 @@ const STATUS_TO_DB = {
   'Invoiced': 'Invoiced',
 }
 
+function getDbStatus(status) {
+  if (!status) return 'A1'
+  const str = String(status).trim()
+  const map = {
+    'pending a1': 'A1',
+    'pending a2': 'A2',
+    'pending qsd': 'QSD',
+    'pending a3': 'A3',
+    'released by a3': 'Invoiced',
+    'released': 'Invoiced',
+    'invoiced': 'Invoiced',
+    'pending': 'A1',
+    'a1': 'A1',
+    'a2': 'A2',
+    'qsd': 'QSD',
+    'a3': 'A3',
+  }
+  return map[str.toLowerCase()] || STATUS_TO_DB[str] || 'A1'
+}
+
 const STATUS_DISPLAY = {
   'Pending': 'Pending A1',
   'A1': 'Pending A1',
@@ -195,7 +215,7 @@ export default function JmsPage() {
   const saveMutation = useMutation({
     mutationFn: (payload) => {
       // Convert UI status to database-compatible value before sending to Supabase
-      const dbStatus = STATUS_TO_DB[payload.status] || payload.status || 'A1'
+      const dbStatus = getDbStatus(payload.status)
       const cleanPayload = { ...payload, status: dbStatus }
 
       return editRow
@@ -224,12 +244,7 @@ export default function JmsPage() {
         if (dbKey && v !== '' && v !== null && v !== undefined) rec[dbKey] = v
       }
       // Ensure status is valid for database constraint
-      if (rec.status) {
-        const uiStatus = JMS_STATUSES.find(s => s.toLowerCase() === String(rec.status).toLowerCase()) || rec.status
-        rec.status = STATUS_TO_DB[uiStatus] || STATUS_TO_DB[rec.status] || 'A1'
-      } else {
-        rec.status = 'A1'
-      }
+      rec.status = getDbStatus(rec.status)
       rec.financial_year = getRecordFy(rec)
       return rec
     }).filter(r => r.jms_no)
