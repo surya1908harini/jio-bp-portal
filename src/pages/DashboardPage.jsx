@@ -45,14 +45,23 @@ export default function DashboardPage() {
   const { data: invoiceList = [] } = useQuery({ queryKey: ['invoices', 'all'], queryFn: () => invoiceDb.listAll() })
   const { data: budgetList = [] }  = useQuery({ queryKey: ['budget', 'all'],   queryFn: () => budgetDb.listAll() })
 
-  // Helper to determine FY
+  // Helper to determine FY accurately (matching JMS and Invoice pages logic)
   const getJmsFy = (r) => {
-    const d = r.jms_create_date || r.inv_date || r.a1_release_date || r.created_at
-    return d ? getFinancialYear(d) : r.financial_year || CURRENT_FY
+    const date = r.jms_create_date || r.inv_date || r.a1_release_date || r.a2_release_date || r.qsd_release_date || r.inv_posting_date || r.payment_date;
+    if (date) {
+      const fy = getFinancialYear(date)
+      if (fy) return fy
+    }
+    return r.financial_year || '2024-25'
   }
 
   const getInvFy = (r) => {
-    return r.inv_date ? getFinancialYear(r.inv_date) : r.financial_year || CURRENT_FY
+    const date = r.inv_date || r.amount_received_date;
+    if (date) {
+      const fy = getFinancialYear(date)
+      if (fy) return fy
+    }
+    return r.financial_year || '2024-25'
   }
 
   // Filter lists strictly for current FY
