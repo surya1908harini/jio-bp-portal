@@ -127,9 +127,9 @@ export default function Layout() {
         {/* Top Header Bar (Acadx Style) */}
         <header className="hidden md:flex items-center justify-between px-6 h-16 bg-white dark:bg-slate-900 border-b border-purple-100/60 dark:border-slate-800 shrink-0 backdrop-blur-md z-10 shadow-sm">
           {/* Left Brand Title */}
-          <div className="flex items-center gap-3">
-            <span className="text-base font-extrabold text-purple-700 dark:text-purple-400 tracking-tight">Acadx</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-slate-400">CONTRACTOR SUITE</span>
+          <div className="flex items-center gap-2.5">
+            <span className="text-base font-extrabold text-purple-700 dark:text-purple-400 tracking-tight">MM CONTRACTOR</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-slate-400">PORTAL</span>
           </div>
 
           {/* Center Pill Search Input */}
