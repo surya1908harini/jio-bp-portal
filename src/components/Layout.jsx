@@ -7,7 +7,7 @@ import { formatINR, formatDate, parseValidity } from '../lib/utils'
 import NotificationDetailModal from './NotificationDetailModal'
 import {
   LayoutDashboard, FileText, Receipt, PieChart, Settings,
-  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck
+  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2
 } from 'lucide-react'
 
 const NAV = [
@@ -39,6 +39,7 @@ export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [globalSearch, setGlobalSearch] = useState('')
   const [notifOpen, setNotifOpen] = useState(false)
+  const [notifTab, setNotifTab] = useState('unread') // 'unread' or 'read'
   const [selectedNotif, setSelectedNotif] = useState(null)
 
   const [readNotifIds, setReadNotifIds] = useState(() => {
@@ -71,12 +72,17 @@ export default function Layout() {
     })
   }
 
+  const clearReadHistory = () => {
+    setReadNotifIds([])
+    localStorage.removeItem('mmc_read_notifications')
+  }
+
   // Fetch live DB data for notifications
   const { data: jmsList = [] }     = useQuery({ queryKey: ['jms', 'all'],     queryFn: () => jmsDb.listAll() })
   const { data: invoiceList = [] } = useQuery({ queryKey: ['invoices', 'all'], queryFn: () => invoiceDb.listAll() })
   const { data: budgetList = [] }  = useQuery({ queryKey: ['budget', 'all'],   queryFn: () => budgetDb.listAll() })
 
-  // Calculate Realtime Actionable Notifications with stage-by-stage JMS calculation
+  // Calculate Realtime Actionable Notifications
   const allNotifications = useMemo(() => {
     const list = []
     const now = new Date()
@@ -125,7 +131,7 @@ export default function Layout() {
       }
     })
 
-    // 3. Stage-by-Stage JMS Pending Calculation (Pending A1 -> A1 Released -> Pending A2 -> A2 Released -> Pending QSD -> QSD Released -> Pending A3 -> A3 Released)
+    // 3. Stage-by-Stage JMS Pending Calculation
     jmsList.forEach(j => {
       const isReleased = j.status === 'Released by A3' || j.status === 'Invoiced'
       if (isReleased) return
@@ -178,9 +184,13 @@ export default function Layout() {
     })
   }, [jmsList, invoiceList, budgetList])
 
-  // Filter unread notifications
+  // Split Notifications into Unread & Read lists
   const unreadNotifications = useMemo(() => {
     return allNotifications.filter(n => !readNotifIds.includes(n.id))
+  }, [allNotifications, readNotifIds])
+
+  const readNotifications = useMemo(() => {
+    return allNotifications.filter(n => readNotifIds.includes(n.id))
   }, [allNotifications, readNotifIds])
 
   // Close notification menu on outside click
@@ -270,6 +280,8 @@ export default function Layout() {
     </aside>
   )
 
+  const activeList = notifTab === 'unread' ? unreadNotifications : readNotifications
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-100 antialiased">
       {/* Desktop sidebar */}
@@ -322,36 +334,80 @@ export default function Layout() {
                 )}
               </button>
 
-              {/* Notification Drawer Dropdown */}
+              {/* Split Unread / Read Notification Drawer Dropdown */}
               {notifOpen && (
-                <div className="absolute right-0 top-12 w-96 max-h-[480px] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden z-50 animate-fade-in flex flex-col">
-                  <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Bell size={16} className="text-purple-400" />
-                      <h3 className="text-sm font-extrabold text-white">System Alerts</h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {unreadNotifications.length > 0 && (
+                <div className="absolute right-0 top-12 w-96 max-h-[500px] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden z-50 animate-fade-in flex flex-col">
+                  {/* Drawer Header */}
+                  <div className="p-4 bg-slate-950 border-b border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Bell size={16} className="text-purple-400" />
+                        <h3 className="text-sm font-extrabold text-white">System Notifications</h3>
+                      </div>
+                      {notifTab === 'unread' && unreadNotifications.length > 0 && (
                         <button
                           onClick={() => markAllAsRead(allNotifications.map(n => n.id))}
-                          className="text-[10px] font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1 bg-purple-950 px-2 py-0.5 rounded-lg border border-purple-800/60 transition-colors"
+                          className="text-[10px] font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1 bg-purple-950 px-2.5 py-1 rounded-xl border border-purple-800/60 transition-colors"
                         >
                           <CheckCheck size={12} /> Mark all read
                         </button>
                       )}
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950 text-rose-400 border border-rose-800">
-                        {unreadNotifications.length} Unread
-                      </span>
+                      {notifTab === 'read' && readNotifications.length > 0 && (
+                        <button
+                          onClick={clearReadHistory}
+                          className="text-[10px] font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-1 bg-rose-950 px-2.5 py-1 rounded-xl border border-rose-800/60 transition-colors"
+                        >
+                          <Trash2 size={12} /> Clear history
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Split Unread vs Read Tabs */}
+                    <div className="flex items-center gap-2 p-1 bg-slate-900 rounded-2xl border border-slate-800">
+                      <button
+                        onClick={() => setNotifTab('unread')}
+                        className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                          notifTab === 'unread'
+                            ? 'bg-purple-600 text-white shadow-md'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <span>Unread</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${notifTab === 'unread' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                          {unreadNotifications.length}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => setNotifTab('read')}
+                        className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                          notifTab === 'read'
+                            ? 'bg-purple-600 text-white shadow-md'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <span>Read</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${notifTab === 'read' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                          {readNotifications.length}
+                        </span>
+                      </button>
                     </div>
                   </div>
 
+                  {/* List Container */}
                   <div className="overflow-y-auto p-3 space-y-2 flex-1">
-                    {allNotifications.length === 0 ? (
-                      <div className="text-center py-8 text-xs text-slate-400">
-                        ✨ No pending alerts or contract expiry issues!
+                    {activeList.length === 0 ? (
+                      <div className="text-center py-10 text-xs text-slate-400 space-y-1">
+                        <p className="text-sm font-bold text-slate-300">
+                          {notifTab === 'unread' ? '✨ All caught up!' : 'No read notifications'}
+                        </p>
+                        <p>
+                          {notifTab === 'unread'
+                            ? 'Zero pending alerts in unread inbox.'
+                            : 'Read notifications will appear here once acknowledged.'}
+                        </p>
                       </div>
                     ) : (
-                      allNotifications.map(item => {
+                      activeList.map(item => {
                         const Icon = item.icon
                         const isRead = readNotifIds.includes(item.id)
                         return (
@@ -360,7 +416,7 @@ export default function Layout() {
                             onClick={() => handleNotificationClick(item)}
                             className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 group ${
                               isRead
-                                ? 'bg-slate-950/40 border-slate-800/50 opacity-60'
+                                ? 'bg-slate-950/40 border-slate-800/50 opacity-70 hover:opacity-100'
                                 : 'bg-slate-800/80 border-slate-700/80 hover:border-purple-500/60 shadow-md'
                             }`}
                           >
@@ -369,7 +425,7 @@ export default function Layout() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
-                                <p className={`text-xs font-bold truncate transition-colors ${isRead ? 'text-slate-400' : 'text-white group-hover:text-purple-300'}`}>
+                                <p className={`text-xs font-bold truncate transition-colors ${isRead ? 'text-slate-300' : 'text-white group-hover:text-purple-300'}`}>
                                   {item.title}
                                 </p>
                                 <span className="text-[9px] font-mono text-slate-400 shrink-0 ml-1">
@@ -390,7 +446,7 @@ export default function Layout() {
                   </div>
 
                   <div className="p-3 bg-slate-950 border-t border-slate-800 text-center">
-                    <span className="text-[10px] text-slate-400 font-medium">Click any alert to open on-screen record summary</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Click any notification to open on-screen record details</span>
                   </div>
                 </div>
               )}
