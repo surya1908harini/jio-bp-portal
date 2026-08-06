@@ -312,7 +312,7 @@ export default function JmsPage() {
       {/* Header Banner & Executive Stat Cards */}
       <ModuleHeader
         title="JMS Details Management"
-        subtitle={`Job Measurement Sheet · ${activeFy === 'overall' ? 'All Financial Years' : `FY ${activeFy}`} · ${sortedRecords.length} records`}
+        subtitle={`Joint Measurement Sheet · ${activeFy === 'overall' ? 'All Financial Years' : `FY ${activeFy}`} · ${sortedRecords.length} records`}
         actions={
           <div className="flex gap-2 flex-wrap">
             <button onClick={handleExport} className="btn-ghost"><Download size={14} /> Export</button>
