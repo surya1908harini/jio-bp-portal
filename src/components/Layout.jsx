@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
 import { formatINR, formatDate, parseValidity } from '../lib/utils'
+import NotificationDetailModal from './NotificationDetailModal'
 import {
   LayoutDashboard, FileText, Receipt, PieChart, Settings,
   ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck
@@ -38,6 +39,8 @@ export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [globalSearch, setGlobalSearch] = useState('')
   const [notifOpen, setNotifOpen] = useState(false)
+  const [selectedNotif, setSelectedNotif] = useState(null)
+
   const [readNotifIds, setReadNotifIds] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('mmc_read_notifications') || '[]')
@@ -73,7 +76,7 @@ export default function Layout() {
   const { data: invoiceList = [] } = useQuery({ queryKey: ['invoices', 'all'], queryFn: () => invoiceDb.listAll() })
   const { data: budgetList = [] }  = useQuery({ queryKey: ['budget', 'all'],   queryFn: () => budgetDb.listAll() })
 
-  // Calculate Realtime Actionable Notifications
+  // Calculate Realtime Actionable Notifications with attached record payload
   const allNotifications = useMemo(() => {
     const list = []
     const now = new Date()
@@ -93,6 +96,7 @@ export default function Layout() {
             days: daysPending,
             severity: daysPending > 45 ? 'high' : 'medium',
             link: `/invoices?search=${encodeURIComponent(invNo)}`,
+            record: inv,
             icon: DollarSign,
             color: 'text-rose-400 bg-rose-950/80 border-rose-800/60'
           })
@@ -114,6 +118,7 @@ export default function Layout() {
           days: daysRemaining,
           severity: isExpired ? 'high' : daysRemaining <= 30 ? 'medium' : 'low',
           link: `/budget?search=${encodeURIComponent(woNo)}`,
+          record: b,
           icon: AlertTriangle,
           color: isExpired ? 'text-rose-400 bg-rose-950/80 border-rose-800/60' : 'text-amber-400 bg-amber-950/80 border-amber-800/60'
         })
@@ -136,6 +141,7 @@ export default function Layout() {
             days: daysPending,
             severity: daysPending > 30 ? 'high' : 'medium',
             link: `/jms?search=${encodeURIComponent(jmsNo)}`,
+            record: j,
             icon: Clock,
             color: 'text-purple-400 bg-purple-950/80 border-purple-800/60'
           })
@@ -175,7 +181,7 @@ export default function Layout() {
   const handleNotificationClick = (item) => {
     markAsRead(item.id)
     setNotifOpen(false)
-    navigate(item.link)
+    setSelectedNotif(item)
   }
 
   const sidebar = (
@@ -362,7 +368,7 @@ export default function Layout() {
                   </div>
 
                   <div className="p-3 bg-slate-950 border-t border-slate-800 text-center">
-                    <span className="text-[10px] text-slate-400 font-medium">Click any alert to open exact record</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Click any alert to open on-screen record summary</span>
                   </div>
                 </div>
               )}
@@ -400,6 +406,13 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {/* On-screen Notification Record Summary Modal */}
+      <NotificationDetailModal
+        notif={selectedNotif}
+        onClose={() => setSelectedNotif(null)}
+        onNavigate={(link) => navigate(link)}
+      />
     </div>
   )
 }
