@@ -446,10 +446,15 @@ export default function BudgetPage() {
                     </div>
 
                     <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
-                      <span className="text-slate-400 font-medium">Validity:</span>
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${badgeColor}`}>
-                        {daysRemaining !== null && daysRemaining !== undefined ? `${daysRemaining} days remaining` : 'No Expiry'}
-                      </span>
+                      <span className="text-slate-400 font-medium">Validity Period:</span>
+                      <div className="text-right">
+                        <div className="text-white font-mono text-xs font-semibold">
+                          {formatValidityRange(b.validity_of_contract) || b.validity_of_contract || '—'}
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border mt-0.5 inline-block ${badgeColor}`}>
+                          {daysRemaining !== null && daysRemaining !== undefined ? `${daysRemaining} days remaining` : 'No Expiry'}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Financial Metrics Box */}

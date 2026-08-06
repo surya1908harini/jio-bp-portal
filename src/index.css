@@ -36,130 +36,18 @@
   }
 }
 
-/* ── Light Mode Comprehensive Styles & Acadx High Contrast Overrides ── */
-html.light-mode body {
-  background-color: #faf8ff !important;
-  color: #0f172a !important;
+/* ── Global Dark Mode System Styling ───────────────────────────── */
+body {
+  @apply bg-slate-950 text-slate-100 antialiased;
+  background-color: #0b0f19 !important;
+  color: #f8fafc !important;
 }
 
-html.light-mode header,
-html.light-mode aside,
-html.light-mode .glass-card,
-html.light-mode .modal-box,
-html.light-mode div[class*="bg-slate-900"],
-html.light-mode div[class*="bg-slate-950"] {
-  background-color: #ffffff !important;
-  border-color: #e9d5ff !important;
-  color: #0f172a !important;
-}
-
-/* Sidebar Specific Light Mode Text */
-html.light-mode aside {
-  background-color: #ffffff !important;
-  border-right-color: #f3e8ff !important;
-}
-html.light-mode aside .sidebar-link {
-  color: #475569 !important;
-}
-html.light-mode aside .sidebar-link:hover {
-  background-color: #f3e8ff !important;
-  color: #7e22ce !important;
-}
-html.light-mode aside .sidebar-link.active {
-  background: linear-gradient(135deg, #9333ea 0%, #c026d3 100%) !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 14px rgba(147, 51, 234, 0.3) !important;
-}
-
-/* Light Mode Text Overrides */
-html.light-mode .text-white {
-  color: #0f172a !important;
-}
-html.light-mode .text-slate-100,
-html.light-mode .text-slate-200,
-html.light-mode .text-slate-300 {
-  color: #1e293b !important;
-}
-html.light-mode .text-slate-400,
-html.light-mode .text-slate-500 {
-  color: #475569 !important;
-}
-
-/* Top Hero Banner & Card Backgrounds in Light Mode */
-html.light-mode div[class*="bg-gradient-to-r"] {
-  background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%) !important;
-  border-color: #cbd5e1 !important;
-}
-
-/* Light Mode Input & Select Fields */
-html.light-mode .input-field,
-html.light-mode .select-field,
-html.light-mode input,
-html.light-mode select {
-  background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
-}
-
-/* Light Mode Table Styling */
-html.light-mode .data-table,
-html.light-mode table {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-}
-html.light-mode .data-table thead tr,
-html.light-mode table thead tr {
-  background-color: #f1f5f9 !important;
-}
-html.light-mode .data-table th,
-html.light-mode table th {
-  color: #334155 !important;
-  background-color: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
-}
-html.light-mode .data-table td,
-html.light-mode table td {
-  color: #0f172a !important;
-  border-color: #e2e8f0 !important;
-}
-html.light-mode .data-table tbody tr:hover,
-html.light-mode table tbody tr:hover {
-  background-color: #f8fafc !important;
-}
-
-/* Buttons in Light Mode */
-html.light-mode .btn-ghost {
-  background-color: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
-  color: #1e293b !important;
-}
-html.light-mode .btn-ghost:hover {
-  background-color: #e2e8f0 !important;
-  color: #0f172a !important;
-}
-
-/* Container backgrounds */
-html.light-mode div[class*="bg-slate-800"] {
-  background-color: #f8fafc !important;
-  border-color: #e2e8f0 !important;
-}
-
-/* Ensure active tab white text remains readable */
-html.light-mode .bg-indigo-600 .text-white,
-html.light-mode .bg-indigo-600,
-html.light-mode .btn-primary,
-html.light-mode .sidebar-link.active span,
-html.light-mode .btn-primary span {
-  color: #ffffff !important;
+.glass-card {
+  @apply bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-xl;
 }
 
 @layer components {
-  /* Glass card */
-  .glass-card {
-    @apply bg-slate-900/70 backdrop-blur-md border border-slate-700/50 rounded-2xl;
-    box-shadow: 0 8px 32px rgba(0, 82, 165, 0.1);
-  }
-
   /* Primary button */
   .btn-primary {
     @apply inline-flex items-center gap-2 px-4 py-2 bg-gradient-jio text-white font-semibold

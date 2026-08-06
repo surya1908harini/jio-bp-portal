@@ -1,19 +1,18 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react'
 import { FINANCIAL_YEARS, CURRENT_FY } from '../lib/utils'
 
 export default function FyTabs({ basePath }) {
   const { fy } = useParams()
-  // Default to CURRENT_FY if no fy is specified in the URL
   const activeFy = fy || CURRENT_FY
 
   return (
-    <div className="flex gap-1 p-1 bg-slate-900 rounded-xl w-fit">
+    <div className="flex items-center gap-1.5 p-1.5 bg-slate-900/90 border border-slate-800 rounded-2xl w-fit backdrop-blur-xl shadow-lg flex-wrap">
       <Link
         to={`${basePath}/overall`}
-        className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-150 ${
           activeFy === 'overall'
-            ? 'bg-jio-blue-700 text-white shadow'
-            : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md shadow-purple-600/30'
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
         }`}
       >
         Overall FY
@@ -22,10 +21,10 @@ export default function FyTabs({ basePath }) {
         <Link
           key={f}
           to={`${basePath}/${f}`}
-          className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-150 ${
             activeFy === f
-              ? 'bg-jio-blue-700 text-white shadow'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md shadow-purple-600/30'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
           }`}
         >
           FY {f}

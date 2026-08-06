@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -60,15 +60,34 @@ export default function DashboardPage() {
     { name: 'Invoiced', value: currentInvList.length, color: '#06b6d4' },
   ].filter(d => d.value > 0)
 
-  // Monthly Activity Trend Data
-  const trendData = [
-    { name: 'Jan', jms: 12, invoices: 8 },
-    { name: 'Feb', jms: 18, invoices: 14 },
-    { name: 'Mar', jms: 25, invoices: 20 },
-    { name: 'Apr', jms: 30, invoices: 22 },
-    { name: 'May', jms: 22, invoices: 18 },
-    { name: 'Jun', jms: 35, invoices: 28 },
-  ]
+  // Realtime Monthly Activity Trend Data calculated dynamically from DB
+  const trendData = useMemo(() => {
+    const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar']
+    const monthCounts = months.map(m => ({ name: m, jms: 0, invoices: 0 }))
+
+    const getMonthAbbrev = (dateStr) => {
+      if (!dateStr) return null
+      const d = new Date(dateStr)
+      if (isNaN(d.getTime())) return null
+      return d.toLocaleString('default', { month: 'short' })
+    }
+
+    currentJmsList.forEach(j => {
+      const date = j.jms_create_date || j.inv_date || j.a1_release_date || j.created_at
+      const m = getMonthAbbrev(date)
+      const item = monthCounts.find(x => x.name === m)
+      if (item) item.jms += 1
+    })
+
+    currentInvList.forEach(inv => {
+      const date = inv.inv_date || inv.amount_received_date || inv.created_at
+      const m = getMonthAbbrev(date)
+      const item = monthCounts.find(x => x.name === m)
+      if (item) item.invoices += 1
+    })
+
+    return monthCounts
+  }, [currentJmsList, currentInvList])
 
   return (
     <div className="space-y-6">
@@ -87,7 +106,7 @@ export default function DashboardPage() {
             MM Contractor Portal is humming.
           </h1>
           <p className="text-sm text-purple-100 mt-2 max-w-2xl leading-relaxed">
-            Up <strong className="text-white">+18% this month</strong> across all work orders. Real-time billing, contract validity, and A3 releases for <strong>FY {CURRENT_FY}</strong>.
+            Real-time billing, contract validity, and A3 releases tracking for <strong>FY {CURRENT_FY}</strong>.
           </p>
 
           <div className="flex items-center gap-3 mt-6 flex-wrap">
@@ -129,32 +148,32 @@ export default function DashboardPage() {
 
       {/* ── 3 Focus Metric Cards Grid (Non-repetitive) ────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Quick Actions Card (White) */}
-        <div className="rounded-3xl border border-purple-100/80 bg-white dark:bg-slate-900/70 p-5 shadow-xl">
+        {/* Quick Actions Card */}
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl">
           <div className="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-md mb-3">
             <Zap size={20} />
           </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">Quick Actions</h3>
+          <h3 className="text-base font-bold text-white">Quick Actions</h3>
           <p className="text-xs text-slate-400 mb-3">Jump straight to work</p>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <Link to="/jms" className="p-2.5 rounded-xl bg-purple-50 dark:bg-slate-800 text-purple-700 dark:text-purple-300 font-semibold text-center hover:bg-purple-100 transition-colors">
+            <Link to="/jms" className="p-2.5 rounded-xl bg-purple-950/80 border border-purple-800/60 text-purple-300 font-semibold text-center hover:bg-purple-900 transition-colors">
               + New JMS
             </Link>
-            <Link to="/invoices" className="p-2.5 rounded-xl bg-pink-50 dark:bg-slate-800 text-pink-700 dark:text-pink-300 font-semibold text-center hover:bg-pink-100 transition-colors">
+            <Link to="/invoices" className="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/60 text-pink-300 font-semibold text-center hover:bg-pink-900 transition-colors">
               + Add Invoice
             </Link>
           </div>
         </div>
 
         {/* Revenue Card (Emerald Green #10b981) */}
-        <div className="rounded-3xl bg-emerald-500 p-5 text-white shadow-xl flex flex-col justify-between">
+        <div className="rounded-3xl bg-emerald-600 p-5 text-white shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">REVENUE / NET</span>
               <DollarSign size={20} />
             </div>
             <h3 className="text-2xl font-extrabold text-white">{formatINR(totalInvAmt)}</h3>
-            <p className="text-xs text-emerald-100 mt-1">▲ +9.6% vs last month</p>
+            <p className="text-xs text-emerald-100 mt-1">{currentInvList.length} Total Invoices</p>
           </div>
           <span className="text-[10px] uppercase font-bold text-emerald-200 mt-4">FY {CURRENT_FY} Total</span>
         </div>
@@ -167,24 +186,24 @@ export default function DashboardPage() {
               <FileText size={20} />
             </div>
             <h3 className="text-2xl font-extrabold text-white">{totalJmsCount} Records</h3>
-            <p className="text-xs text-purple-100 mt-1">▲ {a3Released} Released by A3</p>
+            <p className="text-xs text-purple-100 mt-1">{a3Released} Released by A3</p>
           </div>
           <span className="text-[10px] uppercase font-bold text-purple-200 mt-4">Realtime Synced</span>
         </div>
       </div>
 
-      {/* ── Acadx Visual Charts Grid (Line & Donut Radial) ───────── */}
+      {/* ── Dynamic Realtime Visual Charts Grid ───────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Line / Area Chart */}
-        <div className="lg:col-span-8 rounded-3xl border border-purple-100/80 bg-white dark:bg-slate-900/70 p-6 backdrop-blur-xl shadow-xl">
+        <div className="lg:col-span-8 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 backdrop-blur-xl shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">JMS Activity vs Invoicing Trend</h2>
-              <p className="text-xs text-slate-400">6-month rolling view across all work orders</p>
+              <h2 className="text-base font-bold text-white">Monthly JMS Activity vs Invoicing Trend (FY {CURRENT_FY})</h2>
+              <p className="text-xs text-slate-400">Dynamic monthly distribution calculated from live database records</p>
             </div>
             <div className="flex items-center gap-3 text-xs font-semibold">
-              <span className="flex items-center gap-1 text-purple-600"><span className="w-2.5 h-2.5 rounded-full bg-purple-600" /> JMS Created</span>
-              <span className="flex items-center gap-1 text-pink-500"><span className="w-2.5 h-2.5 rounded-full bg-pink-500" /> Invoiced</span>
+              <span className="flex items-center gap-1 text-purple-400"><span className="w-2.5 h-2.5 rounded-full bg-purple-500" /> JMS Records</span>
+              <span className="flex items-center gap-1 text-pink-400"><span className="w-2.5 h-2.5 rounded-full bg-pink-500" /> Invoices</span>
             </div>
           </div>
 
@@ -193,26 +212,26 @@ export default function DashboardPage() {
               <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 12 }} />
-              <Area type="monotone" dataKey="jms" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.15} strokeWidth={3} />
-              <Area type="monotone" dataKey="invoices" stroke="#ec4899" fill="#ec4899" fillOpacity={0.15} strokeWidth={3} />
+              <Area type="monotone" dataKey="jms" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.2} strokeWidth={3} />
+              <Area type="monotone" dataKey="invoices" stroke="#ec4899" fill="#ec4899" fillOpacity={0.2} strokeWidth={3} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         {/* Radial Donut Progress Chart */}
-        <div className="lg:col-span-4 rounded-3xl border border-purple-100/80 bg-white dark:bg-slate-900/70 p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+        <div className="lg:col-span-4 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">A3 Release Goals</h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">On Track</span>
+              <h2 className="text-base font-bold text-white">A3 Release Goals</h2>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/50">On Track</span>
             </div>
-            <p className="text-xs text-slate-400 mb-4">Target vs actual release progress</p>
+            <p className="text-xs text-slate-400 mb-4">Stage release breakdown</p>
 
             <div className="relative flex items-center justify-center my-2">
               <ResponsiveContainer width="100%" height={160}>
                 <PieChart>
                   <Pie
-                    data={pieData}
+                    data={pieData.length > 0 ? pieData : [{ name: 'Empty', value: 1, color: '#334155' }]}
                     cx="50%"
                     cy="50%"
                     innerRadius={50}
@@ -227,16 +246,16 @@ export default function DashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                <span className="text-xl font-extrabold text-purple-600">68.7%</span>
-                <span className="text-[10px] text-slate-400 font-semibold">Overall Goal</span>
+                <span className="text-xl font-extrabold text-white">{totalJmsCount}</span>
+                <span className="text-[10px] text-slate-400 font-semibold uppercase">Total JMS</span>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-around text-xs pt-3 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-purple-600 font-semibold">● Completion</span>
-            <span className="text-pink-500 font-semibold">● Engagement</span>
-            <span className="text-cyan-500 font-semibold">● Retention</span>
+          <div className="flex justify-around text-xs pt-3 border-t border-slate-800">
+            <span className="text-pink-400 font-semibold">● Released A3</span>
+            <span className="text-purple-400 font-semibold">● Pending Approval</span>
+            <span className="text-cyan-400 font-semibold">● Invoiced</span>
           </div>
         </div>
       </div>
