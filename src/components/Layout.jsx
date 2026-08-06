@@ -1,8 +1,9 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
+import { supabase } from '../lib/supabase'
 import { formatINR, formatDate, parseValidity } from '../lib/utils'
 import NotificationDetailModal from './NotificationDetailModal'
 import {
@@ -35,6 +36,8 @@ function NavItem({ item, collapsed }) {
 
 export default function Layout() {
   const { user, role, isAdmin, signOut } = useAuth()
+  const qc = useQueryClient()
+
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [globalSearch, setGlobalSearch] = useState('')
@@ -42,9 +45,12 @@ export default function Layout() {
   const [notifTab, setNotifTab] = useState('unread') // 'unread' or 'read'
   const [selectedNotif, setSelectedNotif] = useState(null)
 
+  // Per-User persistent read notifications key
+  const storageKey = `mmc_read_notifs_${user?.id || 'guest'}`
+
   const [readNotifIds, setReadNotifIds] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('mmc_read_notifications') || '[]')
+      return JSON.parse(localStorage.getItem(storageKey) || '[]')
     } catch (e) {
       return []
     }
@@ -54,12 +60,32 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Persist read notifications to localStorage
+  // Realtime Supabase Auto-Sync Channel for instant notifications sync between User and Admin
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-portal-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'jms_records' }, () => {
+        qc.invalidateQueries(['jms'])
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' }, () => {
+        qc.invalidateQueries(['invoices'])
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'budget_records' }, () => {
+        qc.invalidateQueries(['budget'])
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [qc])
+
+  // Persist read notifications per user account
   const markAsRead = (id) => {
     setReadNotifIds(prev => {
       if (prev.includes(id)) return prev
       const updated = [...prev, id]
-      localStorage.setItem('mmc_read_notifications', JSON.stringify(updated))
+      localStorage.setItem(storageKey, JSON.stringify(updated))
       return updated
     })
   }
@@ -67,14 +93,14 @@ export default function Layout() {
   const markAllAsRead = (allIds) => {
     setReadNotifIds(prev => {
       const updated = Array.from(new Set([...prev, ...allIds]))
-      localStorage.setItem('mmc_read_notifications', JSON.stringify(updated))
+      localStorage.setItem(storageKey, JSON.stringify(updated))
       return updated
     })
   }
 
   const clearReadHistory = () => {
     setReadNotifIds([])
-    localStorage.removeItem('mmc_read_notifications')
+    localStorage.removeItem(storageKey)
   }
 
   // Fetch live DB data for notifications
@@ -317,14 +343,14 @@ export default function Layout() {
             />
           </form>
 
-          {/* Right Profile & Notifications Controls */}
+          {/* Right Profile & Realtime Synced Notifications Controls */}
           <div className="flex items-center gap-3 relative" ref={notifRef}>
             {/* Bell Icon with Unread Badge */}
             <div className="relative">
               <button
                 onClick={() => setNotifOpen(o => !o)}
                 className="w-9 h-9 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center hover:bg-slate-700 transition-colors relative"
-                title="System Notifications"
+                title="Realtime Synchronized Notifications"
               >
                 <Bell size={17} />
                 {unreadNotifications.length > 0 && (
@@ -445,8 +471,9 @@ export default function Layout() {
                     )}
                   </div>
 
-                  <div className="p-3 bg-slate-950 border-t border-slate-800 text-center">
-                    <span className="text-[10px] text-slate-400 font-medium">Click any notification to open on-screen record details</span>
+                  <div className="p-3 bg-slate-950 border-t border-slate-800 text-center flex items-center justify-between px-4">
+                    <span className="text-[10px] text-slate-400 font-medium">Realtime User & Admin Auto-Sync</span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" title="Supabase Realtime Live" />
                   </div>
                 </div>
               )}
