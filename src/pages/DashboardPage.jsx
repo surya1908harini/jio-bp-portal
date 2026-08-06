@@ -168,24 +168,26 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── 3 Focus Cards Grid ────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Quick Actions Card */}
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl">
-          <div className="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-md mb-3">
-            <Zap size={20} />
+      {/* ── Focus Cards Grid (Quick Actions for Admin, Summary Cards for User) ── */}
+      <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-5`}>
+        {/* Quick Actions Card (ADMIN ONLY) */}
+        {isAdmin && (
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl">
+            <div className="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-md mb-3">
+              <Zap size={20} />
+            </div>
+            <h3 className="text-base font-bold text-white">Quick Actions</h3>
+            <p className="text-xs text-slate-400 mb-3">Jump straight to work</p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <Link to="/jms" className="p-2.5 rounded-xl bg-purple-950/80 border border-purple-800/60 text-purple-300 font-semibold text-center hover:bg-purple-900 transition-colors">
+                + New JMS
+              </Link>
+              <Link to="/invoices" className="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/60 text-pink-300 font-semibold text-center hover:bg-pink-900 transition-colors">
+                + Add Invoice
+              </Link>
+            </div>
           </div>
-          <h3 className="text-base font-bold text-white">Quick Actions</h3>
-          <p className="text-xs text-slate-400 mb-3">Jump straight to work</p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <Link to="/jms" className="p-2.5 rounded-xl bg-purple-950/80 border border-purple-800/60 text-purple-300 font-semibold text-center hover:bg-purple-900 transition-colors">
-              + New JMS
-            </Link>
-            <Link to="/invoices" className="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/60 text-pink-300 font-semibold text-center hover:bg-pink-900 transition-colors">
-              + Add Invoice
-            </Link>
-          </div>
-        </div>
+        )}
 
         {/* Invoicing Summary Card */}
         <div className="rounded-3xl bg-emerald-600 p-5 text-white shadow-xl flex flex-col justify-between">
