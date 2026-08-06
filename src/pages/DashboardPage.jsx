@@ -43,19 +43,43 @@ export default function DashboardPage() {
   const currentInvList    = invoiceList.filter(i => getInvFy(i) === CURRENT_FY)
   const currentBudgetList = budgetList.filter(b => getBudgetRecordFy(b) === CURRENT_FY)
 
-  const totalJmsCount = currentJmsList.length
-  const pendingA1     = currentJmsList.filter(j => j.status === 'Pending A1' || j.status === 'A1').length
-  const pendingA2     = currentJmsList.filter(j => j.status === 'Pending A2' || j.status === 'A2').length
-  const pendingQsd    = currentJmsList.filter(j => j.status === 'Pending QSD' || j.status === 'QSD').length
-  const pendingA3     = currentJmsList.filter(j => j.status === 'Pending A3' || j.status === 'A3').length
-  const a3Released    = currentJmsList.filter(j => j.status === 'Released by A3' || j.status === 'Invoiced').length
+  // JMS Status calculations aligned strictly with JMS Details Page
+  const isJmsReleased = (j) => {
+    if (j.a3_release_date) return true
+    const st = String(j.status || '').trim().toLowerCase()
+    return st === 'released by a3' || st === 'invoiced' || st.includes('released')
+  }
+
+  const totalJmsCount   = currentJmsList.length
+  const a3Released      = currentJmsList.filter(isJmsReleased).length
+  const pendingJmsCount = currentJmsList.filter(j => !isJmsReleased(j)).length
+
+  const pendingA1       = currentJmsList.filter(j => {
+    const st = String(j.status || '').trim().toLowerCase()
+    return st === 'pending a1' || st === 'a1' || st === 'pending'
+  }).length
+
+  const pendingA2       = currentJmsList.filter(j => {
+    const st = String(j.status || '').trim().toLowerCase()
+    return st === 'pending a2' || st === 'a2'
+  }).length
+
+  const pendingQsd      = currentJmsList.filter(j => {
+    const st = String(j.status || '').trim().toLowerCase()
+    return st === 'pending qsd' || st === 'qsd'
+  }).length
+
+  const pendingA3       = currentJmsList.filter(j => {
+    const st = String(j.status || '').trim().toLowerCase()
+    return st === 'pending a3' || st === 'a3'
+  }).length
 
   const totalInvAmt   = currentInvList.reduce((s, i) => s + (i.grand_total || 0), 0)
   const totalBudget   = currentBudgetList.reduce((s, b) => s + (b.fo_total_budget || 0), 0)
   const totalConsumed = currentBudgetList.reduce((s, b) => s + (b.total_consumed || 0), 0)
   const remainingBudget = totalBudget - totalConsumed
 
-  // Donut chart: "JMS Details" (Pending A1, A2, QSD, A3 and Released A3 - No Invoiced)
+  // Donut chart: "JMS Details" breakdown
   const pieData = [
     { name: 'Pending A1',  value: pendingA1,  color: '#3b82f6' },
     { name: 'Pending A2',  value: pendingA2,  color: '#8b5cf6' },
@@ -124,12 +148,12 @@ export default function DashboardPage() {
               to="/budget"
               className="px-5 py-2.5 rounded-full bg-white/20 backdrop-blur-md text-white font-semibold text-xs border border-white/30 hover:bg-white/30 transition-all flex items-center gap-2"
             >
-              <PieChartIcon size={14} /> View Budget Status
+              <PieChartIcon size={15} /> View Budget Status
             </Link>
           </div>
         </div>
 
-        {/* Mini Stat Boxes Inside Hero Banner */}
+        {/* Mini Stat Boxes Inside Hero Banner: Total JMS | Released A3 | Invoices Value | Pending JMS */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-5 border-t border-white/20">
           <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20">
             <p className="text-[10px] text-purple-200 uppercase font-semibold">Total JMS</p>
@@ -144,8 +168,8 @@ export default function DashboardPage() {
             <p className="text-base font-extrabold text-white mt-0.5">{formatINR(totalInvAmt)}</p>
           </div>
           <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20">
-            <p className="text-[10px] text-purple-200 uppercase font-semibold">Budget Available</p>
-            <p className="text-base font-extrabold text-emerald-300 mt-0.5">{formatINR(remainingBudget)}</p>
+            <p className="text-[10px] text-purple-200 uppercase font-semibold">Pending JMS</p>
+            <p className="text-xl font-extrabold text-amber-300 mt-0.5">{pendingJmsCount}</p>
           </div>
         </div>
       </div>
@@ -179,10 +203,13 @@ export default function DashboardPage() {
             <h3 className="text-2xl font-extrabold text-white">{formatINR(totalInvAmt)}</h3>
             <p className="text-xs text-emerald-100 mt-1">{currentInvList.length} Total Invoices Issued</p>
           </div>
-          <span className="text-[10px] uppercase font-bold text-emerald-200 mt-4">FY {CURRENT_FY} Billing</span>
+          <div className="mt-4 pt-3 border-t border-emerald-500/50 flex items-center justify-between text-xs text-emerald-100">
+            <span>FY {CURRENT_FY} Billing</span>
+            <Link to="/invoices" className="font-bold underline hover:text-white">View Invoices →</Link>
+          </div>
         </div>
 
-        {/* Contract Budget Overview Card */}
+        {/* Contract Budget Summary Card */}
         <div className="rounded-3xl bg-purple-600 p-5 text-white shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -192,82 +219,102 @@ export default function DashboardPage() {
             <h3 className="text-2xl font-extrabold text-white">{formatINR(totalBudget)}</h3>
             <p className="text-xs text-purple-100 mt-1">Consumed: {formatINR(totalConsumed)}</p>
           </div>
-          <span className="text-[10px] uppercase font-bold text-purple-200 mt-4">{currentBudgetList.length} Work Orders Active</span>
+          <div className="mt-4 pt-3 border-t border-purple-500/50 flex items-center justify-between text-xs text-purple-100">
+            <span>{currentBudgetList.length} Work Orders Active</span>
+            <Link to="/budget" className="font-bold underline hover:text-white">View Budget →</Link>
+          </div>
         </div>
       </div>
 
-      {/* ── Dynamic Realtime Visual Charts Grid ───────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Line / Area Chart */}
-        <div className="lg:col-span-8 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 backdrop-blur-xl shadow-xl">
+      {/* ── Dynamic Area Trend Chart & Donut Chart ────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2 Cols: Monthly Activity Area Chart */}
+        <div className="lg:col-span-2 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-base font-bold text-white">Monthly Activity Trend (FY {CURRENT_FY})</h2>
+              <h3 className="text-base font-bold text-white">Monthly Activity Trend (FY {CURRENT_FY})</h3>
               <p className="text-xs text-slate-400">Live distribution of JMS entries vs Invoices</p>
             </div>
-            <div className="flex items-center gap-3 text-xs font-semibold">
-              <span className="flex items-center gap-1 text-purple-400"><span className="w-2.5 h-2.5 rounded-full bg-purple-500" /> JMS Records</span>
-              <span className="flex items-center gap-1 text-pink-400"><span className="w-2.5 h-2.5 rounded-full bg-pink-500" /> Invoices</span>
+            <div className="flex items-center gap-4 text-xs font-semibold">
+              <span className="flex items-center gap-1.5 text-purple-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-purple-500" /> JMS Records
+              </span>
+              <span className="flex items-center gap-1.5 text-pink-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-pink-500" /> Invoices
+              </span>
             </div>
           </div>
 
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={trendData}>
-              <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 12 }} />
-              <Area type="monotone" dataKey="jms" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.2} strokeWidth={3} />
-              <Area type="monotone" dataKey="invoices" stroke="#ec4899" fill="#ec4899" fillOpacity={0.2} strokeWidth={3} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorJms" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorInv" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ec4899" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#ec4899" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
+                <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                />
+                <Area type="monotone" dataKey="jms" name="JMS Records" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorJms)" />
+                <Area type="monotone" dataKey="invoices" name="Invoices" stroke="#ec4899" strokeWidth={3} fillOpacity={1} fill="url(#colorInv)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* Donut Progress Chart: "JMS Details" (Pending A1, A2, QSD, A3 and Released A3) */}
-        <div className="lg:col-span-4 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+        {/* Right 1 Col: Donut Stage Breakdown Chart */}
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-base font-bold text-white">JMS Details</h2>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-950 text-purple-300 border border-purple-800">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-base font-bold text-white">JMS Details</h3>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800">
                 FY {CURRENT_FY}
               </span>
             </div>
             <p className="text-xs text-slate-400 mb-4">Stage-wise release & approval breakdown</p>
 
-            <div className="relative flex items-center justify-center my-2">
-              <ResponsiveContainer width="100%" height={170}>
+            <div className="h-44 w-full flex items-center justify-center relative">
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={pieData.length > 0 ? pieData : [{ name: 'Empty', value: 1, color: '#334155' }]}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={52}
-                    outerRadius={72}
-                    paddingAngle={4}
+                    data={pieData}
+                    innerRadius={50}
+                    outerRadius={75}
+                    paddingAngle={3}
                     dataKey="value"
                   >
                     {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                      <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-xl font-extrabold text-white">{totalJmsCount}</span>
-                <span className="text-[10px] text-slate-400 font-semibold uppercase">Total JMS</span>
+                <span className="text-[9px] text-slate-400 uppercase font-semibold">Total JMS</span>
               </div>
             </div>
           </div>
 
-          {/* Legend for Pending A1, A2, QSD, A3 & Released A3 */}
-          <div className="grid grid-cols-2 gap-1.5 pt-3 border-t border-slate-800 text-[11px]">
-            {pieData.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between p-1.5 rounded-lg bg-slate-950/60 border border-slate-800">
-                <div className="flex items-center gap-1.5 truncate">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: item.color }} />
-                  <span className="text-slate-300 font-medium truncate">{item.name}</span>
+          <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-1.5">
+            {pieData.map(item => (
+              <div key={item.name} className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                  <span className="text-slate-300 font-medium">{item.name}</span>
                 </div>
-                <span className="font-bold text-white ml-1">{item.value}</span>
+                <span className="font-extrabold text-white font-mono">{item.value}</span>
               </div>
             ))}
           </div>
