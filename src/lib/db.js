@@ -6,6 +6,33 @@
 import { supabase } from './supabase'
 import { FINANCIAL_YEARS } from './utils'
 
+// ── helper: clean budget record fields to remove view-computed fields before DB insert/update ──
+const BUDGET_ALLOWED_KEYS = new Set([
+  'operation',
+  'description',
+  'arc_number',
+  'work_order_number',
+  'validity_of_contract',
+  'fo_total_budget',
+  'pdf_url',
+  'created_by',
+  'financial_year'
+])
+
+function cleanBudgetRecord(obj) {
+  const result = {}
+  for (const [k, v] of Object.entries(obj)) {
+    if (!BUDGET_ALLOWED_KEYS.has(k)) continue
+    if (v === '' || v === null || v === undefined) continue
+    if (v instanceof Date) {
+      result[k] = v.toISOString().split('T')[0]
+    } else {
+      result[k] = v
+    }
+  }
+  return result
+}
+
 // ── helper: format dates & strip empty/null values before insert/update ──
 function clean(obj) {
   const result = {}
