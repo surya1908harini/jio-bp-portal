@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { FINANCIAL_YEARS, CURRENT_FY } from '../lib/utils'
 
 export default function FyTabs({ basePath }) {
