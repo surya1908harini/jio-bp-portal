@@ -8,7 +8,7 @@ import { formatINR, formatDate, parseValidity } from '../lib/utils'
 import NotificationDetailModal from './NotificationDetailModal'
 import {
   LayoutDashboard, FileText, Receipt, PieChart, Settings,
-  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2
+  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2, CheckCircle2
 } from 'lucide-react'
 
 const NAV = [
@@ -108,14 +108,15 @@ export default function Layout() {
   const { data: invoiceList = [] } = useQuery({ queryKey: ['invoices', 'all'], queryFn: () => invoiceDb.listAll() })
   const { data: budgetList = [] }  = useQuery({ queryKey: ['budget', 'all'],   queryFn: () => budgetDb.listAll() })
 
-  // Calculate Realtime Actionable Notifications
+  // Calculate Realtime Actionable Notifications (Automatically excluded when work is finished!)
   const allNotifications = useMemo(() => {
     const list = []
     const now = new Date()
 
-    // 1. Long Payment Pending Invoices (> 15 days)
+    // 1. Long Payment Pending Invoices (> 15 days) — EXCLUDED automatically when payment_status === 'Full Payment Received'
     invoiceList.forEach(inv => {
-      if (inv.payment_status !== 'Full Payment Received') {
+      const isPaid = inv.payment_status === 'Full Payment Received'
+      if (!isPaid) {
         const invDate = inv.inv_date ? new Date(inv.inv_date) : (inv.created_at ? new Date(inv.created_at) : null)
         const daysPending = invDate ? Math.floor((now - invDate) / (1000 * 60 * 60 * 24)) : 0
         if (daysPending >= 15 || !inv.payment_status) {
@@ -136,7 +137,7 @@ export default function Layout() {
       }
     })
 
-    // 2. Budget Contracts Expiring Soon (≤ 90 days or Expired)
+    // 2. Budget Contracts Expiring Soon (≤ 90 days or Expired) — EXCLUDED automatically when contract validity > 90 days
     budgetList.forEach(b => {
       const { daysRemaining, status } = parseValidity(b.validity_of_contract)
       if (daysRemaining !== null && daysRemaining <= 90) {
@@ -157,10 +158,10 @@ export default function Layout() {
       }
     })
 
-    // 3. Stage-by-Stage JMS Pending Calculation
+    // 3. Stage-by-Stage JMS Pending Calculation — EXCLUDED automatically when status === 'Released by A3' or 'Invoiced'
     jmsList.forEach(j => {
-      const isReleased = j.status === 'Released by A3' || j.status === 'Invoiced'
-      if (isReleased) return
+      const isFinished = j.status === 'Released by A3' || j.status === 'Invoiced'
+      if (isFinished) return
 
       const st = String(j.status || '').trim().toLowerCase()
       let prevReleaseDate = null
@@ -209,6 +210,19 @@ export default function Layout() {
       return b.days - a.days
     })
   }, [jmsList, invoiceList, budgetList])
+
+  // Automatically prune resolved notification IDs from readNotifIds
+  useEffect(() => {
+    const validIds = new Set(allNotifications.map(n => n.id))
+    setReadNotifIds(prev => {
+      const filtered = prev.filter(id => validIds.has(id))
+      if (filtered.length !== prev.length) {
+        localStorage.setItem(storageKey, JSON.stringify(filtered))
+        return filtered
+      }
+      return prev
+    })
+  }, [allNotifications, storageKey])
 
   // Split Notifications into Unread & Read lists
   const unreadNotifications = useMemo(() => {
@@ -423,12 +437,13 @@ export default function Layout() {
                   <div className="overflow-y-auto p-3 space-y-2 flex-1">
                     {activeList.length === 0 ? (
                       <div className="text-center py-10 text-xs text-slate-400 space-y-1">
-                        <p className="text-sm font-bold text-slate-300">
-                          {notifTab === 'unread' ? '✨ All caught up!' : 'No read notifications'}
+                        <p className="text-sm font-bold text-slate-300 flex items-center justify-center gap-1">
+                          <CheckCircle2 size={16} className="text-emerald-400" />
+                          {notifTab === 'unread' ? 'All work finished & caught up!' : 'No read notifications'}
                         </p>
                         <p>
                           {notifTab === 'unread'
-                            ? 'Zero pending alerts in unread inbox.'
+                            ? 'Notifications are automatically removed when work is finished.'
                             : 'Read notifications will appear here once acknowledged.'}
                         </p>
                       </div>
@@ -472,7 +487,9 @@ export default function Layout() {
                   </div>
 
                   <div className="p-3 bg-slate-950 border-t border-slate-800 text-center flex items-center justify-between px-4">
-                    <span className="text-[10px] text-slate-400 font-medium">Realtime User & Admin Auto-Sync</span>
+                    <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                      <CheckCircle2 size={12} /> Auto-removed when work is finished
+                    </span>
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" title="Supabase Realtime Live" />
                   </div>
                 </div>
