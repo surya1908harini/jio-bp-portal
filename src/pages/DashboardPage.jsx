@@ -164,8 +164,8 @@ export default function DashboardPage() {
             <p className="text-xl font-extrabold text-emerald-300 mt-0.5">{a3Released}</p>
           </div>
           <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20">
-            <p className="text-[10px] text-purple-200 uppercase font-semibold">Invoices Value</p>
-            <p className="text-base font-extrabold text-white mt-0.5">{formatINR(totalInvAmt)}</p>
+            <p className="text-[10px] text-purple-200 uppercase font-semibold">Total Invoices</p>
+            <p className="text-xl font-extrabold text-white mt-0.5">{currentInvList.length}</p>
           </div>
           <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20">
             <p className="text-[10px] text-purple-200 uppercase font-semibold">Pending JMS</p>
