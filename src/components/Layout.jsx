@@ -76,12 +76,12 @@ export default function Layout() {
   const { data: invoiceList = [] } = useQuery({ queryKey: ['invoices', 'all'], queryFn: () => invoiceDb.listAll() })
   const { data: budgetList = [] }  = useQuery({ queryKey: ['budget', 'all'],   queryFn: () => budgetDb.listAll() })
 
-  // Calculate Realtime Actionable Notifications with attached record payload
+  // Calculate Realtime Actionable Notifications with stage-by-stage JMS calculation
   const allNotifications = useMemo(() => {
     const list = []
     const now = new Date()
 
-    // 1. Long Payment Pending Invoices
+    // 1. Long Payment Pending Invoices (> 15 days)
     invoiceList.forEach(inv => {
       if (inv.payment_status !== 'Full Payment Received') {
         const invDate = inv.inv_date ? new Date(inv.inv_date) : (inv.created_at ? new Date(inv.created_at) : null)
@@ -104,7 +104,7 @@ export default function Layout() {
       }
     })
 
-    // 2. Budget Contracts Expiring Soon
+    // 2. Budget Contracts Expiring Soon (≤ 90 days or Expired)
     budgetList.forEach(b => {
       const { daysRemaining, status } = parseValidity(b.validity_of_contract)
       if (daysRemaining !== null && daysRemaining <= 90) {
@@ -125,27 +125,49 @@ export default function Layout() {
       }
     })
 
-    // 3. Long Days Pending JMS Records
+    // 3. Stage-by-Stage JMS Pending Calculation (Pending A1 -> A1 Released -> Pending A2 -> A2 Released -> Pending QSD -> QSD Released -> Pending A3 -> A3 Released)
     jmsList.forEach(j => {
       const isReleased = j.status === 'Released by A3' || j.status === 'Invoiced'
-      if (!isReleased) {
-        const jmsDate = j.jms_create_date ? new Date(j.jms_create_date) : (j.created_at ? new Date(j.created_at) : null)
-        const daysPending = jmsDate ? Math.floor((now - jmsDate) / (1000 * 60 * 60 * 24)) : 0
-        if (daysPending >= 10) {
-          const jmsNo = j.jms_no || j.work_order_number || String(j.id)
-          list.push({
-            id: `jms-${j.id}`,
-            category: 'jms',
-            title: `Long Pending JMS #${j.jms_no || 'Record'}`,
-            sub: `WO #${j.work_order_number || 'N/A'} · Stage "${j.status || 'Pending A1'}" for ${daysPending} days`,
-            days: daysPending,
-            severity: daysPending > 30 ? 'high' : 'medium',
-            link: `/jms?search=${encodeURIComponent(jmsNo)}`,
-            record: j,
-            icon: Clock,
-            color: 'text-purple-400 bg-purple-950/80 border-purple-800/60'
-          })
-        }
+      if (isReleased) return
+
+      const st = String(j.status || '').trim().toLowerCase()
+      let prevReleaseDate = null
+      let stageName = 'Pending A1'
+
+      if (st.includes('a3')) {
+        stageName = 'Pending A3'
+        prevReleaseDate = j.qsd_release_date || j.a2_release_date || j.a1_release_date || j.jms_create_date || j.created_at
+      } else if (st.includes('qsd')) {
+        stageName = 'Pending QSD'
+        prevReleaseDate = j.a2_release_date || j.a1_release_date || j.jms_create_date || j.created_at
+      } else if (st.includes('a2')) {
+        stageName = 'Pending A2'
+        prevReleaseDate = j.a1_release_date || j.jms_create_date || j.created_at
+      } else {
+        stageName = 'Pending A1'
+        prevReleaseDate = j.jms_create_date || j.created_at
+      }
+
+      if (!prevReleaseDate) return
+      const refDate = new Date(prevReleaseDate)
+      if (isNaN(refDate.getTime())) return
+
+      const daysPending = Math.floor((now - refDate) / (1000 * 60 * 60 * 24))
+
+      if (daysPending > 10) {
+        const jmsNo = j.jms_no || j.work_order_number || String(j.id)
+        list.push({
+          id: `jms-${j.id}`,
+          category: 'jms',
+          title: `Long ${stageName}: JMS #${j.jms_no || 'Record'}`,
+          sub: `WO #${j.work_order_number || 'N/A'} · Pending in ${stageName} for ${daysPending} days (Since ${formatDate(prevReleaseDate)})`,
+          days: daysPending,
+          severity: daysPending > 30 ? 'high' : 'medium',
+          link: `/jms?search=${encodeURIComponent(jmsNo)}`,
+          record: j,
+          icon: Clock,
+          color: 'text-purple-400 bg-purple-950/80 border-purple-800/60'
+        })
       }
     })
 
