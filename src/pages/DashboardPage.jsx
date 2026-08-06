@@ -139,14 +139,8 @@ export default function DashboardPage() {
 
           <div className="flex items-center gap-3 mt-6 flex-wrap">
             <Link
-              to="/jms"
-              className="px-5 py-2.5 rounded-full bg-white text-purple-700 font-bold text-xs shadow-lg hover:bg-purple-50 active:scale-95 transition-all flex items-center gap-2"
-            >
-              <Plus size={15} strokeWidth={3} /> Create / Manage JMS
-            </Link>
-            <Link
               to="/budget"
-              className="px-5 py-2.5 rounded-full bg-white/20 backdrop-blur-md text-white font-semibold text-xs border border-white/30 hover:bg-white/30 transition-all flex items-center gap-2"
+              className="px-5 py-2.5 rounded-full bg-white text-purple-700 font-bold text-xs shadow-lg hover:bg-purple-50 active:scale-95 transition-all flex items-center gap-2"
             >
               <PieChartIcon size={15} /> View Budget Status
             </Link>
