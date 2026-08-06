@@ -6,7 +6,7 @@ import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
 import { formatINR, formatDate, parseValidity } from '../lib/utils'
 import {
   LayoutDashboard, FileText, Receipt, PieChart, Settings,
-  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight
+  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck
 } from 'lucide-react'
 
 const NAV = [
@@ -38,10 +38,35 @@ export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [globalSearch, setGlobalSearch] = useState('')
   const [notifOpen, setNotifOpen] = useState(false)
+  const [readNotifIds, setReadNotifIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('mmc_read_notifications') || '[]')
+    } catch (e) {
+      return []
+    }
+  })
   const notifRef = useRef(null)
 
   const navigate = useNavigate()
   const location = useLocation()
+
+  // Persist read notifications to localStorage
+  const markAsRead = (id) => {
+    setReadNotifIds(prev => {
+      if (prev.includes(id)) return prev
+      const updated = [...prev, id]
+      localStorage.setItem('mmc_read_notifications', JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  const markAllAsRead = (allIds) => {
+    setReadNotifIds(prev => {
+      const updated = Array.from(new Set([...prev, ...allIds]))
+      localStorage.setItem('mmc_read_notifications', JSON.stringify(updated))
+      return updated
+    })
+  }
 
   // Fetch live DB data for notifications
   const { data: jmsList = [] }     = useQuery({ queryKey: ['jms', 'all'],     queryFn: () => jmsDb.listAll() })
@@ -49,24 +74,25 @@ export default function Layout() {
   const { data: budgetList = [] }  = useQuery({ queryKey: ['budget', 'all'],   queryFn: () => budgetDb.listAll() })
 
   // Calculate Realtime Actionable Notifications
-  const notifications = useMemo(() => {
+  const allNotifications = useMemo(() => {
     const list = []
     const now = new Date()
 
-    // 1. Long Payment Pending Invoices (Pending payment > 15 days)
+    // 1. Long Payment Pending Invoices
     invoiceList.forEach(inv => {
       if (inv.payment_status !== 'Full Payment Received') {
         const invDate = inv.inv_date ? new Date(inv.inv_date) : (inv.created_at ? new Date(inv.created_at) : null)
         const daysPending = invDate ? Math.floor((now - invDate) / (1000 * 60 * 60 * 24)) : 0
         if (daysPending >= 15 || !inv.payment_status) {
+          const invNo = inv.inv_number || String(inv.id)
           list.push({
             id: `inv-${inv.id}`,
             category: 'invoice',
-            title: `Payment Pending: INV #${inv.inv_number || 'Record'}`,
+            title: `Payment Pending: INV #${invNo}`,
             sub: `Amount: ${formatINR(inv.grand_total)} · Pending for ${daysPending > 0 ? `${daysPending} days` : 'review'}`,
             days: daysPending,
             severity: daysPending > 45 ? 'high' : 'medium',
-            link: '/invoices',
+            link: `/invoices?search=${encodeURIComponent(invNo)}`,
             icon: DollarSign,
             color: 'text-rose-400 bg-rose-950/80 border-rose-800/60'
           })
@@ -74,32 +100,34 @@ export default function Layout() {
       }
     })
 
-    // 2. Budget Contracts Expiring Soon (≤ 90 days or Expired)
+    // 2. Budget Contracts Expiring Soon
     budgetList.forEach(b => {
       const { daysRemaining, status } = parseValidity(b.validity_of_contract)
       if (daysRemaining !== null && daysRemaining <= 90) {
         const isExpired = daysRemaining <= 0
+        const woNo = b.work_order_number || String(b.id)
         list.push({
           id: `bud-${b.id}`,
           category: 'budget',
-          title: isExpired ? `Contract Expired: WO #${b.work_order_number}` : `Budget Expiring: WO #${b.work_order_number}`,
+          title: isExpired ? `Contract Expired: WO #${woNo}` : `Budget Expiring: WO #${woNo}`,
           sub: `${b.operation || 'Contract'} · ${isExpired ? 'Validity Ended' : `${daysRemaining} days remaining`}`,
           days: daysRemaining,
           severity: isExpired ? 'high' : daysRemaining <= 30 ? 'medium' : 'low',
-          link: '/budget',
+          link: `/budget?search=${encodeURIComponent(woNo)}`,
           icon: AlertTriangle,
           color: isExpired ? 'text-rose-400 bg-rose-950/80 border-rose-800/60' : 'text-amber-400 bg-amber-950/80 border-amber-800/60'
         })
       }
     })
 
-    // 3. Long Days Pending JMS Records (Pending approval > 10 days)
+    // 3. Long Days Pending JMS Records
     jmsList.forEach(j => {
       const isReleased = j.status === 'Released by A3' || j.status === 'Invoiced'
       if (!isReleased) {
         const jmsDate = j.jms_create_date ? new Date(j.jms_create_date) : (j.created_at ? new Date(j.created_at) : null)
         const daysPending = jmsDate ? Math.floor((now - jmsDate) / (1000 * 60 * 60 * 24)) : 0
         if (daysPending >= 10) {
+          const jmsNo = j.jms_no || j.work_order_number || String(j.id)
           list.push({
             id: `jms-${j.id}`,
             category: 'jms',
@@ -107,7 +135,7 @@ export default function Layout() {
             sub: `WO #${j.work_order_number || 'N/A'} · Stage "${j.status || 'Pending A1'}" for ${daysPending} days`,
             days: daysPending,
             severity: daysPending > 30 ? 'high' : 'medium',
-            link: '/jms',
+            link: `/jms?search=${encodeURIComponent(jmsNo)}`,
             icon: Clock,
             color: 'text-purple-400 bg-purple-950/80 border-purple-800/60'
           })
@@ -115,13 +143,17 @@ export default function Layout() {
       }
     })
 
-    // Sort by severity (high first) then days
     return list.sort((a, b) => {
       if (a.severity === 'high' && b.severity !== 'high') return -1
       if (a.severity !== 'high' && b.severity === 'high') return 1
       return b.days - a.days
     })
   }, [jmsList, invoiceList, budgetList])
+
+  // Filter unread notifications
+  const unreadNotifications = useMemo(() => {
+    return allNotifications.filter(n => !readNotifIds.includes(n.id))
+  }, [allNotifications, readNotifIds])
 
   // Close notification menu on outside click
   useEffect(() => {
@@ -138,6 +170,12 @@ export default function Layout() {
     e.preventDefault()
     if (!globalSearch.trim()) return
     navigate(`/jms?search=${encodeURIComponent(globalSearch)}`)
+  }
+
+  const handleNotificationClick = (item) => {
+    markAsRead(item.id)
+    setNotifOpen(false)
+    navigate(item.link)
   }
 
   const sidebar = (
@@ -241,7 +279,7 @@ export default function Layout() {
 
           {/* Right Profile & Notifications Controls */}
           <div className="flex items-center gap-3 relative" ref={notifRef}>
-            {/* Bell Icon with Realtime Badge */}
+            {/* Bell Icon with Unread Badge */}
             <div className="relative">
               <button
                 onClick={() => setNotifOpen(o => !o)}
@@ -249,9 +287,9 @@ export default function Layout() {
                 title="System Notifications"
               >
                 <Bell size={17} />
-                {notifications.length > 0 && (
+                {unreadNotifications.length > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center border-2 border-slate-900 animate-pulse">
-                    {notifications.length}
+                    {unreadNotifications.length}
                   </span>
                 )}
               </button>
@@ -262,36 +300,51 @@ export default function Layout() {
                   <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Bell size={16} className="text-purple-400" />
-                      <h3 className="text-sm font-extrabold text-white">System Alerts & Notifications</h3>
+                      <h3 className="text-sm font-extrabold text-white">System Alerts</h3>
                     </div>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950 text-rose-400 border border-rose-800">
-                      {notifications.length} Active
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {unreadNotifications.length > 0 && (
+                        <button
+                          onClick={() => markAllAsRead(allNotifications.map(n => n.id))}
+                          className="text-[10px] font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1 bg-purple-950 px-2 py-0.5 rounded-lg border border-purple-800/60 transition-colors"
+                        >
+                          <CheckCheck size={12} /> Mark all read
+                        </button>
+                      )}
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950 text-rose-400 border border-rose-800">
+                        {unreadNotifications.length} Unread
+                      </span>
+                    </div>
                   </div>
 
                   <div className="overflow-y-auto p-3 space-y-2 flex-1">
-                    {notifications.length === 0 ? (
+                    {allNotifications.length === 0 ? (
                       <div className="text-center py-8 text-xs text-slate-400">
                         ✨ No pending alerts or contract expiry issues!
                       </div>
                     ) : (
-                      notifications.map(item => {
+                      allNotifications.map(item => {
                         const Icon = item.icon
+                        const isRead = readNotifIds.includes(item.id)
                         return (
                           <div
                             key={item.id}
-                            onClick={() => { setNotifOpen(false); navigate(item.link); }}
-                            className="p-3 rounded-2xl bg-slate-800/60 border border-slate-700/60 hover:border-purple-500/50 cursor-pointer transition-all flex items-start gap-3 group"
+                            onClick={() => handleNotificationClick(item)}
+                            className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 group ${
+                              isRead
+                                ? 'bg-slate-950/40 border-slate-800/50 opacity-60'
+                                : 'bg-slate-800/80 border-slate-700/80 hover:border-purple-500/60 shadow-md'
+                            }`}
                           >
                             <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${item.color}`}>
                               <Icon size={16} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
-                                <p className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors truncate">
+                                <p className={`text-xs font-bold truncate transition-colors ${isRead ? 'text-slate-400' : 'text-white group-hover:text-purple-300'}`}>
                                   {item.title}
                                 </p>
-                                <span className="text-[9px] font-mono text-slate-400 shrink-0">
+                                <span className="text-[9px] font-mono text-slate-400 shrink-0 ml-1">
                                   {item.days > 0 ? `${item.days}d` : 'Urgent'}
                                 </span>
                               </div>
@@ -299,6 +352,9 @@ export default function Layout() {
                                 {item.sub}
                               </p>
                             </div>
+                            {!isRead && (
+                              <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0 mt-1" title="Unread" />
+                            )}
                           </div>
                         )
                       })
@@ -306,7 +362,7 @@ export default function Layout() {
                   </div>
 
                   <div className="p-3 bg-slate-950 border-t border-slate-800 text-center">
-                    <span className="text-[10px] text-slate-400 font-medium">Realtime Audit System</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Click any alert to open exact record</span>
                   </div>
                 </div>
               )}

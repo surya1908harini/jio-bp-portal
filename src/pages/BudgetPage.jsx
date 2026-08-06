@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import {
   Plus, Download, Upload, Pencil, Trash2, PieChart, TrendingUp, Clock, AlertTriangle,
   CheckCircle2, RefreshCw, LayoutGrid, List, Search, Eye, FileText, PieChart as PieChartIcon, ChevronLeft, ChevronRight
@@ -46,6 +46,9 @@ export default function BudgetPage() {
   const { fy } = useParams()
   const activeFy = fy || CURRENT_FY
 
+  const [searchParams] = useSearchParams()
+  const initialSearch = searchParams.get('search') || ''
+
   const [formOpen, setFormOpen]       = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [editRow, setEditRow]       = useState(null)
@@ -53,8 +56,13 @@ export default function BudgetPage() {
   const [selectedRow, setSelectedRow] = useState(null)
   const [activeSlot, setActiveSlot]  = useState('all')
   const [viewMode, setViewMode]      = useState('grid') // 'grid' or 'list'
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(initialSearch)
   const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    const s = searchParams.get('search')
+    if (s) setSearchQuery(s)
+  }, [searchParams])
 
   const VALIDITY_SLOTS = [
     { key: 'all',           label: 'All Work Orders' },
