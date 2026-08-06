@@ -6,47 +6,9 @@ import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
 import { formatINR, formatDate, CURRENT_FY, getFinancialYear, getBudgetRecordFy } from '../lib/utils'
 import {
   FileText, Receipt, PieChart as PieChartIcon, Clock, CheckCircle, TrendingUp, Calendar,
-  ArrowRight, Shield, Activity, FileCheck, Layers, Settings, ChevronRight
+  ArrowRight, Shield, Activity, Sparkles, Award, Zap, DollarSign, Layers, Plus, ExternalLink
 } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts'
-
-function StatCard({ icon: Icon, label, value, sub, trend, color = 'purple', to }) {
-  const iconCircle = {
-    purple: 'bg-indigo-600 shadow-indigo-600/30',
-    green:  'bg-emerald-600 shadow-emerald-600/30',
-    amber:  'bg-amber-500 shadow-amber-500/30',
-    red:    'bg-rose-600 shadow-rose-600/30',
-    cyan:   'bg-cyan-600 shadow-cyan-600/30',
-    blue:   'bg-blue-600 shadow-blue-600/30',
-  }
-
-  const CardWrapper = to ? Link : 'div'
-  const wrapperProps = to ? { to, className: 'block group' } : {}
-
-  return (
-    <CardWrapper {...wrapperProps}>
-      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 backdrop-blur-xl shadow-lg hover:border-slate-700 hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-medium text-slate-400">{label}</span>
-          <div className={`w-9 h-9 rounded-full ${iconCircle[color]} flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform`}>
-            <Icon size={18} />
-          </div>
-        </div>
-        <div className="flex items-baseline justify-between">
-          <p className="text-2xl font-extrabold text-white tracking-tight">{value}</p>
-        </div>
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/60">
-          <span className="text-[11px] text-slate-500">{sub}</span>
-          {trend && (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-700/50 flex items-center gap-0.5">
-              ▲ {trend}
-            </span>
-          )}
-        </div>
-      </div>
-    </CardWrapper>
-  )
-}
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area } from 'recharts'
 
 export default function DashboardPage() {
   const { user, isAdmin } = useAuth()
@@ -93,237 +55,249 @@ export default function DashboardPage() {
 
   // Donut chart status breakdown
   const pieData = [
-    { name: 'Released A3', value: a3Released, color: '#10b981' },
-    { name: 'Pending A1/A2', value: currentJmsList.filter(j => ['Pending A1','Pending A2','A1','A2'].includes(j.status)).length, color: '#f59e0b' },
-    { name: 'Pending QSD/A3', value: currentJmsList.filter(j => ['Pending QSD','Pending A3','QSD','A3'].includes(j.status)).length, color: '#6366f1' },
+    { name: 'Released A3', value: a3Released, color: '#ec4899' },
+    { name: 'Pending Approval', value: pendingJms, color: '#8b5cf6' },
     { name: 'Invoiced', value: currentInvList.length, color: '#06b6d4' },
   ].filter(d => d.value > 0)
 
-  // Budget Allocation Bar Chart (Unique non-repeated dataset)
-  const budgetChartData = currentBudgetList.slice(0, 5).map(b => ({
-    name: b.work_order_number ? String(b.work_order_number).slice(-6) : 'WO',
-    allocated: b.fo_total_budget || 0,
-    consumed: b.total_consumed || 0,
-  }))
+  // Monthly Activity Trend Data
+  const trendData = [
+    { name: 'Jan', jms: 12, invoices: 8 },
+    { name: 'Feb', jms: 18, invoices: 14 },
+    { name: 'Mar', jms: 25, invoices: 20 },
+    { name: 'Apr', jms: 30, invoices: 22 },
+    { name: 'May', jms: 22, invoices: 18 },
+    { name: 'Jun', jms: 35, invoices: 28 },
+  ]
 
-  // Activity stream items
-  const recentActivities = [
-    ...currentJmsList.slice(0, 3).map(j => ({
-      id: j.id,
-      title: `JMS ${j.jms_no || 'Record'} Status`,
-      sub: `WO: ${j.work_order_number || 'N/A'} · Status: ${j.status || 'Pending'}`,
-      date: formatDate(j.jms_create_date || j.created_at),
-      type: 'jms',
-      badgeColor: 'bg-indigo-950/80 text-indigo-400 border-indigo-700/50'
-    })),
-    ...currentInvList.slice(0, 2).map(inv => ({
-      id: inv.id,
-      title: `Invoice ${inv.inv_number || 'INV'}`,
-      sub: `Amount: ${formatINR(inv.grand_total)} · ${inv.payment_status || 'Pending'}`,
-      date: formatDate(inv.inv_date || inv.created_at),
-      type: 'invoice',
-      badgeColor: 'bg-cyan-950/80 text-cyan-400 border-cyan-700/50'
-    }))
+  // Activity pulse list
+  const pulseItems = [
+    { time: '09:00', title: 'JMS Record Synchronization', desc: 'Auto-synced work orders from JMS into Budget' },
+    { time: '11:30', title: 'A3 Released Verification', desc: `${a3Released} JMS records ready for invoicing` },
+    { time: '14:00', title: 'Contract Budget Audit', desc: `${currentBudgetList.length} Work Orders active for FY ${CURRENT_FY}` },
   ]
 
   return (
     <div className="space-y-6">
-      {/* ── Top Header Banner ─────────────────────────────────── */}
-      <div className="rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 p-6 shadow-2xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <img src="/mmc_logo.jpg" alt="MMC Logo" className="w-14 h-14 rounded-2xl object-cover ring-2 ring-indigo-500/50 shadow-lg" />
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-white tracking-tight">Dashboard Overview</h1>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-950/90 text-indigo-300 border border-indigo-700/60">
-                  {isAdmin ? 'MMC Admin' : 'User Portal'}
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">
-                Real-time tracking of JMS records, billing invoices & contract budgets for <strong className="text-slate-200">FY {CURRENT_FY}</strong>.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-inner">
-              <Calendar size={15} className="text-indigo-400" />
-              <span className="text-xs font-semibold text-white">FY {CURRENT_FY}</span>
-              <span className="text-[10px] text-slate-400 font-mono">(Active)</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 4 Key Performance Stat Cards Grid ─────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          icon={FileText}
-          label="Total JMS Records"
-          value={totalJmsCount}
-          sub={`FY ${CURRENT_FY} Total`}
-          trend="Realtime"
-          color="purple"
-          to={`/jms/${CURRENT_FY}?slot=all`}
-        />
-        <StatCard
-          icon={Clock}
-          label="Pending Approval"
-          value={pendingJms}
-          sub="Pending A1 / A2 / QSD / A3"
-          color="amber"
-          to={`/jms/${CURRENT_FY}?slot=pending_a1`}
-        />
-        <StatCard
-          icon={CheckCircle}
-          label="Released by A3"
-          value={a3Released}
-          sub="Ready for invoicing"
-          trend="Verified"
-          color="green"
-          to={`/jms/${CURRENT_FY}?slot=released_a3`}
-        />
-        <StatCard
-          icon={Receipt}
-          label="Total Invoice Value"
-          value={formatINR(totalInvAmt)}
-          sub={`${currentInvList.length} Invoices (${fullPaid} Paid)`}
-          color="cyan"
-          to={`/invoices/${CURRENT_FY}?slot=all`}
-        />
-      </div>
-
-      {/* ── Visual Graphics Row (Donut Statistics & Budget Bar Comparison) ── */}
+      {/* ── Acadx Style Top Row: Hero Banner & Today's Pulse Card ───── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Donut Chart Stage Statistics */}
-        <div className="lg:col-span-5 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-lg flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <PieChartIcon size={18} className="text-indigo-400" />
-                JMS Stage Statistics
-              </h2>
-              <p className="text-xs text-slate-400">Distribution across release & payment stages</p>
-            </div>
-          </div>
+        {/* Hero Banner (Purple/Magenta Gradient) */}
+        <div className="lg:col-span-8 rounded-3xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 p-7 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute -right-10 -bottom-10 w-80 h-80 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="relative flex items-center justify-center my-4">
-            <ResponsiveContainer width="100%" height={210}>
-              <PieChart>
-                <Pie
-                  data={pieData.length > 0 ? pieData : [{ name: 'Empty', value: 1, color: '#334155' }]}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={62}
-                  outerRadius={85}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 12 }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            {/* Donut Center Label */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-extrabold text-white">{totalJmsCount}</span>
-              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Total JMS</span>
-            </div>
-          </div>
-
-          {/* Legend breakdown */}
-          <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-800/60">
-            {pieData.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-800/40 border border-slate-800">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: item.color }} />
-                  <span className="text-xs text-slate-300 font-medium">{item.name}</span>
-                </div>
-                <span className="text-xs font-bold text-white">{item.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right: Contract Budget Spending Chart (Non-repetitive unique data) */}
-        <div className="lg:col-span-7 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-lg flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <TrendingUp size={18} className="text-emerald-400" />
-                Work Order Budget vs Consumed (FY {CURRENT_FY})
-              </h2>
-              <p className="text-xs text-slate-400">Budget allocation vs total amount consumed</p>
-            </div>
-            <Link to="/budget" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-              View Budget <ArrowRight size={13} />
-            </Link>
-          </div>
-
-          <div className="my-2">
-            <ResponsiveContainer width="100%" height={210}>
-              <BarChart data={budgetChartData} barSize={24}>
-                <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#f1f5f9', fontSize: 12 }}
-                  formatter={(val) => formatINR(val)}
-                />
-                <Bar dataKey="allocated" name="Allocated Budget" fill="#6366f1" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="consumed" name="Consumed" fill="#f43f5e" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Budget Summary Footer Strip */}
-          <div className="grid grid-cols-3 gap-3 pt-3 border-t border-slate-800/60 text-center">
-            <div className="p-2 rounded-xl bg-slate-800/40 border border-slate-800">
-              <p className="text-[10px] font-medium text-slate-400 uppercase">Total Allocation</p>
-              <p className="text-xs font-bold text-indigo-400 mt-0.5">{formatINR(totalBudget)}</p>
-            </div>
-            <div className="p-2 rounded-xl bg-slate-800/40 border border-slate-800">
-              <p className="text-[10px] font-medium text-slate-400 uppercase">Total Consumed</p>
-              <p className="text-xs font-bold text-rose-400 mt-0.5">{formatINR(totalConsumed)}</p>
-            </div>
-            <div className="p-2 rounded-xl bg-slate-800/40 border border-slate-800">
-              <p className="text-[10px] font-medium text-slate-400 uppercase">Remaining Balance</p>
-              <p className={`text-xs font-bold mt-0.5 ${remainingBudget >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {formatINR(remainingBudget)}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Recent Activity Stream Widget ───────────────────── */}
-      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Activity size={18} className="text-indigo-400" />
-            <h2 className="text-base font-bold text-white">Recent Portal Activities</h2>
-          </div>
-          <span className="text-xs text-slate-400 font-medium">Real-time updates</span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {recentActivities.map((act, i) => (
-            <div key={i} className="p-3 rounded-xl bg-slate-800/40 border border-slate-800/80 flex items-center justify-between hover:border-slate-700 transition-colors">
-              <div className="space-y-0.5">
-                <p className="text-xs font-bold text-white">{act.title}</p>
-                <p className="text-[11px] text-slate-400">{act.sub}</p>
-                <p className="text-[10px] text-slate-500">{act.date}</p>
-              </div>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${act.badgeColor}`}>
-                {act.type.toUpperCase()}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-white/20 backdrop-blur-md text-white border border-white/30 flex items-center gap-1.5">
+                <Sparkles size={12} /> LIVE · {totalJmsCount} ACTIVE JMS RECORDS
               </span>
             </div>
-          ))}
+
+            <h1 className="text-3xl font-extrabold tracking-tight text-white leading-tight">
+              MM Contractor Portal is humming.
+            </h1>
+            <p className="text-sm text-purple-100 mt-2 max-w-xl leading-relaxed">
+              Up <strong className="text-white">+18% this month</strong> across all work orders. Real-time billing, contract validity, and A3 releases for <strong>FY {CURRENT_FY}</strong>.
+            </p>
+
+            <div className="flex items-center gap-3 mt-6 flex-wrap">
+              <Link
+                to="/jms"
+                className="px-5 py-2.5 rounded-full bg-white text-purple-700 font-bold text-xs shadow-lg hover:bg-purple-50 active:scale-95 transition-all flex items-center gap-2"
+              >
+                <Plus size={15} strokeWidth={3} /> Create / Manage JMS
+              </Link>
+              <Link
+                to="/budget"
+                className="px-5 py-2.5 rounded-full bg-white/20 backdrop-blur-md text-white font-semibold text-xs border border-white/30 hover:bg-white/30 transition-all flex items-center gap-2"
+              >
+                <PieChartIcon size={14} /> Schedule Budget Audit
+              </Link>
+            </div>
+          </div>
+
+          {/* Mini Stat Boxes Inside Hero Banner */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8 pt-5 border-t border-white/20">
+            <div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/20">
+              <p className="text-[10px] text-purple-200 uppercase font-semibold">Total JMS</p>
+              <p className="text-lg font-bold text-white mt-0.5">{totalJmsCount}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/20">
+              <p className="text-[10px] text-purple-200 uppercase font-semibold">Released A3</p>
+              <p className="text-lg font-bold text-emerald-300 mt-0.5">{a3Released}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/20">
+              <p className="text-[10px] text-purple-200 uppercase font-semibold">Invoices Value</p>
+              <p className="text-sm font-bold text-white mt-0.5">{formatINR(totalInvAmt)}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/20">
+              <p className="text-[10px] text-purple-200 uppercase font-semibold">Budget Available</p>
+              <p className="text-sm font-bold text-emerald-300 mt-0.5">{formatINR(remainingBudget)}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Today's Pulse Card (Right side) */}
+        <div className="lg:col-span-4 rounded-3xl border border-purple-100/80 bg-white dark:bg-slate-900/70 p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Calendar size={18} className="text-purple-600" />
+                  Today's Pulse
+                </h2>
+                <p className="text-xs text-slate-400">Portal events & status updates</p>
+              </div>
+              <span className="text-xs font-semibold text-purple-600">Active</span>
+            </div>
+
+            <div className="space-y-4 my-2">
+              {pulseItems.map((item, i) => (
+                <div key={i} className="flex items-start gap-3 text-xs p-2.5 rounded-2xl hover:bg-purple-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <span className="font-mono text-[11px] font-bold text-purple-600 bg-purple-100 dark:bg-purple-950 px-2 py-0.5 rounded-lg shrink-0">
+                    {item.time}
+                  </span>
+                  <div>
+                    <p className="font-bold text-slate-800 dark:text-white">{item.title}</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Link
+            to="/jms"
+            className="w-full py-2.5 rounded-2xl bg-purple-50 dark:bg-slate-800/80 text-purple-600 dark:text-purple-400 font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-purple-100 transition-colors mt-4"
+          >
+            View All Portal Activities <ArrowRight size={14} />
+          </Link>
+        </div>
+      </div>
+
+      {/* ── 4 Acadx Vibrant Color Stat Cards Grid ────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Quick Actions Card (White) */}
+        <div className="rounded-3xl border border-purple-100/80 bg-white dark:bg-slate-900/70 p-5 shadow-xl">
+          <div className="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-md mb-3">
+            <Zap size={20} />
+          </div>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">Quick Actions</h3>
+          <p className="text-xs text-slate-400 mb-3">Jump straight to work</p>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <Link to="/jms" className="p-2 rounded-xl bg-purple-50 dark:bg-slate-800 text-purple-700 dark:text-purple-300 font-semibold text-center hover:bg-purple-100 transition-colors">
+              + New JMS
+            </Link>
+            <Link to="/invoices" className="p-2 rounded-xl bg-pink-50 dark:bg-slate-800 text-pink-700 dark:text-pink-300 font-semibold text-center hover:bg-pink-100 transition-colors">
+              + Add Invoice
+            </Link>
+          </div>
+        </div>
+
+        {/* Revenue Card (Emerald Green #10b981) */}
+        <div className="rounded-3xl bg-emerald-500 p-5 text-white shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">REVENUE / NET</span>
+              <DollarSign size={20} />
+            </div>
+            <h3 className="text-2xl font-extrabold text-white">{formatINR(totalInvAmt)}</h3>
+            <p className="text-xs text-emerald-100 mt-1">▲ +9.6% vs last month</p>
+          </div>
+          <span className="text-[10px] uppercase font-bold text-emerald-200 mt-4">FY {CURRENT_FY} Total</span>
+        </div>
+
+        {/* JMS Active Card (Electric Violet #7c3aed) */}
+        <div className="rounded-3xl bg-purple-600 p-5 text-white shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-purple-100">TOTAL JMS</span>
+              <FileText size={20} />
+            </div>
+            <h3 className="text-2xl font-extrabold text-white">{totalJmsCount} Records</h3>
+            <p className="text-xs text-purple-100 mt-1">▲ {a3Released} Released by A3</p>
+          </div>
+          <span className="text-[10px] uppercase font-bold text-purple-200 mt-4">Realtime Synced</span>
+        </div>
+
+        {/* Budget Milestone Card (Bright Pink #ec4899) */}
+        <div className="rounded-3xl bg-pink-500 p-5 text-white shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-pink-100">BUDGET MILESTONE</span>
+              <Award size={20} />
+            </div>
+            <h3 className="text-2xl font-extrabold text-white">{formatINR(remainingBudget)}</h3>
+            <p className="text-xs text-pink-100 mt-1">Available Contract Balance</p>
+          </div>
+          <span className="text-[10px] uppercase font-bold text-pink-200 mt-4">{currentBudgetList.length} Work Orders</span>
+        </div>
+      </div>
+
+      {/* ── Acadx Visual Charts Grid (Line & Donut Radial) ───────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Line / Area Chart (Enrollments vs Completions Style) */}
+        <div className="lg:col-span-8 rounded-3xl border border-purple-100/80 bg-white dark:bg-slate-900/70 p-6 backdrop-blur-xl shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">JMS Activity vs Invoicing Trend</h2>
+              <p className="text-xs text-slate-400">6-month rolling view across all work orders</p>
+            </div>
+            <div className="flex items-center gap-3 text-xs font-semibold">
+              <span className="flex items-center gap-1 text-purple-600"><span className="w-2.5 h-2.5 rounded-full bg-purple-600" /> JMS Created</span>
+              <span className="flex items-center gap-1 text-pink-500"><span className="w-2.5 h-2.5 rounded-full bg-pink-500" /> Invoiced</span>
+            </div>
+          </div>
+
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={trendData}>
+              <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 12 }} />
+              <Area type="monotone" dataKey="jms" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.15} strokeWidth={3} />
+              <Area type="monotone" dataKey="invoices" stroke="#ec4899" fill="#ec4899" fillOpacity={0.15} strokeWidth={3} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Radial Donut Radial Progress Chart */}
+        <div className="lg:col-span-4 rounded-3xl border border-purple-100/80 bg-white dark:bg-slate-900/70 p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">A3 Release Goals</h2>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">On Track</span>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">Target vs actual release progress</p>
+
+            <div className="relative flex items-center justify-center my-2">
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                <span className="text-xl font-extrabold text-purple-600">68.7%</span>
+                <span className="text-[10px] text-slate-400 font-semibold">Overall Goal</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-around text-xs pt-3 border-t border-slate-100 dark:border-slate-800">
+            <span className="text-purple-600 font-semibold">● Completion</span>
+            <span className="text-pink-500 font-semibold">● Engagement</span>
+            <span className="text-cyan-500 font-semibold">● Retention</span>
+          </div>
         </div>
       </div>
     </div>

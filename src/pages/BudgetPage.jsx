@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
-import { Plus, Download, Upload, Pencil, Trash2, PieChart, TrendingUp, Clock, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react'
+import {
+  Plus, Download, Upload, Pencil, Trash2, PieChart, TrendingUp, Clock, AlertTriangle,
+  CheckCircle2, RefreshCw, LayoutGrid, List, Search, Eye, FileText, PieChart as PieChartIcon
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { budgetDb } from '../lib/db'
-import { formatINR, exportToExcel, CURRENT_FY, parseValidity, getBudgetRecordFy } from '../lib/utils'
+import { formatINR, exportToExcel, CURRENT_FY, parseValidity, formatValidityRange, getBudgetRecordFy } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
@@ -14,7 +17,6 @@ import FyTabs from '../components/FyTabs'
 import SlotTabs from '../components/SlotTabs'
 import SummaryModal from '../components/SummaryModal'
 import ModuleHeader from '../components/ModuleHeader'
-import { FileText, PieChart as PieChartIcon } from 'lucide-react'
 
 const EMPTY_FORM = {
   operation: '', description: '', arc_number: '', work_order_number: '',
@@ -35,19 +37,6 @@ const BUDGET_IMPORT_COLUMNS = [
   'operation','description','arc_number','work_order_number',
   'validity_of_contract','fo_total_budget',
 ]
-
-function UtilBar({ consumed, total }) {
-  const pct   = total > 0 ? Math.min(100, Math.round((consumed / total) * 100)) : 0
-  const color = pct > 85 ? '#E30613' : pct > 60 ? '#f59e0b' : '#10b981'
-  return (
-    <div className="flex items-center gap-2 min-w-[100px]">
-      <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
-      </div>
-      <span className="text-xs text-slate-400 w-8 text-right">{pct}%</span>
-    </div>
-  )
-}
 
 function StatCard({ label, value, sub, color = 'slate' }) {
   const cls = {
@@ -77,6 +66,8 @@ export default function BudgetPage() {
   const [form, setForm]             = useState(EMPTY_FORM)
   const [selectedRow, setSelectedRow] = useState(null)
   const [activeSlot, setActiveSlot]  = useState('all')
+  const [viewMode, setViewMode]      = useState('grid') // 'grid' or 'list'
+  const [searchQuery, setSearchQuery] = useState('')
 
   const VALIDITY_SLOTS = [
     { key: 'all',           label: 'All Work Orders' },
@@ -99,14 +90,23 @@ export default function BudgetPage() {
   const filteredRecords = useMemo(() => {
     return fyRecords.filter(r => {
       const { daysRemaining } = parseValidity(r.validity_of_contract)
-      if (activeSlot === 'all')           return true
-      if (activeSlot === 'active')        return daysRemaining === null || daysRemaining > 90
-      if (activeSlot === 'expiring_soon') return daysRemaining !== null && daysRemaining <= 90 && daysRemaining > 0
-      if (activeSlot === 'critical')      return daysRemaining !== null && daysRemaining <= 30 && daysRemaining > 0
-      if (activeSlot === 'expired')       return daysRemaining !== null && daysRemaining <= 0
+      if (activeSlot === 'active' && !(daysRemaining === null || daysRemaining > 90)) return false
+      if (activeSlot === 'expiring_soon' && !(daysRemaining !== null && daysRemaining <= 90 && daysRemaining > 0)) return false
+      if (activeSlot === 'critical' && !(daysRemaining !== null && daysRemaining <= 30 && daysRemaining > 0)) return false
+      if (activeSlot === 'expired' && !(daysRemaining !== null && daysRemaining <= 0)) return false
+
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase()
+        const wo = String(r.work_order_number || '').toLowerCase()
+        const op = String(r.operation || '').toLowerCase()
+        const arc = String(r.arc_number || '').toLowerCase()
+        const desc = String(r.description || '').toLowerCase()
+        if (!wo.includes(q) && !op.includes(q) && !arc.includes(q) && !desc.includes(q)) return false
+      }
+
       return true
     })
-  }, [fyRecords, activeSlot])
+  }, [fyRecords, activeSlot, searchQuery])
 
   const sortedRecords = useMemo(() => {
     return [...filteredRecords].sort((a, b) => {
@@ -117,7 +117,6 @@ export default function BudgetPage() {
         if (fyB === CURRENT_FY) return 1
         return fyB.localeCompare(fyA)
       }
-      // Sort by validity end date descending (newest validity contract on top)
       const resA = parseValidity(a.validity_of_contract)
       const resB = parseValidity(b.validity_of_contract)
       const tA = resA.endDate ? resA.endDate.getTime() : 0
@@ -226,20 +225,26 @@ export default function BudgetPage() {
           status = res.status
           formattedValidity = formatValidityRange(valStr)
         } catch (e) {
-          // fallback gracefully
+          formattedValidity = valStr
         }
 
         const badgeColor =
-          status === 'expired'       ? 'bg-jio-red-950/80 text-jio-red-400 border-jio-red-700/60' :
-          status === 'critical'      ? 'bg-amber-950/80 text-amber-400 border-amber-700/60' :
-          status === 'expiring_soon' ? 'bg-amber-950/60 text-amber-300 border-amber-800/40' :
-          'bg-emerald-950/80 text-emerald-400 border-emerald-700/60'
+          status === 'active'
+            ? 'bg-emerald-950/80 text-emerald-400 border-emerald-700/50'
+            : status === 'expiring_soon'
+            ? 'bg-amber-950/80 text-amber-400 border-amber-700/50'
+            : status === 'critical'
+            ? 'bg-rose-950/80 text-rose-400 border-rose-700/50'
+            : status === 'expired'
+            ? 'bg-slate-800 text-slate-400 border-slate-700'
+            : 'bg-slate-800 text-slate-400 border-slate-700'
 
         const badgeText =
-          daysRemaining === null || daysRemaining === undefined ? '' :
-          daysRemaining < 0      ? `Expired (${Math.abs(daysRemaining)}d ago)` :
-          daysRemaining === 0    ? `Expires Today` :
-          `${daysRemaining} days remaining`
+          daysRemaining === null || daysRemaining === undefined
+            ? 'No Expiry'
+            : daysRemaining <= 0
+            ? 'Expired'
+            : `${daysRemaining} days remaining`
 
         return (
           <div className="space-y-1 min-w-[170px]">
@@ -298,7 +303,7 @@ export default function BudgetPage() {
       {/* Header Banner & Executive Stat Cards */}
       <ModuleHeader
         title="Contract Budget Status"
-        subtitle={`Budget tracking & validity · ${activeFy === 'overall' ? 'All Financial Years' : `FY ${activeFy}`} · ${fyRecords.length} work orders`}
+        subtitle={`Browse, manage and track every work order in your budget library.`}
         actions={
           <div className="flex items-center gap-2 flex-wrap">
             <button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending} className="btn-ghost text-indigo-400 hover:text-white border border-indigo-800/40">
@@ -309,7 +314,12 @@ export default function BudgetPage() {
             {isAdmin && (
               <>
                 <button onClick={() => setImportOpen(true)} className="btn-ghost"><Upload size={14} /> Import</button>
-                <button onClick={openAdd} className="btn-primary"><Plus size={14} /> Add Budget</button>
+                <button
+                  onClick={openAdd}
+                  className="px-5 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 hover:opacity-95 active:scale-95 transition-all flex items-center gap-2"
+                >
+                  <Plus size={15} /> Add New Budget Work Order
+                </button>
               </>
             )}
           </div>
@@ -324,30 +334,184 @@ export default function BudgetPage() {
 
       <FyTabs basePath="/budget" />
 
-      {/* Budget Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-        <StatCard label="Work Orders"    value={fyRecords.length} sub={activeFy === 'overall' ? 'Overall' : `FY ${activeFy}`} color="blue" />
-        <StatCard label="FO Total Budget"value={formatINR(totalBudget)}   color="blue" />
-        <StatCard label="Total Consumed" value={formatINR(totalConsumed)} color="red" />
-        <StatCard label="Balance Avail"  value={formatINR(totalBalance)}  color={totalBalance < 0 ? 'red' : 'green'} />
-        <StatCard label="Active (>90d)"  value={activeCount}              sub="Valid contracts" color="green" />
-        <StatCard label="Expiring (≤90d)"value={expiringCount}            sub="Requires renewal" color="amber" />
-        <StatCard label="Expired"        value={expiredCount}             sub="Validity ended" color="red" />
+      {/* Acadx Style Filter & View Controls Bar */}
+      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-3 backdrop-blur-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* Search Bar */}
+        <div className="relative w-full md:w-80">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search work orders, operations, ARC..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          />
+        </div>
+
+        {/* Slot Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto">
+          {VALIDITY_SLOTS.map(slot => (
+            <button
+              key={slot.key}
+              onClick={() => setActiveSlot(slot.key)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+                activeSlot === slot.key
+                  ? 'bg-purple-600 text-white font-semibold shadow-md shadow-purple-600/30'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              {slot.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Grid / List View Mode Toggle Buttons */}
+        <div className="flex items-center gap-1 p-1 bg-slate-950 rounded-xl border border-slate-800 shrink-0">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              viewMode === 'grid'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <LayoutGrid size={14} /> Grid
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              viewMode === 'list'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <List size={14} /> List
+          </button>
+        </div>
       </div>
 
-      {/* Contract Validity Days Categorization Filter */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <SlotTabs slots={VALIDITY_SLOTS} activeSlot={activeSlot} onChange={setActiveSlot} />
-      </div>
+      {/* ── Content View Rendering (Grid Cards vs List Table) ── */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {sortedRecords.length === 0 ? (
+            <div className="col-span-full text-center py-12 glass-card text-slate-400">
+              No budget work orders found for the selected filter criteria.
+            </div>
+          ) : (
+            sortedRecords.map(b => {
+              const total = b.fo_total_budget || 0
+              const consumed = b.total_consumed || 0
+              const remaining = total - consumed
+              const isPositive = remaining >= 0
+              const { daysRemaining, status } = parseValidity(b.validity_of_contract)
 
-      {/* Table */}
-      <div className="glass-card p-4">
-        <DataTable columns={columns} data={sortedRecords} loading={isLoading}
-          emptyMessage="No budget entries found for selected criteria" onRowClick={(row) => setSelectedRow(row)} />
-      </div>
+              const badgeColor =
+                status === 'active'
+                  ? 'bg-emerald-950/90 text-emerald-400 border-emerald-700/60'
+                  : status === 'expiring_soon'
+                  ? 'bg-amber-950/90 text-amber-400 border-amber-700/60'
+                  : status === 'critical'
+                  ? 'bg-rose-950/90 text-rose-400 border-rose-700/60'
+                  : 'bg-slate-800 text-slate-400 border-slate-700'
+
+              return (
+                <div
+                  key={b.id}
+                  className="rounded-3xl border border-slate-800 bg-slate-900/70 backdrop-blur-xl shadow-xl overflow-hidden group hover:border-purple-500/50 transition-all duration-300 flex flex-col justify-between"
+                  onClick={() => setSelectedRow(b)}
+                >
+                  {/* Top Cover Banner */}
+                  <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 p-4 text-white relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white backdrop-blur-md">
+                        ACTIVE WORK ORDER
+                      </span>
+                      <span className="text-[10px] font-mono font-bold bg-black/20 px-2 py-0.5 rounded-md">
+                        {b.financial_year || activeFy}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-extrabold text-white tracking-tight leading-snug">
+                      WO #{b.work_order_number || '—'}
+                    </h3>
+                    <p className="text-xs text-purple-100 opacity-90 truncate mt-0.5">
+                      {b.operation || 'No operation details'}
+                    </p>
+                  </div>
+
+                  {/* Body Content */}
+                  <div className="p-4 space-y-3">
+                    <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
+                      <span className="text-slate-400 font-medium">ARC Number:</span>
+                      <span className="text-white font-mono font-semibold">{b.arc_number || '—'}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
+                      <span className="text-slate-400 font-medium">Validity:</span>
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${badgeColor}`}>
+                        {daysRemaining !== null && daysRemaining !== undefined ? `${daysRemaining} days remaining` : 'No Expiry'}
+                      </span>
+                    </div>
+
+                    {/* Financial Metrics Box */}
+                    <div className="grid grid-cols-3 gap-2 bg-slate-950/70 p-3 rounded-2xl border border-slate-800/80 text-center">
+                      <div>
+                        <p className="text-[9px] text-slate-400 uppercase font-semibold">FO Budget</p>
+                        <p className="text-xs font-bold text-blue-400 mt-0.5">{formatINR(total)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-slate-400 uppercase font-semibold">Consumed</p>
+                        <p className="text-xs font-bold text-rose-400 mt-0.5">{formatINR(consumed)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-slate-400 uppercase font-semibold">Remaining</p>
+                        <p className={`text-xs font-bold mt-0.5 ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {formatINR(remaining)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {b.description && (
+                      <p className="text-[11px] text-slate-400 line-clamp-2 italic bg-slate-950/30 p-2 rounded-xl">
+                        "{b.description}"
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div className="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between" onClick={e => e.stopPropagation()}>
+                    <PdfCell
+                      pdfUrl={b.pdf_url}
+                      folder="budget"
+                      isAdmin={isAdmin}
+                      onSave={url => pdfMutation.mutateAsync({ id: b.id, pdf_url: url })}
+                      onDelete={() => pdfMutation.mutateAsync({ id: b.id, pdf_url: null })}
+                    />
+                    {isAdmin && (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => openEdit(b)} className="p-1.5 rounded-lg hover:bg-slate-800 text-indigo-400 hover:text-white transition-colors">
+                          <Pencil size={14} />
+                        </button>
+                        <button onClick={() => handleDelete(b.id)} className="p-1.5 rounded-lg hover:bg-rose-950 text-rose-400 hover:text-white transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      ) : (
+        /* List Table View Mode */
+        <div className="glass-card p-4">
+          <DataTable columns={columns} data={sortedRecords} loading={isLoading}
+            emptyMessage="No budget entries found for selected criteria" onRowClick={(row) => setSelectedRow(row)} />
+        </div>
+      )}
 
       {/* Modal */}
-      <Modal open={formOpen} onClose={handleClose} title={editRow ? 'Edit Budget Entry' : 'Add Budget Entry'} size="max-w-xl">
+      <Modal open={formOpen} onClose={handleClose} title={editRow ? 'Edit Budget Entry' : 'Add Budget Work Order'} size="max-w-xl">
         <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
           {[
             { name: 'operation',            label: 'Operation' },
@@ -369,7 +533,7 @@ export default function BudgetPage() {
           <div className="col-span-2 flex justify-end gap-3 pt-2 border-t border-slate-700 mt-2">
             <button type="button" onClick={handleClose} className="btn-ghost">Cancel</button>
             <button type="submit" disabled={saveMutation.isPending} className="btn-primary">
-              {saveMutation.isPending ? 'Saving…' : editRow ? 'Update Entry' : 'Create Entry'}
+              {saveMutation.isPending ? 'Saving…' : editRow ? 'Update Entry' : 'Create Work Order'}
             </button>
           </div>
         </form>
@@ -378,7 +542,7 @@ export default function BudgetPage() {
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)}
         onImport={importRecords} columnMap={BUDGET_IMPORT_COLUMNS} title="Import Budget Records" />
 
-      {/* Summary Modal - opens when a row is clicked */}
+      {/* Summary Modal - opens when a card/row is clicked */}
       <SummaryModal row={selectedRow} onClose={() => setSelectedRow(null)} />
     </div>
   )

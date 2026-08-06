@@ -36,9 +36,9 @@
   }
 }
 
-/* ── Light Mode Comprehensive Styles & High Contrast Overrides ── */
+/* ── Light Mode Comprehensive Styles & Acadx High Contrast Overrides ── */
 html.light-mode body {
-  background-color: #f1f5f9 !important;
+  background-color: #faf8ff !important;
   color: #0f172a !important;
 }
 
@@ -49,21 +49,26 @@ html.light-mode .modal-box,
 html.light-mode div[class*="bg-slate-900"],
 html.light-mode div[class*="bg-slate-950"] {
   background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
+  border-color: #e9d5ff !important;
   color: #0f172a !important;
 }
 
 /* Sidebar Specific Light Mode Text */
+html.light-mode aside {
+  background-color: #ffffff !important;
+  border-right-color: #f3e8ff !important;
+}
 html.light-mode aside .sidebar-link {
-  color: #334155 !important;
+  color: #475569 !important;
 }
 html.light-mode aside .sidebar-link:hover {
-  background-color: #e2e8f0 !important;
-  color: #0f172a !important;
+  background-color: #f3e8ff !important;
+  color: #7e22ce !important;
 }
 html.light-mode aside .sidebar-link.active {
-  background-color: #4f46e5 !important;
+  background: linear-gradient(135deg, #9333ea 0%, #c026d3 100%) !important;
   color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(147, 51, 234, 0.3) !important;
 }
 
 /* Light Mode Text Overrides */
