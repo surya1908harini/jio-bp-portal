@@ -56,27 +56,6 @@ export default function ModuleHeader({
             {actions}
           </div>
         </div>
-
-        {/* ── Navigation Pill Buttons ─────────────────────────── */}
-        <div className="flex items-center gap-2 mt-5 pt-4 border-t border-slate-800/80 flex-wrap">
-          {tabs.map(tab => {
-            const isActive = location.pathname.startsWith(tab.path)
-            return (
-              <Link
-                key={tab.id}
-                to={tab.path}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 shadow-sm ${
-                  isActive
-                    ? 'bg-indigo-600 text-white shadow-indigo-600/40 ring-1 ring-indigo-400'
-                    : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/50'
-                }`}
-              >
-                <tab.icon size={14} />
-                <span>{tab.label}</span>
-              </Link>
-            )
-          })}
-        </div>
       </div>
 
       {/* ── 4 Executive Stat Cards Grid (if provided) ──────────── */}

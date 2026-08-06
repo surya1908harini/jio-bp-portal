@@ -15,6 +15,7 @@
   body {
     @apply bg-slate-950 text-slate-100 antialiased;
     min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   ::-webkit-scrollbar {
@@ -33,6 +34,49 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-jio-blue-500;
   }
+}
+
+/* ── Light Mode Styles ────────────────────────────────────────── */
+html.light-mode body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html.light-mode header,
+html.light-mode aside,
+html.light-mode .glass-card,
+html.light-mode .modal-box {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+}
+
+html.light-mode .data-table thead tr {
+  background-color: #f1f5f9 !important;
+}
+
+html.light-mode .data-table th {
+  color: #475569 !important;
+}
+
+html.light-mode .data-table td {
+  color: #1e293b !important;
+}
+
+html.light-mode .data-table tbody tr {
+  border-color: #f1f5f9 !important;
+}
+
+html.light-mode .data-table tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+html.light-mode .input-field,
+html.light-mode .select-field {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
 }
 
 @layer components {

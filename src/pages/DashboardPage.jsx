@@ -6,20 +6,11 @@ import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
 import { formatINR, formatDate, CURRENT_FY, getFinancialYear, getBudgetRecordFy } from '../lib/utils'
 import {
   FileText, Receipt, PieChart as PieChartIcon, Clock, CheckCircle, TrendingUp, Calendar,
-  ArrowRight, Shield, Zap, DollarSign, Activity, FileCheck, Layers, Settings, RefreshCw, CheckCircle2
+  ArrowRight, Shield, Activity, FileCheck, Layers, Settings, ChevronRight
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts'
 
 function StatCard({ icon: Icon, label, value, sub, trend, color = 'purple', to }) {
-  const bgColors = {
-    purple: 'bg-indigo-600/20 text-indigo-400 border-indigo-500/30',
-    green:  'bg-emerald-600/20 text-emerald-400 border-emerald-500/30',
-    amber:  'bg-amber-600/20 text-amber-400 border-amber-500/30',
-    red:    'bg-rose-600/20 text-rose-400 border-rose-500/30',
-    cyan:   'bg-cyan-600/20 text-cyan-400 border-cyan-500/30',
-    blue:   'bg-blue-600/20 text-blue-400 border-blue-500/30',
-  }
-
   const iconCircle = {
     purple: 'bg-indigo-600 shadow-indigo-600/30',
     green:  'bg-emerald-600 shadow-emerald-600/30',
@@ -60,7 +51,6 @@ function StatCard({ icon: Icon, label, value, sub, trend, color = 'purple', to }
 export default function DashboardPage() {
   const { user, isAdmin } = useAuth()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('all')
 
   // Fetch data
   const { data: jmsList = [] }     = useQuery({ queryKey: ['jms', 'all'],     queryFn: () => jmsDb.listAll() })
@@ -109,29 +99,32 @@ export default function DashboardPage() {
     { name: 'Invoiced', value: currentInvList.length, color: '#06b6d4' },
   ].filter(d => d.value > 0)
 
-  // Status Distribution Bar Chart
-  const statusDist = [
-    { name: 'Pending A1', count: currentJmsList.filter(j => ['Pending A1','Pending','A1'].includes(j.status)).length },
-    { name: 'Pending A2', count: currentJmsList.filter(j => ['Pending A2','A2'].includes(j.status)).length },
-    { name: 'Pending QSD', count: currentJmsList.filter(j => ['Pending QSD','QSD'].includes(j.status)).length },
-    { name: 'Pending A3', count: currentJmsList.filter(j => ['Pending A3','A3'].includes(j.status)).length },
-    { name: 'Released A3', count: a3Released },
+  // Budget Allocation Bar Chart (Unique non-repeated dataset)
+  const budgetChartData = currentBudgetList.slice(0, 5).map(b => ({
+    name: b.work_order_number ? String(b.work_order_number).slice(-6) : 'WO',
+    allocated: b.fo_total_budget || 0,
+    consumed: b.total_consumed || 0,
+  }))
+
+  // Activity stream items
+  const recentActivities = [
+    ...currentJmsList.slice(0, 3).map(j => ({
+      id: j.id,
+      title: `JMS ${j.jms_no || 'Record'} Status`,
+      sub: `WO: ${j.work_order_number || 'N/A'} · Status: ${j.status || 'Pending'}`,
+      date: formatDate(j.jms_create_date || j.created_at),
+      type: 'jms',
+      badgeColor: 'bg-indigo-950/80 text-indigo-400 border-indigo-700/50'
+    })),
+    ...currentInvList.slice(0, 2).map(inv => ({
+      id: inv.id,
+      title: `Invoice ${inv.inv_number || 'INV'}`,
+      sub: `Amount: ${formatINR(inv.grand_total)} · ${inv.payment_status || 'Pending'}`,
+      date: formatDate(inv.inv_date || inv.created_at),
+      type: 'invoice',
+      badgeColor: 'bg-cyan-950/80 text-cyan-400 border-cyan-700/50'
+    }))
   ]
-  const BAR_COLORS = ['#f59e0b', '#a855f7', '#06b6d4', '#3b82f6', '#10b981']
-
-  // Latest JMS records
-  const recentJms = [...currentJmsList].sort((a, b) => {
-    const da = a.jms_create_date || a.inv_date || a.a1_release_date || a.created_at || ''
-    const db = b.jms_create_date || b.inv_date || b.a1_release_date || b.created_at || ''
-    return db.localeCompare(da)
-  }).slice(0, 5)
-
-  // Latest Invoices
-  const recentInvoices = [...currentInvList].sort((a, b) => {
-    const da = a.inv_date || a.amount_received_date || a.created_at || ''
-    const db = b.inv_date || b.amount_received_date || b.created_at || ''
-    return db.localeCompare(da)
-  }).slice(0, 5)
 
   return (
     <div className="space-y-6">
@@ -161,31 +154,6 @@ export default function DashboardPage() {
               <span className="text-[10px] text-slate-400 font-mono">(Active)</span>
             </div>
           </div>
-        </div>
-
-        {/* ── Quick Action Pill Buttons Bar ───────────────────── */}
-        <div className="flex items-center gap-2 mt-6 pt-5 border-t border-slate-800/80 flex-wrap">
-          {[
-            { id: 'all', label: 'Overview', path: '/dashboard', icon: Layers },
-            { id: 'jms', label: 'JMS Details', path: '/jms', icon: FileText },
-            { id: 'invoices', label: 'Invoices', path: '/invoices', icon: Receipt },
-            { id: 'budget', label: 'Budget Status', path: '/budget', icon: PieChartIcon },
-            ...(isAdmin ? [{ id: 'admin', label: 'Admin Panel', path: '/admin', icon: Settings }] : []),
-          ].map(tab => (
-            <Link
-              key={tab.id}
-              to={tab.path}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 shadow-sm ${
-                activeTab === tab.id
-                  ? 'bg-indigo-600 text-white shadow-indigo-600/40 ring-1 ring-indigo-400'
-                  : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/50'
-              }`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <tab.icon size={14} />
-              <span>{tab.label}</span>
-            </Link>
-          ))}
         </div>
       </div>
 
@@ -227,9 +195,9 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* ── Visual Graphics Row (Donut Statistics & Bar Distribution) ── */}
+      {/* ── Visual Graphics Row (Donut Statistics & Budget Bar Comparison) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Donut Chart Statistics */}
+        {/* Left: Donut Chart Stage Statistics */}
         <div className="lg:col-span-5 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-lg flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <div>
@@ -283,43 +251,40 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right: Bar Chart Distribution */}
+        {/* Right: Contract Budget Spending Chart (Non-repetitive unique data) */}
         <div className="lg:col-span-7 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-lg flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Activity size={18} className="text-emerald-400" />
-                JMS Approval Stage Bar Chart
+                <TrendingUp size={18} className="text-emerald-400" />
+                Work Order Budget vs Consumed (FY {CURRENT_FY})
               </h2>
-              <p className="text-xs text-slate-400">Current status counts for FY {CURRENT_FY}</p>
+              <p className="text-xs text-slate-400">Budget allocation vs total amount consumed</p>
             </div>
-            <Link to="/jms" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-              View All <ArrowRight size={13} />
+            <Link to="/budget" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+              View Budget <ArrowRight size={13} />
             </Link>
           </div>
 
           <div className="my-2">
             <ResponsiveContainer width="100%" height={210}>
-              <BarChart data={statusDist} barSize={36}>
+              <BarChart data={budgetChartData} barSize={24}>
                 <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip
-                  contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#f1f5f9', fontSize: 13 }}
-                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                  contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#f1f5f9', fontSize: 12 }}
+                  formatter={(val) => formatINR(val)}
                 />
-                <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                  {statusDist.map((_, i) => (
-                    <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
-                  ))}
-                </Bar>
+                <Bar dataKey="allocated" name="Allocated Budget" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="consumed" name="Consumed" fill="#f43f5e" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Budget Overview Summary strip */}
+          {/* Budget Summary Footer Strip */}
           <div className="grid grid-cols-3 gap-3 pt-3 border-t border-slate-800/60 text-center">
             <div className="p-2 rounded-xl bg-slate-800/40 border border-slate-800">
-              <p className="text-[10px] font-medium text-slate-400 uppercase">FO Total Budget</p>
+              <p className="text-[10px] font-medium text-slate-400 uppercase">Total Allocation</p>
               <p className="text-xs font-bold text-indigo-400 mt-0.5">{formatINR(totalBudget)}</p>
             </div>
             <div className="p-2 rounded-xl bg-slate-800/40 border border-slate-800">
@@ -327,7 +292,7 @@ export default function DashboardPage() {
               <p className="text-xs font-bold text-rose-400 mt-0.5">{formatINR(totalConsumed)}</p>
             </div>
             <div className="p-2 rounded-xl bg-slate-800/40 border border-slate-800">
-              <p className="text-[10px] font-medium text-slate-400 uppercase">Remaining Budget</p>
+              <p className="text-[10px] font-medium text-slate-400 uppercase">Remaining Balance</p>
               <p className={`text-xs font-bold mt-0.5 ${remainingBudget >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {formatINR(remainingBudget)}
               </p>
@@ -336,112 +301,29 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Recent Details Section: Recent JMS & Invoices Grid ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent JMS Table */}
-        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-indigo-950/80 border border-indigo-700/50 flex items-center justify-center text-indigo-400">
-                <FileText size={16} />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-white">Recent JMS Records</h3>
-                <p className="text-[11px] text-slate-400">Latest entries for FY {CURRENT_FY}</p>
-              </div>
-            </div>
-            <Link to="/jms" className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1">
-              View All <ArrowRight size={13} />
-            </Link>
+      {/* ── Recent Activity Stream Widget ───────────────────── */}
+      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-lg">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Activity size={18} className="text-indigo-400" />
+            <h2 className="text-base font-bold text-white">Recent Portal Activities</h2>
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="text-slate-400 border-b border-slate-800">
-                  <th className="py-2.5 px-3 font-semibold">JMS No</th>
-                  <th className="py-2.5 px-3 font-semibold">Work Order</th>
-                  <th className="py-2.5 px-3 font-semibold">Net Amount</th>
-                  <th className="py-2.5 px-3 font-semibold text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                {recentJms.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-6 text-center text-slate-500">No recent JMS records found</td>
-                  </tr>
-                ) : (
-                  recentJms.map(j => (
-                    <tr key={j.id} className="hover:bg-slate-800/40 transition-colors cursor-pointer" onClick={() => navigate('/jms')}>
-                      <td className="py-2.5 px-3 font-bold text-white">{j.jms_no}</td>
-                      <td className="py-2.5 px-3 font-mono text-slate-400">{j.work_order_number || '—'}</td>
-                      <td className="py-2.5 px-3 font-semibold text-emerald-400">{formatINR(j.net_amount)}</td>
-                      <td className="py-2.5 px-3 text-right">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-700/50">
-                          {j.status || 'Pending A1'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <span className="text-xs text-slate-400 font-medium">Real-time updates</span>
         </div>
 
-        {/* Recent Invoices Table */}
-        <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-5 backdrop-blur-xl shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-cyan-950/80 border border-cyan-700/50 flex items-center justify-center text-cyan-400">
-                <Receipt size={16} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {recentActivities.map((act, i) => (
+            <div key={i} className="p-3 rounded-xl bg-slate-800/40 border border-slate-800/80 flex items-center justify-between hover:border-slate-700 transition-colors">
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-white">{act.title}</p>
+                <p className="text-[11px] text-slate-400">{act.sub}</p>
+                <p className="text-[10px] text-slate-500">{act.date}</p>
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-white">Recent Invoices</h3>
-                <p className="text-[11px] text-slate-400">Latest billing entries for FY {CURRENT_FY}</p>
-              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${act.badgeColor}`}>
+                {act.type.toUpperCase()}
+              </span>
             </div>
-            <Link to="/invoices" className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
-              View All <ArrowRight size={13} />
-            </Link>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="text-slate-400 border-b border-slate-800">
-                  <th className="py-2.5 px-3 font-semibold">Invoice No</th>
-                  <th className="py-2.5 px-3 font-semibold">Date</th>
-                  <th className="py-2.5 px-3 font-semibold">Grand Total</th>
-                  <th className="py-2.5 px-3 font-semibold text-right">Payment Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                {recentInvoices.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-6 text-center text-slate-500">No recent invoice records found</td>
-                  </tr>
-                ) : (
-                  recentInvoices.map(inv => (
-                    <tr key={inv.id} className="hover:bg-slate-800/40 transition-colors cursor-pointer" onClick={() => navigate('/invoices')}>
-                      <td className="py-2.5 px-3 font-bold text-white">{inv.inv_number || '—'}</td>
-                      <td className="py-2.5 px-3 text-slate-400">{formatDate(inv.inv_date)}</td>
-                      <td className="py-2.5 px-3 font-semibold text-cyan-400">{formatINR(inv.grand_total)}</td>
-                      <td className="py-2.5 px-3 text-right">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          inv.payment_status === 'Full Payment Received'
-                            ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-700/50'
-                            : 'bg-amber-950/80 text-amber-300 border border-amber-700/50'
-                        }`}>
-                          {inv.payment_status || 'Pending'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          ))}
         </div>
       </div>
     </div>

@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import {
   LayoutDashboard, FileText, Receipt, PieChart, Settings,
-  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User
+  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Sun, Moon
 } from 'lucide-react'
 import { FINANCIAL_YEARS } from '../lib/utils'
 
@@ -73,6 +74,7 @@ function NavItem({ item, collapsed }) {
 
 export default function Layout() {
   const { user, role, isAdmin, signOut } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -162,17 +164,38 @@ export default function Layout() {
             </div>
           </div>
 
-          {isAdmin && (
-            <div className="flex items-center gap-3 bg-slate-800/80 border border-jio-red-500/40 rounded-xl px-3 py-1.5 shadow-lg">
-              <img src="/mmc_logo.jpg" alt="MMC Admin Logo" className="w-7 h-7 rounded-lg object-cover ring-2 ring-jio-red-500/60" />
-              <div>
-                <p className="text-xs font-bold text-white leading-tight flex items-center gap-1">
-                  <Shield size={12} className="text-jio-red-400" /> MMC ADMIN
-                </p>
-                <p className="text-[10px] text-slate-400 leading-tight">{user?.email}</p>
+          <div className="flex items-center gap-3">
+            {/* Dark / Light Mode Toggle */}
+            <button
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+              className="p-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-white hover:bg-slate-700 transition-all duration-200 shadow-sm flex items-center gap-2 text-xs font-semibold"
+            >
+              {theme === 'dark' ? (
+                <>
+                  <Sun size={15} className="text-amber-400" />
+                  <span className="hidden sm:inline">Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <Moon size={15} className="text-indigo-400" />
+                  <span className="hidden sm:inline">Dark Mode</span>
+                </>
+              )}
+            </button>
+
+            {isAdmin && (
+              <div className="flex items-center gap-3 bg-slate-800/80 border border-jio-red-500/40 rounded-xl px-3 py-1.5 shadow-lg">
+                <img src="/mmc_logo.jpg" alt="MMC Admin Logo" className="w-7 h-7 rounded-lg object-cover ring-2 ring-jio-red-500/60" />
+                <div>
+                  <p className="text-xs font-bold text-white leading-tight flex items-center gap-1">
+                    <Shield size={12} className="text-jio-red-400" /> MMC ADMIN
+                  </p>
+                  <p className="text-[10px] text-slate-400 leading-tight">{user?.email}</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </header>
 
         {/* Mobile header */}
@@ -184,7 +207,12 @@ export default function Layout() {
             <img src="/mmc_logo.jpg" alt="MMC Logo" className="w-6 h-6 rounded-lg object-cover" />
             <p className="text-sm font-bold text-white">MMC</p>
           </div>
-          <div className="w-5" />
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white"
+          >
+            {theme === 'dark' ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-indigo-400" />}
+          </button>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 animate-fade-in">
