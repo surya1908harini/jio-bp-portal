@@ -44,20 +44,24 @@ export default function DashboardPage() {
   const currentBudgetList = budgetList.filter(b => getBudgetRecordFy(b) === CURRENT_FY)
 
   const totalJmsCount = currentJmsList.length
-  const pendingJms    = currentJmsList.filter(j => !['Released by A3','Invoiced'].includes(j.status)).length
+  const pendingA1     = currentJmsList.filter(j => j.status === 'Pending A1' || j.status === 'A1').length
+  const pendingA2     = currentJmsList.filter(j => j.status === 'Pending A2' || j.status === 'A2').length
+  const pendingQsd    = currentJmsList.filter(j => j.status === 'Pending QSD' || j.status === 'QSD').length
+  const pendingA3     = currentJmsList.filter(j => j.status === 'Pending A3' || j.status === 'A3').length
   const a3Released    = currentJmsList.filter(j => j.status === 'Released by A3' || j.status === 'Invoiced').length
-  const totalInvAmt   = currentInvList.reduce((s, i) => s + (i.grand_total || 0), 0)
-  const fullPaid      = currentInvList.filter(i => i.payment_status === 'Full Payment Received').length
 
+  const totalInvAmt   = currentInvList.reduce((s, i) => s + (i.grand_total || 0), 0)
   const totalBudget   = currentBudgetList.reduce((s, b) => s + (b.fo_total_budget || 0), 0)
   const totalConsumed = currentBudgetList.reduce((s, b) => s + (b.total_consumed || 0), 0)
   const remainingBudget = totalBudget - totalConsumed
 
-  // Donut chart status breakdown
+  // Donut chart: "JMS Details" (Pending A1, A2, QSD, A3 and Released A3 - No Invoiced)
   const pieData = [
-    { name: 'Released A3', value: a3Released, color: '#ec4899' },
-    { name: 'Pending Approval', value: pendingJms, color: '#8b5cf6' },
-    { name: 'Invoiced', value: currentInvList.length, color: '#06b6d4' },
+    { name: 'Pending A1',  value: pendingA1,  color: '#3b82f6' },
+    { name: 'Pending A2',  value: pendingA2,  color: '#8b5cf6' },
+    { name: 'Pending QSD', value: pendingQsd, color: '#f59e0b' },
+    { name: 'Pending A3',  value: pendingA3,  color: '#ec4899' },
+    { name: 'Released A3', value: a3Released, color: '#10b981' },
   ].filter(d => d.value > 0)
 
   // Realtime Monthly Activity Trend Data calculated dynamically from DB
@@ -103,10 +107,10 @@ export default function DashboardPage() {
           </div>
 
           <h1 className="text-3xl font-extrabold tracking-tight text-white leading-tight">
-            MM Contractor Portal is humming.
+            MM Contractor Portal Executive Overview
           </h1>
           <p className="text-sm text-purple-100 mt-2 max-w-2xl leading-relaxed">
-            Real-time billing, contract validity, and A3 releases tracking for <strong>FY {CURRENT_FY}</strong>.
+            Real-time billing, contract validity, and stage releases tracking for <strong>FY {CURRENT_FY}</strong>.
           </p>
 
           <div className="flex items-center gap-3 mt-6 flex-wrap">
@@ -120,7 +124,7 @@ export default function DashboardPage() {
               to="/budget"
               className="px-5 py-2.5 rounded-full bg-white/20 backdrop-blur-md text-white font-semibold text-xs border border-white/30 hover:bg-white/30 transition-all flex items-center gap-2"
             >
-              <PieChartIcon size={14} /> Schedule Budget Audit
+              <PieChartIcon size={14} /> View Budget Status
             </Link>
           </div>
         </div>
@@ -146,7 +150,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── 3 Focus Metric Cards Grid (Non-repetitive) ────────────── */}
+      {/* ── 3 Focus Cards Grid ────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Quick Actions Card */}
         <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl">
@@ -165,30 +169,30 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Revenue Card (Emerald Green #10b981) */}
+        {/* Invoicing Summary Card */}
         <div className="rounded-3xl bg-emerald-600 p-5 text-white shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">REVENUE / NET</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">INVOICING TOTAL</span>
               <DollarSign size={20} />
             </div>
             <h3 className="text-2xl font-extrabold text-white">{formatINR(totalInvAmt)}</h3>
-            <p className="text-xs text-emerald-100 mt-1">{currentInvList.length} Total Invoices</p>
+            <p className="text-xs text-emerald-100 mt-1">{currentInvList.length} Total Invoices Issued</p>
           </div>
-          <span className="text-[10px] uppercase font-bold text-emerald-200 mt-4">FY {CURRENT_FY} Total</span>
+          <span className="text-[10px] uppercase font-bold text-emerald-200 mt-4">FY {CURRENT_FY} Billing</span>
         </div>
 
-        {/* JMS Active Card (Electric Violet #7c3aed) */}
+        {/* Contract Budget Overview Card */}
         <div className="rounded-3xl bg-purple-600 p-5 text-white shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-purple-100">TOTAL JMS</span>
-              <FileText size={20} />
+              <span className="text-xs font-bold uppercase tracking-wider text-purple-100">CONTRACT BUDGET</span>
+              <PieChartIcon size={20} />
             </div>
-            <h3 className="text-2xl font-extrabold text-white">{totalJmsCount} Records</h3>
-            <p className="text-xs text-purple-100 mt-1">{a3Released} Released by A3</p>
+            <h3 className="text-2xl font-extrabold text-white">{formatINR(totalBudget)}</h3>
+            <p className="text-xs text-purple-100 mt-1">Consumed: {formatINR(totalConsumed)}</p>
           </div>
-          <span className="text-[10px] uppercase font-bold text-purple-200 mt-4">Realtime Synced</span>
+          <span className="text-[10px] uppercase font-bold text-purple-200 mt-4">{currentBudgetList.length} Work Orders Active</span>
         </div>
       </div>
 
@@ -198,8 +202,8 @@ export default function DashboardPage() {
         <div className="lg:col-span-8 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 backdrop-blur-xl shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-base font-bold text-white">Monthly JMS Activity vs Invoicing Trend (FY {CURRENT_FY})</h2>
-              <p className="text-xs text-slate-400">Dynamic monthly distribution calculated from live database records</p>
+              <h2 className="text-base font-bold text-white">Monthly Activity Trend (FY {CURRENT_FY})</h2>
+              <p className="text-xs text-slate-400">Live distribution of JMS entries vs Invoices</p>
             </div>
             <div className="flex items-center gap-3 text-xs font-semibold">
               <span className="flex items-center gap-1 text-purple-400"><span className="w-2.5 h-2.5 rounded-full bg-purple-500" /> JMS Records</span>
@@ -218,24 +222,26 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        {/* Radial Donut Progress Chart */}
+        {/* Donut Progress Chart: "JMS Details" (Pending A1, A2, QSD, A3 and Released A3) */}
         <div className="lg:col-span-4 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-base font-bold text-white">A3 Release Goals</h2>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-700/50">On Track</span>
+              <h2 className="text-base font-bold text-white">JMS Details</h2>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-950 text-purple-300 border border-purple-800">
+                FY {CURRENT_FY}
+              </span>
             </div>
-            <p className="text-xs text-slate-400 mb-4">Stage release breakdown</p>
+            <p className="text-xs text-slate-400 mb-4">Stage-wise release & approval breakdown</p>
 
             <div className="relative flex items-center justify-center my-2">
-              <ResponsiveContainer width="100%" height={160}>
+              <ResponsiveContainer width="100%" height={170}>
                 <PieChart>
                   <Pie
                     data={pieData.length > 0 ? pieData : [{ name: 'Empty', value: 1, color: '#334155' }]}
                     cx="50%"
                     cy="50%"
-                    innerRadius={50}
-                    outerRadius={70}
+                    innerRadius={52}
+                    outerRadius={72}
                     paddingAngle={4}
                     dataKey="value"
                   >
@@ -243,6 +249,7 @@ export default function DashboardPage() {
                       <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                     ))}
                   </Pie>
+                  <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
@@ -252,10 +259,17 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex justify-around text-xs pt-3 border-t border-slate-800">
-            <span className="text-pink-400 font-semibold">● Released A3</span>
-            <span className="text-purple-400 font-semibold">● Pending Approval</span>
-            <span className="text-cyan-400 font-semibold">● Invoiced</span>
+          {/* Legend for Pending A1, A2, QSD, A3 & Released A3 */}
+          <div className="grid grid-cols-2 gap-1.5 pt-3 border-t border-slate-800 text-[11px]">
+            {pieData.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between p-1.5 rounded-lg bg-slate-950/60 border border-slate-800">
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: item.color }} />
+                  <span className="text-slate-300 font-medium truncate">{item.name}</span>
+                </div>
+                <span className="font-bold text-white ml-1">{item.value}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

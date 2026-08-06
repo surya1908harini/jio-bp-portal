@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import {
   Plus, Download, Upload, Pencil, Trash2, PieChart, TrendingUp, Clock, AlertTriangle,
-  CheckCircle2, RefreshCw, LayoutGrid, List, Search, Eye, FileText, PieChart as PieChartIcon
+  CheckCircle2, RefreshCw, LayoutGrid, List, Search, Eye, FileText, PieChart as PieChartIcon, ChevronLeft, ChevronRight
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
@@ -38,21 +38,7 @@ const BUDGET_IMPORT_COLUMNS = [
   'validity_of_contract','fo_total_budget',
 ]
 
-function StatCard({ label, value, sub, color = 'slate' }) {
-  const cls = {
-    blue: 'border-jio-blue-700/40 bg-jio-blue-900/30', green: 'border-emerald-700/40 bg-emerald-900/20',
-    amber: 'border-amber-700/40 bg-amber-900/20', purple: 'border-purple-700/40 bg-purple-900/20',
-    cyan: 'border-cyan-700/40 bg-cyan-900/20', red: 'border-jio-red-700/40 bg-jio-red-900/20',
-    slate: 'border-slate-700/40 bg-slate-800/40',
-  }
-  return (
-    <div className={`rounded-xl border p-3 ${cls[color]}`}>
-      <p className="text-[11px] font-medium text-slate-400 mb-1">{label}</p>
-      <p className="text-base font-bold text-white">{value}</p>
-      {sub && <p className="text-[10px] text-slate-500 mt-0.5">{sub}</p>}
-    </div>
-  )
-}
+const ITEMS_PER_PAGE = 10
 
 export default function BudgetPage() {
   const { user, isAdmin } = useAuth()
@@ -68,6 +54,7 @@ export default function BudgetPage() {
   const [activeSlot, setActiveSlot]  = useState('all')
   const [viewMode, setViewMode]      = useState('grid') // 'grid' or 'list'
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
 
   const VALIDITY_SLOTS = [
     { key: 'all',           label: 'All Work Orders' },
@@ -126,19 +113,20 @@ export default function BudgetPage() {
     })
   }, [filteredRecords])
 
+  // Reset pagination to page 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeSlot, searchQuery, activeFy])
+
+  const totalPages = Math.max(1, Math.ceil(sortedRecords.length / ITEMS_PER_PAGE))
+  const paginatedRecords = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return sortedRecords.slice(start, start + ITEMS_PER_PAGE)
+  }, [sortedRecords, currentPage])
+
   const totalBudget    = fyRecords.reduce((s, r) => s + (r.fo_total_budget    || 0), 0)
   const totalConsumed  = fyRecords.reduce((s, r) => s + (r.total_consumed     || 0), 0)
   const totalBalance   = totalBudget - totalConsumed
-
-  const activeCount    = fyRecords.filter(r => (parseValidity(r.validity_of_contract).daysRemaining ?? 999) > 90).length
-  const expiringCount  = fyRecords.filter(r => {
-    const d = parseValidity(r.validity_of_contract).daysRemaining
-    return d !== null && d <= 90 && d > 0
-  }).length
-  const expiredCount   = fyRecords.filter(r => {
-    const d = parseValidity(r.validity_of_contract).daysRemaining
-    return d !== null && d <= 0
-  }).length
 
   const saveMutation = useMutation({
     mutationFn: (payload) => {
@@ -235,8 +223,6 @@ export default function BudgetPage() {
             ? 'bg-amber-950/80 text-amber-400 border-amber-700/50'
             : status === 'critical'
             ? 'bg-rose-950/80 text-rose-400 border-rose-700/50'
-            : status === 'expired'
-            ? 'bg-slate-800 text-slate-400 border-slate-700'
             : 'bg-slate-800 text-slate-400 border-slate-700'
 
         const badgeText =
@@ -334,8 +320,8 @@ export default function BudgetPage() {
 
       <FyTabs basePath="/budget" />
 
-      {/* Acadx Style Filter & View Controls Bar */}
-      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-3 backdrop-blur-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+      {/* Filter & View Controls Bar */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 backdrop-blur-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Search Bar */}
         <div className="relative w-full md:w-80">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -392,119 +378,166 @@ export default function BudgetPage() {
 
       {/* ── Content View Rendering (Grid Cards vs List Table) ── */}
       {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {sortedRecords.length === 0 ? (
-            <div className="col-span-full text-center py-12 glass-card text-slate-400">
-              No budget work orders found for the selected filter criteria.
-            </div>
-          ) : (
-            sortedRecords.map(b => {
-              const total = b.fo_total_budget || 0
-              const consumed = b.total_consumed || 0
-              const remaining = total - consumed
-              const isPositive = remaining >= 0
-              const { daysRemaining, status } = parseValidity(b.validity_of_contract)
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {sortedRecords.length === 0 ? (
+              <div className="col-span-full text-center py-12 glass-card text-slate-400">
+                No budget work orders found for the selected filter criteria.
+              </div>
+            ) : (
+              paginatedRecords.map(b => {
+                const total = b.fo_total_budget || 0
+                const consumed = b.total_consumed || 0
+                const remaining = total - consumed
+                const isPositive = remaining >= 0
+                const { daysRemaining, status } = parseValidity(b.validity_of_contract)
 
-              const badgeColor =
-                status === 'active'
-                  ? 'bg-emerald-950/90 text-emerald-400 border-emerald-700/60'
-                  : status === 'expiring_soon'
-                  ? 'bg-amber-950/90 text-amber-400 border-amber-700/60'
-                  : status === 'critical'
-                  ? 'bg-rose-950/90 text-rose-400 border-rose-700/60'
-                  : 'bg-slate-800 text-slate-400 border-slate-700'
+                const badgeColor =
+                  status === 'active'
+                    ? 'bg-emerald-950/90 text-emerald-400 border-emerald-700/60'
+                    : status === 'expiring_soon'
+                    ? 'bg-amber-950/90 text-amber-400 border-amber-700/60'
+                    : status === 'critical'
+                    ? 'bg-rose-950/90 text-rose-400 border-rose-700/60'
+                    : 'bg-slate-800 text-slate-400 border-slate-700'
 
-              return (
-                <div
-                  key={b.id}
-                  className="rounded-3xl border border-slate-800 bg-slate-900/70 backdrop-blur-xl shadow-xl overflow-hidden group hover:border-purple-500/50 transition-all duration-300 flex flex-col justify-between"
-                  onClick={() => setSelectedRow(b)}
-                >
-                  {/* Top Cover Banner */}
-                  <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 p-4 text-white relative">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white backdrop-blur-md">
-                        ACTIVE WORK ORDER
-                      </span>
-                      <span className="text-[10px] font-mono font-bold bg-black/20 px-2 py-0.5 rounded-md">
-                        {b.financial_year || activeFy}
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-extrabold text-white tracking-tight leading-snug">
-                      WO #{b.work_order_number || '—'}
-                    </h3>
-                    <p className="text-xs text-purple-100 opacity-90 truncate mt-0.5">
-                      {b.operation || 'No operation details'}
-                    </p>
-                  </div>
-
-                  {/* Body Content */}
-                  <div className="p-4 space-y-3">
-                    <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
-                      <span className="text-slate-400 font-medium">ARC Number:</span>
-                      <span className="text-white font-mono font-semibold">{b.arc_number || '—'}</span>
-                    </div>
-
-                    <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
-                      <span className="text-slate-400 font-medium">Validity Period:</span>
-                      <div className="text-right">
-                        <div className="text-white font-mono text-xs font-semibold">
-                          {formatValidityRange(b.validity_of_contract) || b.validity_of_contract || '—'}
-                        </div>
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border mt-0.5 inline-block ${badgeColor}`}>
-                          {daysRemaining !== null && daysRemaining !== undefined ? `${daysRemaining} days remaining` : 'No Expiry'}
+                return (
+                  <div
+                    key={b.id}
+                    className="rounded-3xl border border-slate-800 bg-slate-900/70 backdrop-blur-xl shadow-xl overflow-hidden group hover:border-purple-500/50 transition-all duration-300 flex flex-col justify-between"
+                    onClick={() => setSelectedRow(b)}
+                  >
+                    {/* Top Cover Banner */}
+                    <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 p-4 text-white relative">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white backdrop-blur-md">
+                          ACTIVE WORK ORDER
+                        </span>
+                        <span className="text-[10px] font-mono font-bold bg-black/20 px-2 py-0.5 rounded-md">
+                          {b.financial_year || activeFy}
                         </span>
                       </div>
-                    </div>
-
-                    {/* Financial Metrics Box */}
-                    <div className="grid grid-cols-3 gap-2 bg-slate-950/70 p-3 rounded-2xl border border-slate-800/80 text-center">
-                      <div>
-                        <p className="text-[9px] text-slate-400 uppercase font-semibold">FO Budget</p>
-                        <p className="text-xs font-bold text-blue-400 mt-0.5">{formatINR(total)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] text-slate-400 uppercase font-semibold">Consumed</p>
-                        <p className="text-xs font-bold text-rose-400 mt-0.5">{formatINR(consumed)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] text-slate-400 uppercase font-semibold">Remaining</p>
-                        <p className={`text-xs font-bold mt-0.5 ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {formatINR(remaining)}
-                        </p>
-                      </div>
-                    </div>
-
-                    {b.description && (
-                      <p className="text-[11px] text-slate-400 line-clamp-2 italic bg-slate-950/30 p-2 rounded-xl">
-                        "{b.description}"
+                      <h3 className="text-lg font-extrabold text-white tracking-tight leading-snug">
+                        WO #{b.work_order_number || '—'}
+                      </h3>
+                      <p className="text-xs text-purple-100 opacity-90 truncate mt-0.5">
+                        {b.operation || 'No operation details'}
                       </p>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Footer Actions */}
-                  <div className="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between" onClick={e => e.stopPropagation()}>
-                    <PdfCell
-                      pdfUrl={b.pdf_url}
-                      folder="budget"
-                      isAdmin={isAdmin}
-                      onSave={url => pdfMutation.mutateAsync({ id: b.id, pdf_url: url })}
-                      onDelete={() => pdfMutation.mutateAsync({ id: b.id, pdf_url: null })}
-                    />
-                    {isAdmin && (
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => openEdit(b)} className="p-1.5 rounded-lg hover:bg-slate-800 text-indigo-400 hover:text-white transition-colors">
-                          <Pencil size={14} />
-                        </button>
-                        <button onClick={() => handleDelete(b.id)} className="p-1.5 rounded-lg hover:bg-rose-950 text-rose-400 hover:text-white transition-colors">
-                          <Trash2 size={14} />
-                        </button>
+                    {/* Body Content */}
+                    <div className="p-4 space-y-3">
+                      <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
+                        <span className="text-slate-400 font-medium">ARC Number:</span>
+                        <span className="text-white font-mono font-semibold">{b.arc_number || '—'}</span>
                       </div>
-                    )}
+
+                      <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
+                        <span className="text-slate-400 font-medium">Validity Period:</span>
+                        <div className="text-right">
+                          <div className="text-white font-mono text-xs font-semibold">
+                            {formatValidityRange(b.validity_of_contract) || b.validity_of_contract || '—'}
+                          </div>
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border mt-0.5 inline-block ${badgeColor}`}>
+                            {daysRemaining !== null && daysRemaining !== undefined ? `${daysRemaining} days remaining` : 'No Expiry'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Financial Metrics Box */}
+                      <div className="grid grid-cols-3 gap-2 bg-slate-950/70 p-3 rounded-2xl border border-slate-800/80 text-center">
+                        <div>
+                          <p className="text-[9px] text-slate-400 uppercase font-semibold">FO Budget</p>
+                          <p className="text-xs font-bold text-blue-400 mt-0.5">{formatINR(total)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-slate-400 uppercase font-semibold">Consumed</p>
+                          <p className="text-xs font-bold text-rose-400 mt-0.5">{formatINR(consumed)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-slate-400 uppercase font-semibold">Remaining</p>
+                          <p className={`text-xs font-bold mt-0.5 ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {formatINR(remaining)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {b.description && (
+                        <p className="text-[11px] text-slate-400 line-clamp-2 italic bg-slate-950/30 p-2 rounded-xl">
+                          "{b.description}"
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between" onClick={e => e.stopPropagation()}>
+                      <PdfCell
+                        pdfUrl={b.pdf_url}
+                        folder="budget"
+                        isAdmin={isAdmin}
+                        onSave={url => pdfMutation.mutateAsync({ id: b.id, pdf_url: url })}
+                        onDelete={() => pdfMutation.mutateAsync({ id: b.id, pdf_url: null })}
+                      />
+                      {isAdmin && (
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => openEdit(b)} className="p-1.5 rounded-lg hover:bg-slate-800 text-indigo-400 hover:text-white transition-colors">
+                            <Pencil size={14} />
+                          </button>
+                          <button onClick={() => handleDelete(b.id)} className="p-1.5 rounded-lg hover:bg-rose-950 text-rose-400 hover:text-white transition-colors">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                )
+              })
+            )}
+          </div>
+
+          {/* Pagination Controls Bar (Exactly 10 items per page) */}
+          {sortedRecords.length > 0 && (
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+              <span className="text-xs text-slate-400 font-medium">
+                Showing <strong className="text-white">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to{' '}
+                <strong className="text-white">{Math.min(currentPage * ITEMS_PER_PAGE, sortedRecords.length)}</strong> of{' '}
+                <strong className="text-white">{sortedRecords.length}</strong> work orders
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 hover:bg-slate-700 transition-colors"
+                >
+                  <ChevronLeft size={14} /> Previous
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
+                        currentPage === pageNum
+                          ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                          : 'bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-white hover:bg-slate-700'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
                 </div>
-              )
-            })
+
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 hover:bg-slate-700 transition-colors"
+                >
+                  Next <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
           )}
         </div>
       ) : (
