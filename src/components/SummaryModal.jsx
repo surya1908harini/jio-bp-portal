@@ -57,6 +57,28 @@ export default function SummaryModal({ row, onClose }) {
           </div>
           <SummaryRow label="ARC Number" value={arc_number} />
           <SummaryRow label="Validity" value={formatValidityRange(validity_of_contract)} />
+          {row.pdf_url && (
+            <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-800/50 transition-colors border-t border-slate-700/40 mt-1">
+              <span className="text-xs font-medium text-slate-400">PDF Document</span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={row.pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1 rounded-lg bg-red-950/80 text-red-400 border border-red-700/50 hover:bg-red-900 hover:text-white transition-colors text-xs font-semibold"
+                >
+                  View PDF
+                </a>
+                <a
+                  href={row.pdf_url}
+                  download
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors text-xs font-medium"
+                >
+                  Download PDF
+                </a>
+              </div>
+            </div>
+          )}
           {description && (
             <div className="mt-2 px-3 py-2 rounded-lg bg-slate-900/50 border border-slate-700/30">
               <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Description</p>

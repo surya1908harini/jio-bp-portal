@@ -189,17 +189,22 @@ export function formatValidityRange(validityStr) {
 }
 
 // ──────────────────────────────────────────────
-// Derive financial year for budget entries from validity end date
+// Derive financial year for budget entries based on contract validity expiry year
+// Expiry 2024 -> FY 23-24 (2023-24)
+// Expiry 2025 -> FY 24-25 (2024-25)
+// Expiry 2026 -> FY 25-26 (2025-26)
+// Expiry 2027 -> FY 26-27 (2026-27)
 // ──────────────────────────────────────────────
 export function getBudgetRecordFy(r) {
   if (!r) return '2024-25'
   try {
     const { endDate, startDate } = parseValidity(r.validity_of_contract)
-    if (endDate && !isNaN(endDate.getTime())) {
-      return getFinancialYear(endDate)
-    }
-    if (startDate && !isNaN(startDate.getTime())) {
-      return getFinancialYear(startDate)
+    const targetDate = endDate || startDate
+    if (targetDate && !isNaN(targetDate.getTime())) {
+      const expiryYear = targetDate.getFullYear()
+      const startYear = expiryYear - 1
+      const shortExpiry = String(expiryYear).slice(2)
+      return `${startYear}-${shortExpiry}`
     }
   } catch (e) {
     // fallback

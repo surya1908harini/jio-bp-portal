@@ -254,13 +254,18 @@ export default function BudgetPage() {
     },
     { key: 'fo_total_budget',     header: 'FO Total Budget',   render: r => <span className="text-blue-400 font-semibold">{formatINR(r.fo_total_budget)}</span> },
     {
-      key: 'total_consumed',      header: 'Budget Consumed',
-      render: r => (
-        <div className="space-y-1 min-w-[160px]">
-          <div className="text-jio-red-400 font-medium text-xs">{formatINR(r.total_consumed)}</div>
-          <UtilBar consumed={r.total_consumed} total={r.fo_total_budget} />
-        </div>
-      )
+      key: 'balance_available', header: 'Remaining Budget',
+      render: r => {
+        const total = r.fo_total_budget || 0
+        const consumed = r.total_consumed || 0
+        const remaining = total - consumed
+        const isPositive = remaining >= 0
+        return (
+          <span className={`font-bold text-xs ${isPositive ? 'text-emerald-400' : 'text-jio-red-400'}`}>
+            {formatINR(remaining)}
+          </span>
+        )
+      }
     },
     {
       key: 'pdf', header: 'PDF Doc', sortable: false,
