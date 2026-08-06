@@ -13,6 +13,8 @@ import PdfCell from '../components/PdfCell'
 import FyTabs from '../components/FyTabs'
 import SlotTabs from '../components/SlotTabs'
 import SummaryModal from '../components/SummaryModal'
+import ModuleHeader from '../components/ModuleHeader'
+import { FileText, PieChart as PieChartIcon } from 'lucide-react'
 
 const EMPTY_FORM = {
   operation: '', description: '', arc_number: '', work_order_number: '',
@@ -287,36 +289,38 @@ export default function BudgetPage() {
     }] : []),
   ]
 
+  const totalFoBudget = fyRecords.reduce((s, b) => s + (b.fo_total_budget || 0), 0)
+  const totalConsumedBudget = fyRecords.reduce((s, b) => s + (b.total_consumed || 0), 0)
+  const totalRemainingBudget = totalFoBudget - totalConsumedBudget
+
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Budget Status</h1>
-          <p className="text-sm text-slate-400">
-            {activeFy === 'overall' ? 'Overall Contract Budget Tracking' : `FY ${activeFy} Budget Tracking`}
-            <span className="ml-2 font-semibold text-slate-300">· {fyRecords.length} work orders</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending} className="btn-ghost flex items-center gap-2 text-jio-blue-400 hover:text-white border border-jio-blue-800/40">
-            <RefreshCw size={15} className={syncMutation.isPending ? 'animate-spin' : ''} />
-            {syncMutation.isPending ? 'Syncing…' : 'Sync JMS Work Orders'}
-          </button>
-          <button onClick={handleExport} className="btn-ghost flex items-center gap-2">
-            <Download size={16} /> Export
-          </button>
-          {isAdmin && (
-            <>
-              <button onClick={() => setImportOpen(true)} className="btn-ghost flex items-center gap-2">
-                <Upload size={16} /> Import
-              </button>
-              <button onClick={openAdd} className="btn-primary flex items-center gap-2">
-                <Plus size={16} /> Add Budget Entry
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+      {/* Header Banner & Executive Stat Cards */}
+      <ModuleHeader
+        title="Contract Budget Status"
+        subtitle={`Budget tracking & validity · ${activeFy === 'overall' ? 'All Financial Years' : `FY ${activeFy}`} · ${fyRecords.length} work orders`}
+        actions={
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending} className="btn-ghost text-indigo-400 hover:text-white border border-indigo-800/40">
+              <RefreshCw size={14} className={syncMutation.isPending ? 'animate-spin' : ''} />
+              {syncMutation.isPending ? 'Syncing…' : 'Sync JMS Work Orders'}
+            </button>
+            <button onClick={handleExport} className="btn-ghost"><Download size={14} /> Export</button>
+            {isAdmin && (
+              <>
+                <button onClick={() => setImportOpen(true)} className="btn-ghost"><Upload size={14} /> Import</button>
+                <button onClick={openAdd} className="btn-primary"><Plus size={14} /> Add Budget</button>
+              </>
+            )}
+          </div>
+        }
+        stats={[
+          { icon: FileText, label: 'Work Orders', value: fyRecords.length, sub: activeFy === 'overall' ? 'All FY' : `FY ${activeFy}`, color: 'purple' },
+          { icon: TrendingUp, label: 'FO Total Budget', value: formatINR(totalFoBudget), sub: 'Total Allocation', color: 'blue' },
+          { icon: PieChartIcon, label: 'Budget Consumed', value: formatINR(totalConsumedBudget), sub: 'Total Spent', color: 'red' },
+          { icon: CheckCircle2, label: 'Remaining Budget', value: formatINR(totalRemainingBudget), sub: 'Available Balance', color: totalRemainingBudget >= 0 ? 'green' : 'red' },
+        ]}
+      />
 
       <FyTabs basePath="/budget" />
 

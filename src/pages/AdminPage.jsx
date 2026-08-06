@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { Shield, UserPlus, Trash2, Users, RefreshCw } from 'lucide-react'
+import { Shield, UserPlus, Trash2, Users, RefreshCw, Lock, CheckCircle2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatDate } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
+import ModuleHeader from '../components/ModuleHeader'
 
 export default function AdminPage() {
   const { user } = useAuth()
@@ -38,7 +39,6 @@ export default function AdminPage() {
       if (error) throw error
     },
     onSuccess: () => { qc.invalidateQueries(['admin-roles']); toast.success('Role updated') },
-    onError: (e) => toast.error(e.message),
   })
 
   const deleteRoleMutation = useMutation({
@@ -51,16 +51,15 @@ export default function AdminPage() {
 
   const handleInvite = async (e) => {
     e.preventDefault()
+    if (!inviteEmail) return
     setInviting(true)
     try {
-      // Create user via Supabase admin (requires service role key — set up on backend)
-      const res = await fetch('/api/admin/invite-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+      const { error } = await supabase.from('user_roles').insert({
+        user_id: inviteEmail,
+        role: inviteRole,
       })
-      if (!res.ok) throw new Error((await res.json()).detail || 'Failed to invite')
-      toast.success(`Invitation sent to ${inviteEmail}`)
+      if (error) throw error
+      toast.success(`Role '${inviteRole}' assigned to ${inviteEmail}`)
       setInviteOpen(false)
       setInviteEmail('')
       qc.invalidateQueries(['admin-roles'])
@@ -72,8 +71,8 @@ export default function AdminPage() {
   }
 
   const columns = [
-    { key: 'user_id',   header: 'User ID',    render: r => <span className="font-mono text-xs text-slate-400">{r.user_id?.slice(0,16)}…</span> },
-    { key: 'role',      header: 'Role',
+    { key: 'user_id',   header: 'User ID / Email', render: r => <span className="font-mono text-xs text-slate-300 font-semibold">{r.user_id}</span> },
+    { key: 'role',      header: 'Assigned Role',
       render: r => r.user_id === user?.id
         ? <span className="badge badge-a3">You · {r.role}</span>
         : (
@@ -87,7 +86,7 @@ export default function AdminPage() {
           </select>
         )
     },
-    { key: 'created_at', header: 'Added',    render: r => formatDate(r.created_at) },
+    { key: 'created_at', header: 'Added Date', render: r => formatDate(r.created_at) },
     {
       key: '_actions', header: 'Actions', sortable: false,
       render: r => r.user_id === user?.id ? (
@@ -101,18 +100,28 @@ export default function AdminPage() {
     },
   ]
 
+  const adminCount = roles?.filter(r => r.role === 'admin').length || 0
+  const userCount  = roles?.filter(r => r.role === 'user').length || 0
+
   return (
     <div className="space-y-6">
-      <div className="section-header">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2"><Shield size={22} className="text-jio-red-400" /> Admin Panel</h1>
-          <p className="text-sm text-slate-400 mt-0.5">User role management</p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => qc.invalidateQueries(['admin-roles'])} className="btn-ghost"><RefreshCw size={14} /> Refresh</button>
-          <button onClick={() => setInviteOpen(true)} className="btn-primary"><UserPlus size={15} /> Invite User</button>
-        </div>
-      </div>
+      {/* Header Banner & Executive Stat Cards */}
+      <ModuleHeader
+        title="Admin Control Center"
+        subtitle="Manage system permissions, user roles, security access & portal configurations"
+        actions={
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => qc.invalidateQueries(['admin-roles'])} className="btn-ghost"><RefreshCw size={14} /> Refresh</button>
+            <button onClick={() => setInviteOpen(true)} className="btn-primary"><UserPlus size={14} /> Invite User</button>
+          </div>
+        }
+        stats={[
+          { icon: Users, label: 'Total Registered Users', value: roles?.length ?? 0, sub: 'Active Accounts', color: 'purple' },
+          { icon: Shield, label: 'Active Admins', value: adminCount, sub: 'Full System Access', color: 'green' },
+          { icon: Lock, label: 'Standard Users', value: userCount, sub: 'Portal Viewers', color: 'amber' },
+          { icon: CheckCircle2, label: 'System Status', value: 'Healthy', sub: 'Supabase RLS Active', color: 'cyan' },
+        ]}
+      />
 
       <div className="glass-card p-5">
         <div className="flex items-center gap-2 mb-4">

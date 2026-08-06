@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar, Calculator } from 'lucide-react'
+import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar, Calculator, Receipt, DollarSign, CheckCircle2, FileCheck } from 'lucide-react'
+import ModuleHeader from '../components/ModuleHeader'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { invoiceDb } from '../lib/db'
@@ -332,23 +333,34 @@ export default function InvoicePage() {
     }] : []),
   ]
 
+  const totalGrand = records.reduce((s, r) => s + (r.grand_total || 0), 0)
+  const totalReceived = records.reduce((s, r) => s + (r.received_bill_amount || 0), 0)
+  const totalPaidCount = records.filter(r => r.payment_status === 'Full Payment Received').length
+
   return (
     <div className="space-y-5">
-      <div className="section-header">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Invoice Details</h1>
-          <p className="text-sm text-slate-400 mt-0.5">
-            Billing & payment · {activeFy === 'overall' ? 'All Financial Years' : `FY ${activeFy}`} · {records.length} records
-          </p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={handleExport} className="btn-ghost"><Download size={15} /> Export</button>
-          {isAdmin && <>
-            <button onClick={() => setImportOpen(true)} className="btn-ghost"><Upload size={15} /> Import</button>
-            <button onClick={openAdd} className="btn-primary"><Plus size={15} /> Add Invoice</button>
-          </>}
-        </div>
-      </div>
+      {/* Header Banner & Executive Stat Cards */}
+      <ModuleHeader
+        title="Invoice & Billing Details"
+        subtitle={`Billing & payment records · ${activeFy === 'overall' ? 'All Financial Years' : `FY ${activeFy}`} · ${records.length} invoices`}
+        actions={
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={handleExport} className="btn-ghost"><Download size={14} /> Export</button>
+            {isAdmin && (
+              <>
+                <button onClick={() => setImportOpen(true)} className="btn-ghost"><Upload size={14} /> Import</button>
+                <button onClick={openAdd} className="btn-primary"><Plus size={14} /> Add Invoice</button>
+              </>
+            )}
+          </div>
+        }
+        stats={[
+          { icon: Receipt, label: 'Total Invoices', value: records.length, sub: activeFy === 'overall' ? 'All FY' : `FY ${activeFy}`, color: 'purple' },
+          { icon: DollarSign, label: 'Grand Total Value', value: formatINR(totalGrand), sub: 'Total Billed', color: 'cyan' },
+          { icon: CheckCircle2, label: 'Received Amount', value: formatINR(totalReceived), sub: `${totalPaidCount} Fully Paid`, color: 'green' },
+          { icon: FileCheck, label: 'Pending Received', value: formatINR(totalGrand - totalReceived), sub: 'Balance Due', color: 'amber' },
+        ]}
+      />
 
       {/* FY Tabs Control Box */}
       <div className="flex items-center justify-between gap-3 flex-wrap bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
