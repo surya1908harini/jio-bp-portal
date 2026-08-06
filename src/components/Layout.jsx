@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
+import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
+import { formatINR, formatDate, parseValidity } from '../lib/utils'
 import {
   LayoutDashboard, FileText, Receipt, PieChart, Settings,
-  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell
+  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight
 } from 'lucide-react'
 
 const NAV = [
@@ -34,8 +37,102 @@ export default function Layout() {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [globalSearch, setGlobalSearch] = useState('')
+  const [notifOpen, setNotifOpen] = useState(false)
+  const notifRef = useRef(null)
+
   const navigate = useNavigate()
   const location = useLocation()
+
+  // Fetch live DB data for notifications
+  const { data: jmsList = [] }     = useQuery({ queryKey: ['jms', 'all'],     queryFn: () => jmsDb.listAll() })
+  const { data: invoiceList = [] } = useQuery({ queryKey: ['invoices', 'all'], queryFn: () => invoiceDb.listAll() })
+  const { data: budgetList = [] }  = useQuery({ queryKey: ['budget', 'all'],   queryFn: () => budgetDb.listAll() })
+
+  // Calculate Realtime Actionable Notifications
+  const notifications = useMemo(() => {
+    const list = []
+    const now = new Date()
+
+    // 1. Long Payment Pending Invoices (Pending payment > 15 days)
+    invoiceList.forEach(inv => {
+      if (inv.payment_status !== 'Full Payment Received') {
+        const invDate = inv.inv_date ? new Date(inv.inv_date) : (inv.created_at ? new Date(inv.created_at) : null)
+        const daysPending = invDate ? Math.floor((now - invDate) / (1000 * 60 * 60 * 24)) : 0
+        if (daysPending >= 15 || !inv.payment_status) {
+          list.push({
+            id: `inv-${inv.id}`,
+            category: 'invoice',
+            title: `Payment Pending: INV #${inv.inv_number || 'Record'}`,
+            sub: `Amount: ${formatINR(inv.grand_total)} · Pending for ${daysPending > 0 ? `${daysPending} days` : 'review'}`,
+            days: daysPending,
+            severity: daysPending > 45 ? 'high' : 'medium',
+            link: '/invoices',
+            icon: DollarSign,
+            color: 'text-rose-400 bg-rose-950/80 border-rose-800/60'
+          })
+        }
+      }
+    })
+
+    // 2. Budget Contracts Expiring Soon (≤ 90 days or Expired)
+    budgetList.forEach(b => {
+      const { daysRemaining, status } = parseValidity(b.validity_of_contract)
+      if (daysRemaining !== null && daysRemaining <= 90) {
+        const isExpired = daysRemaining <= 0
+        list.push({
+          id: `bud-${b.id}`,
+          category: 'budget',
+          title: isExpired ? `Contract Expired: WO #${b.work_order_number}` : `Budget Expiring: WO #${b.work_order_number}`,
+          sub: `${b.operation || 'Contract'} · ${isExpired ? 'Validity Ended' : `${daysRemaining} days remaining`}`,
+          days: daysRemaining,
+          severity: isExpired ? 'high' : daysRemaining <= 30 ? 'medium' : 'low',
+          link: '/budget',
+          icon: AlertTriangle,
+          color: isExpired ? 'text-rose-400 bg-rose-950/80 border-rose-800/60' : 'text-amber-400 bg-amber-950/80 border-amber-800/60'
+        })
+      }
+    })
+
+    // 3. Long Days Pending JMS Records (Pending approval > 10 days)
+    jmsList.forEach(j => {
+      const isReleased = j.status === 'Released by A3' || j.status === 'Invoiced'
+      if (!isReleased) {
+        const jmsDate = j.jms_create_date ? new Date(j.jms_create_date) : (j.created_at ? new Date(j.created_at) : null)
+        const daysPending = jmsDate ? Math.floor((now - jmsDate) / (1000 * 60 * 60 * 24)) : 0
+        if (daysPending >= 10) {
+          list.push({
+            id: `jms-${j.id}`,
+            category: 'jms',
+            title: `Long Pending JMS #${j.jms_no || 'Record'}`,
+            sub: `WO #${j.work_order_number || 'N/A'} · Stage "${j.status || 'Pending A1'}" for ${daysPending} days`,
+            days: daysPending,
+            severity: daysPending > 30 ? 'high' : 'medium',
+            link: '/jms',
+            icon: Clock,
+            color: 'text-purple-400 bg-purple-950/80 border-purple-800/60'
+          })
+        }
+      }
+    })
+
+    // Sort by severity (high first) then days
+    return list.sort((a, b) => {
+      if (a.severity === 'high' && b.severity !== 'high') return -1
+      if (a.severity !== 'high' && b.severity === 'high') return 1
+      return b.days - a.days
+    })
+  }, [jmsList, invoiceList, budgetList])
+
+  // Close notification menu on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setNotifOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleSearchSubmit = (e) => {
     e.preventDefault()
@@ -123,7 +220,7 @@ export default function Layout() {
       {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header Bar */}
-        <header className="hidden md:flex items-center justify-between px-6 h-16 bg-slate-900/90 border-b border-slate-800 shrink-0 backdrop-blur-md z-10 shadow-sm">
+        <header className="hidden md:flex items-center justify-between px-6 h-16 bg-slate-900/90 border-b border-slate-800 shrink-0 backdrop-blur-md z-10 shadow-sm relative">
           {/* Left Brand Title */}
           <div className="flex items-center gap-2.5">
             <span className="text-base font-extrabold text-purple-400 tracking-tight">MM CONTRACTOR</span>
@@ -142,11 +239,77 @@ export default function Layout() {
             />
           </form>
 
-          {/* Right Profile Controls */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center hover:bg-slate-700 transition-colors cursor-pointer relative">
-              <Bell size={17} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-pink-500 ring-2 ring-slate-900" />
+          {/* Right Profile & Notifications Controls */}
+          <div className="flex items-center gap-3 relative" ref={notifRef}>
+            {/* Bell Icon with Realtime Badge */}
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen(o => !o)}
+                className="w-9 h-9 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center hover:bg-slate-700 transition-colors relative"
+                title="System Notifications"
+              >
+                <Bell size={17} />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center border-2 border-slate-900 animate-pulse">
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Drawer Dropdown */}
+              {notifOpen && (
+                <div className="absolute right-0 top-12 w-96 max-h-[480px] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden z-50 animate-fade-in flex flex-col">
+                  <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bell size={16} className="text-purple-400" />
+                      <h3 className="text-sm font-extrabold text-white">System Alerts & Notifications</h3>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950 text-rose-400 border border-rose-800">
+                      {notifications.length} Active
+                    </span>
+                  </div>
+
+                  <div className="overflow-y-auto p-3 space-y-2 flex-1">
+                    {notifications.length === 0 ? (
+                      <div className="text-center py-8 text-xs text-slate-400">
+                        ✨ No pending alerts or contract expiry issues!
+                      </div>
+                    ) : (
+                      notifications.map(item => {
+                        const Icon = item.icon
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={() => { setNotifOpen(false); navigate(item.link); }}
+                            className="p-3 rounded-2xl bg-slate-800/60 border border-slate-700/60 hover:border-purple-500/50 cursor-pointer transition-all flex items-start gap-3 group"
+                          >
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${item.color}`}>
+                              <Icon size={16} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors truncate">
+                                  {item.title}
+                                </p>
+                                <span className="text-[9px] font-mono text-slate-400 shrink-0">
+                                  {item.days > 0 ? `${item.days}d` : 'Urgent'}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-slate-400 mt-0.5 leading-snug line-clamp-2">
+                                {item.sub}
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+
+                  <div className="p-3 bg-slate-950 border-t border-slate-800 text-center">
+                    <span className="text-[10px] text-slate-400 font-medium">Realtime Audit System</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Profile Avatar Pill */}

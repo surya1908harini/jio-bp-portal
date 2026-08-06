@@ -38,7 +38,7 @@ const BUDGET_IMPORT_COLUMNS = [
   'validity_of_contract','fo_total_budget',
 ]
 
-const ITEMS_PER_PAGE = 10
+const ITEMS_PER_PAGE = 9
 
 export default function BudgetPage() {
   const { user, isAdmin } = useAuth()
