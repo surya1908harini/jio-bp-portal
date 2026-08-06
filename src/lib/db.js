@@ -187,9 +187,10 @@ export const budgetDb = {
   },
 
   create: async (payload, userId) => {
+    const cleaned = cleanBudgetRecord({ ...payload, created_by: userId })
     const { data, error } = await supabase
       .from('budget_records')
-      .insert(clean({ ...payload, created_by: userId }))
+      .insert(cleaned)
       .select()
       .single()
     if (error) throw error
@@ -197,9 +198,10 @@ export const budgetDb = {
   },
 
   update: async (id, payload) => {
+    const cleaned = cleanBudgetRecord(payload)
     const { data, error } = await supabase
       .from('budget_records')
-      .update(clean(payload))
+      .update(cleaned)
       .eq('id', id)
       .select()
       .single()
@@ -216,10 +218,46 @@ export const budgetDb = {
     const cleaned = rows.map(r => {
       const { fy, ...rest } = r
       const fyVal = r.financial_year || (activeFy && activeFy !== 'overall' ? activeFy : undefined)
-      return clean({ ...rest, ...(fyVal ? { financial_year: fyVal } : {}), created_by: userId })
+      return cleanBudgetRecord({ ...rest, ...(fyVal ? { financial_year: fyVal } : {}), created_by: userId })
     })
     const { error } = await supabase.from('budget_records').insert(cleaned)
     if (error) throw error
     return cleaned.length
+  },
+
+  syncMissingFromJms: async (userId) => {
+    const { data: jmsRows, error: jmsErr } = await supabase.from('jms_records').select('work_order_number, financial_year, net_amount')
+    const { data: budgetRows, error: bgErr } = await supabase.from('budget_records').select('work_order_number')
+
+    if (jmsErr) throw jmsErr
+    if (bgErr) throw bgErr
+
+    const budgetWos = new Set(budgetRows?.map(b => String(b.work_order_number).trim()).filter(Boolean))
+    const missingMap = new Map()
+
+    jmsRows?.forEach(j => {
+      const wo = String(j.work_order_number || '').trim()
+      if (wo && !budgetWos.has(wo)) {
+        if (!missingMap.has(wo)) {
+          missingMap.set(wo, {
+            work_order_number: wo,
+            financial_year: j.financial_year || '2024-25',
+            operation: 'JMS Work Order',
+            description: 'Auto-synced from JMS records',
+            fo_total_budget: Number(j.net_amount || 0),
+            created_by: userId,
+          })
+        } else {
+          missingMap.get(wo).fo_total_budget += Number(j.net_amount || 0)
+        }
+      }
+    })
+
+    const newEntries = Array.from(missingMap.values())
+    if (newEntries.length === 0) return 0
+
+    const { error } = await supabase.from('budget_records').insert(newEntries)
+    if (error) throw error
+    return newEntries.length
   },
 }

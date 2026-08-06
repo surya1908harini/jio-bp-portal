@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
-import { Plus, Download, Upload, Pencil, Trash2, PieChart, TrendingUp, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { Plus, Download, Upload, Pencil, Trash2, PieChart, TrendingUp, Clock, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { budgetDb } from '../lib/db'
@@ -164,6 +164,19 @@ export default function BudgetPage() {
     onSuccess: () => qc.invalidateQueries(['budget']),
   })
 
+  const syncMutation = useMutation({
+    mutationFn: () => budgetDb.syncMissingFromJms(user?.id),
+    onSuccess: (count) => {
+      qc.invalidateQueries(['budget'])
+      if (count > 0) {
+        toast.success(`Synced ${count} new work orders from JMS into Budget!`)
+      } else {
+        toast.success('All JMS work orders are up to date in Budget ✓')
+      }
+    },
+    onError: (e) => toast.error(e?.message || 'Sync failed'),
+  })
+
   const importRecords = async (rows) => {
     const mapped = rows.map(raw => {
       const rec = {}
@@ -278,7 +291,11 @@ export default function BudgetPage() {
             <span className="ml-2 font-semibold text-slate-300">· {fyRecords.length} work orders</span>
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending} className="btn-ghost flex items-center gap-2 text-jio-blue-400 hover:text-white border border-jio-blue-800/40">
+            <RefreshCw size={15} className={syncMutation.isPending ? 'animate-spin' : ''} />
+            {syncMutation.isPending ? 'Syncing…' : 'Sync JMS Work Orders'}
+          </button>
           <button onClick={handleExport} className="btn-ghost flex items-center gap-2">
             <Download size={16} /> Export
           </button>
