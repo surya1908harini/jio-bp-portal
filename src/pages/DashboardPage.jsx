@@ -70,7 +70,7 @@ export default function DashboardPage() {
   const currentBudgetList = budgetList.filter(b => getBudgetRecordFy(b) === CURRENT_FY)
 
   const pendingJms   = currentJmsList.filter(j => !['Released by A3','Invoiced'].includes(j.status)).length
-  const a3Released   = currentJmsList.filter(j => j.status === 'Released by A3' || j.status === 'Invoiced' || j.status === 'Pending A3' || j.status === 'A3').length
+  const a3Released   = currentJmsList.filter(j => j.status === 'Released by A3' || j.status === 'Invoiced').length
   const fullPaid     = currentInvList.filter(i => i.payment_status === 'Full Payment Received').length
   const totalInvAmt  = currentInvList.reduce((s, i) => s + (i.grand_total || 0), 0)
   const totalBudget  = currentBudgetList.reduce((s, b) => s + (b.fo_total_budget || 0), 0)

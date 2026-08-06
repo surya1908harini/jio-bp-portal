@@ -253,6 +253,7 @@ export default function BudgetPage() {
       }
     },
     { key: 'fo_total_budget',     header: 'FO Total Budget',   render: r => <span className="text-blue-400 font-semibold">{formatINR(r.fo_total_budget)}</span> },
+    { key: 'total_consumed',      header: 'Budget Consumed',   render: r => <span className="text-jio-red-400 font-semibold">{formatINR(r.total_consumed)}</span> },
     {
       key: 'balance_available', header: 'Remaining Budget',
       render: r => {
