@@ -220,26 +220,30 @@ export function getBudgetRecordFy(r) {
 // ──────────────────────────────────────────────
 export function applyGstDateAutoSync(record) {
   if (!record) return record
-  const invDateStr = record.inv_date ? String(record.inv_date).trim() : ''
-  if (!invDateStr) return record
+  const synced = { ...record }
+  synced.payment_status = derivePaymentStatus(synced)
+  return synced
+}
 
-  const d = new Date(invDateStr)
-  if (isNaN(d.getTime())) return record
+// ──────────────────────────────────────────────
+// Derive Payment Status automatically from date fields:
+// 1. Full Payment Received Date only -> 'Net Amount Received'
+// 2. GST Payment Received Date only -> 'GST Payment Only Received'
+// 3. Both Full & GST Dates entered -> 'Full Payment Received'
+// 4. Neither entered -> 'Pending' (or existing status)
+// ──────────────────────────────────────────────
+export function derivePaymentStatus(record) {
+  if (!record) return 'Pending'
+  const fullDate = record.amount_received_date ? String(record.amount_received_date).trim() : ''
+  const gstDate  = record.gst_amount_received_date ? String(record.gst_amount_received_date).trim() : ''
 
-  // Check if invoice date is dated on or after 2026-04-01 (FY 2026-27)
-  const isFy2026OrLater = d >= new Date('2026-04-01')
-
-  if (isFy2026OrLater) {
-    const fullDate = record.amount_received_date ? String(record.amount_received_date).trim() : ''
-    const gstDate  = record.gst_amount_received_date ? String(record.gst_amount_received_date).trim() : ''
-
-    if (fullDate && !gstDate) {
-      record.gst_amount_received_date = fullDate
-    } else if (gstDate && !fullDate) {
-      record.amount_received_date = gstDate
-    }
+  if (fullDate && gstDate) {
+    return 'Full Payment Received'
+  } else if (fullDate && !gstDate) {
+    return 'Net Amount Received'
+  } else if (!fullDate && gstDate) {
+    return 'GST Payment Only Received'
   }
-
-  return record
+  return record.payment_status || 'Pending'
 }
 
