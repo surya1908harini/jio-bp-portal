@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar, FileText, Clock, CheckCircle, Receipt, Search } from 'lucide-react'
+import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar, FileText, Clock, CheckCircle, Receipt } from 'lucide-react'
 import ModuleHeader from '../components/ModuleHeader'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
@@ -12,6 +12,7 @@ import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
 import FyTabs from '../components/FyTabs'
 import SlotTabs from '../components/SlotTabs'
+import RecordDetailModal from '../components/RecordDetailModal'
 
 const EMPTY_FORM = {
   jms_no: '', period_of_work: '', work_order_number: '', arc_number: '',
@@ -148,7 +149,7 @@ export default function JmsPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [editRow,    setEditRow]    = useState(null)
   const [form,       setForm]       = useState(EMPTY_FORM)
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
+  const [selectedRowModal, setSelectedRowModal] = useState(null)
 
   // Fetch all records to support flexible splitting
   const { data: allRecords = [], isLoading } = useQuery({
@@ -179,6 +180,25 @@ export default function JmsPage() {
     return true
   })
 
+  // Sort records: Current FY on top, then newest on top by JMS Date (or fallback date), then JMS No
+  const sortedRecords = useMemo(() => {
+    return [...records].sort((a, b) => {
+      const fyA = getRecordFy(a)
+      const fyB = getRecordFy(b)
+      if (fyA !== fyB) {
+        if (fyA === CURRENT_FY) return -1
+        if (fyB === CURRENT_FY) return 1
+        return fyB.localeCompare(fyA)
+      }
+      const dateA = a.jms_create_date || a.inv_date || a.a1_release_date || a.created_at || ''
+      const dateB = b.jms_create_date || b.inv_date || b.a1_release_date || b.created_at || ''
+      if (dateA !== dateB) {
+        return dateB.localeCompare(dateA)
+      }
+      return String(b.jms_no || '').localeCompare(String(a.jms_no || ''), undefined, { numeric: true })
+    })
+  }, [records])
+
   // Per-FY stats for Overall View
   const fyStats = FINANCIAL_YEARS.map(f => {
     const rows = allRecords.filter(r => getRecordFy(r) === f)
@@ -193,49 +213,12 @@ export default function JmsPage() {
   })
 
   // Current records stats (for specific FY view)
-  const sortedRecords = useMemo(() => {
-    let result = records.filter(r => {
-      const st = r.status || ''
-      if (activeSlot === 'pending_a1'  && !['Pending A1', 'Pending', 'A1'].includes(st)) return false
-      if (activeSlot === 'pending_a2'  && !['Pending A2', 'A2'].includes(st)) return false
-      if (activeSlot === 'pending_qsd' && !['Pending QSD', 'QSD'].includes(st)) return false
-      if (activeSlot === 'pending_a3'  && !['Pending A3', 'A3'].includes(st)) return false
-      if (activeSlot === 'released_a3' && !['Released by A3', 'Invoiced'].includes(st)) return false
-
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase()
-        const jmsNo = String(r.jms_no || '').toLowerCase()
-        const wo = String(r.work_order_number || '').toLowerCase()
-        const arc = String(r.arc_number || '').toLowerCase()
-        const site = String(r.site || '').toLowerCase()
-        const desc = String(r.work_description || '').toLowerCase()
-        return jmsNo.includes(q) || wo.includes(q) || arc.includes(q) || site.includes(q) || desc.includes(q)
-      }
-      return true
-    })
-
-    return [...result].sort((a, b) => {
-      const da = new Date(a.jms_create_date || a.created_at || 0)
-      const db = new Date(b.jms_create_date || b.created_at || 0)
-      return db - da
-    })
-  }, [records, activeSlot, searchQuery])
-
-  const byStatus = useMemo(() => {
-    const map = {}
-    records.forEach(r => {
-      const s = r.status || 'Pending A1'
-      map[s] = (map[s] || 0) + 1
-    })
-    return map
-  }, [records])
-
-  const totalNetAmount = useMemo(() => {
-    return records.reduce((sum, r) => sum + (r.net_amount || 0), 0)
-  }, [records])
+  const totalNetAmount = records.reduce((s, r) => s + (r.net_amount || 0), 0)
+  const byStatus = JMS_STATUSES.reduce((acc, s) => ({ ...acc, [s]: records.filter(r => (STATUS_DISPLAY[r.status] || r.status) === s).length }), {})
 
   const saveMutation = useMutation({
     mutationFn: (payload) => {
+      // Convert UI status to database-compatible value before sending to Supabase
       const dbStatus = getDbStatus(payload.status)
       const cleanPayload = { ...payload, status: dbStatus }
 
@@ -252,7 +235,7 @@ export default function JmsPage() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: id => jmsDb.delete(id),
+    mutationFn: jmsDb.delete,
     onSuccess: () => { qc.invalidateQueries(['jms']); toast.success('JMS deleted') },
     onError:   (e) => toast.error(e?.message || 'Delete failed'),
   })
@@ -262,10 +245,10 @@ export default function JmsPage() {
       const rec = {}
       for (const [k, v] of Object.entries(raw)) {
         const dbKey = IMPORT_MAP[k] ?? IMPORT_MAP[k.trim()]
-        if (dbKey && v !== '' && v !== null && v !== undefined) {
-          rec[dbKey] = (dbKey === 'status') ? getDbStatus(v) : v
-        }
+        if (dbKey && v !== '' && v !== null && v !== undefined) rec[dbKey] = v
       }
+      // Ensure status is valid for database constraint
+      rec.status = getDbStatus(rec.status)
       rec.financial_year = getRecordFy(rec)
       return rec
     }).filter(r => r.jms_no)
@@ -285,29 +268,43 @@ export default function JmsPage() {
   const openAdd  = ()    => { setEditRow(null); setForm(EMPTY_FORM); setFormOpen(true) }
   const handleClose  = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
-  const handleDelete = (e, id) => { e?.stopPropagation?.(); if (window.confirm('Delete this JMS record?')) deleteMutation.mutate(id) }
+  const handleDelete = (id) => { if (window.confirm('Delete this JMS record?')) deleteMutation.mutate(id) }
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
   const handleExport = () => { exportToExcel(sortedRecords, `JMS_${activeFy}.xlsx`, 'JMS Records'); toast.success('Excel downloaded') }
 
   const columns = [
-    { key: 'jms_no',           header: 'JMS No',        render: r => <span className="font-bold text-white">{r.jms_no}</span> },
+    { key: 'jms_no',           header: 'JMS No',        render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
     { key: 'jms_create_date',  header: 'JMS Date',       render: r => formatDate(r.jms_create_date || r.inv_date || r.a1_release_date) },
     { key: 'period_of_work',   header: 'Period' },
-    { key: 'work_order_number',header: 'Work Order' },
+    { key: 'work_order_number',header: 'Work Order',    render: r => <span className="font-semibold text-slate-200">{r.work_order_number}</span> },
     { key: 'net_amount',       header: 'Net Amount',     render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.net_amount)}</span> },
     { key: 'site',             header: 'Site' },
     { key: 'work_description', header: 'Description' },
     { key: 'status',           header: 'Status',         render: r => <StatusBadge status={r.status} /> },
-    ...(isAdmin ? [{
+    {
+      key: 'pdf', header: 'PDF', sortable: false,
+      render: r => (
+        <div onClick={e => e.stopPropagation()}>
+          <PdfCell pdfUrl={r.pdf_url} folder="jms" isAdmin={true}
+            onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url: url })}
+            onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url: null })} />
+        </div>
+      )
+    },
+    {
       key: '_actions', header: 'Actions', sortable: false,
       render: r => (
         <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-          <button onClick={(e) => { e.stopPropagation(); openEdit(r) }} className="p-1.5 rounded-lg hover:bg-jio-blue-800/50 text-jio-blue-400 hover:text-white transition-colors"><Pencil size={14} /></button>
-          <button onClick={(e) => handleDelete(e, r.id)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors"><Trash2 size={14} /></button>
+          <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-jio-blue-800/50 text-jio-blue-400 hover:text-white transition-colors" title="Edit JMS"><Pencil size={14} /></button>
+          <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors" title="Delete JMS"><Trash2 size={14} /></button>
         </div>
       )
-    }] : []),
+    },
   ]
+
+  const totalNet = sortedRecords.reduce((s, r) => s + (r.net_amount || 0), 0)
+  const totalReleased = sortedRecords.filter(r => r.status === 'Released by A3' || r.status === 'Invoiced').length
+  const totalPending = sortedRecords.filter(r => !['Released by A3', 'Invoiced'].includes(r.status)).length
 
   return (
     <div className="space-y-5">
@@ -413,8 +410,18 @@ export default function JmsPage() {
       <div className="glass-card p-4">
         <DataTable columns={columns} data={sortedRecords} loading={isLoading}
           emptyMessage={activeFy === 'overall' ? 'No JMS records found' : `No JMS records for FY ${activeFy}`}
-          onRowClick={(row) => setSelectedRow(row)} />
+          onRowClick={(row) => setSelectedRowModal(row)} />
       </div>
+
+      {/* On-screen Row Click Record Detail Modal */}
+      <RecordDetailModal
+        record={selectedRowModal}
+        type="jms"
+        onClose={() => setSelectedRowModal(null)}
+        onEdit={openEdit}
+        onDelete={handleDelete}
+        isAdmin={isAdmin}
+      />
 
       {/* Add / Edit Modal */}
       <Modal open={formOpen} onClose={handleClose} title={editRow ? 'Edit JMS Record' : 'Add JMS Record'}>
@@ -467,9 +474,6 @@ export default function JmsPage() {
 
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)}
         onImport={importRecords} columnMap={JMS_IMPORT_COLUMNS} title="Import JMS Records" />
-
-      {/* Summary Modal - opens when a row is clicked */}
-      <SummaryModal row={selectedRow} onClose={() => setSelectedRow(null)} />
     </div>
   )
 }

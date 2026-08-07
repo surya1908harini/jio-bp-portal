@@ -280,3 +280,15 @@ export function derivePaymentStatus(record) {
   return synced.payment_status
 }
 
+// ──────────────────────────────────────────────
+// Calculate Expected Payment Date based on Invoice Date + Timeframe Days
+// ──────────────────────────────────────────────
+export function calculateExpectedPaymentDate(invDateStr, timeframeDays = 30) {
+  if (!invDateStr) return ''
+  const d = new Date(invDateStr)
+  if (isNaN(d.getTime())) return ''
+  const days = parseInt(timeframeDays, 10) || 30
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
+}
+
