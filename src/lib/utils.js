@@ -234,7 +234,7 @@ export function applyGstDateAutoSync(record) {
 // ──────────────────────────────────────────────
 export function derivePaymentStatus(record) {
   if (!record) return 'Pending'
-  const fullDate = record.amount_received_date ? String(record.amount_received_date).trim() : ''
+  const fullDate = (record.full_amount_received_date || record.amount_received_date) ? String(record.full_amount_received_date || record.amount_received_date).trim() : ''
   const gstDate  = record.gst_amount_received_date ? String(record.gst_amount_received_date).trim() : ''
 
   if (fullDate && gstDate) {

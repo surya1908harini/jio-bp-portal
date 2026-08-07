@@ -323,7 +323,7 @@ export default function InvoicePage() {
     { key: 'sd_retention',             header: 'SD/Retention',       render: r => formatINR(r.sd_retention) },
     { key: 'tcs_credit_note',          header: 'TCS/Credit',         render: r => formatINR(r.tcs_credit_note) },
     { key: 'received_bill_amount',     header: 'Received Amt',       render: r => <span className="text-amber-400">{formatINR(r.received_bill_amount)}</span> },
-    { key: 'amount_received_date',     header: 'Full Received Date', render: r => formatDate(r.amount_received_date) },
+    { key: 'amount_received_date',     header: 'Full Received Date', render: r => formatDate(r.full_amount_received_date || r.amount_received_date) },
     { key: 'gst_amount_received_date', header: 'GST Received Date',  render: r => formatDate(r.gst_amount_received_date) },
     { key: 'payment_status',           header: 'Payment Status',     render: r => <PaymentBadge status={r.payment_status} /> },
     {
