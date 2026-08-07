@@ -262,7 +262,7 @@ export default function SearchEnginePage() {
       {activeTab === 'jms' && (
         <div className="space-y-6">
           {/* Query Filter Controls Panel */}
-          <div className="glass-card p-5 space-y-4 border-l-4 border-l-purple-500">
+          <div className="glass-card p-5 space-y-4 border-l-4 border-l-purple-500 relative z-30">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
                 <Search size={16} className="text-purple-400" /> JMS Multi-Select Query Controls
@@ -380,7 +380,7 @@ export default function SearchEnginePage() {
       {activeTab === 'invoice' && (
         <div className="space-y-6">
           {/* Query Filter Controls Panel */}
-          <div className="glass-card p-5 space-y-4 border-l-4 border-l-cyan-500">
+          <div className="glass-card p-5 space-y-4 border-l-4 border-l-cyan-500 relative z-30">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
                 <Search size={16} className="text-cyan-400" /> Invoice Multi-Select Query Controls

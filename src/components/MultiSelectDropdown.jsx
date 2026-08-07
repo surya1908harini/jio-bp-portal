@@ -58,7 +58,7 @@ export default function MultiSelectDropdown({ options, selected = [], onChange, 
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-11 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 p-2 space-y-2 max-h-64 flex flex-col animate-fade-in">
+        <div className="absolute left-0 right-0 top-11 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-[100] p-2.5 space-y-2 max-h-64 flex flex-col animate-fade-in backdrop-blur-xl">
           <div className="relative">
             <input
               type="text"

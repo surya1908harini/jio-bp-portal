@@ -261,23 +261,48 @@ export const budgetDb = {
 
   create: async (payload, userId) => {
     const cleaned = cleanBudgetRecord({ ...payload, created_by: userId })
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('budget_records')
       .insert(cleaned)
       .select()
       .single()
+    
+    if (error && (error.message?.includes('payment_timeframe_days') || error.message?.includes('schema cache'))) {
+      delete cleaned.payment_timeframe_days
+      delete cleaned.status
+      const retry = await supabase
+        .from('budget_records')
+        .insert(cleaned)
+        .select()
+        .single()
+      data = retry.data
+      error = retry.error
+    }
     if (error) throw error
     return data
   },
 
   update: async (id, payload) => {
     const cleaned = cleanBudgetRecord(payload)
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('budget_records')
       .update(cleaned)
       .eq('id', id)
       .select()
       .single()
+
+    if (error && (error.message?.includes('payment_timeframe_days') || error.message?.includes('schema cache'))) {
+      delete cleaned.payment_timeframe_days
+      delete cleaned.status
+      const retry = await supabase
+        .from('budget_records')
+        .update(cleaned)
+        .eq('id', id)
+        .select()
+        .single()
+      data = retry.data
+      error = retry.error
+    }
     if (error) throw error
     return data
   },
