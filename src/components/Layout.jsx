@@ -16,7 +16,7 @@ const NAV = [
   { label: 'JMS', icon: FileText, path: '/jms' },
   { label: 'Invoices', icon: Receipt, path: '/invoices' },
   { label: 'Budget', icon: PieChart, path: '/budget' },
-  { label: 'Search Engine', icon: Search, path: '/search' },
+  { label: 'SEARCH', icon: Search, path: '/search' },
   { label: 'Notifications', icon: Bell, path: '/notifications', badgeKey: 'notif' },
 ]
 

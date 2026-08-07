@@ -7,11 +7,11 @@ import {
 import ModuleHeader from '../components/ModuleHeader'
 import DataTable from '../components/DataTable'
 import RecordDetailModal from '../components/RecordDetailModal'
+import MultiSelectDropdown from '../components/MultiSelectDropdown'
 import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
 import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS } from '../lib/utils'
 
 const MONTHS = [
-  { value: 'all', label: 'All Months' },
   { value: '1',  label: 'January' },
   { value: '2',  label: 'February' },
   { value: '3',  label: 'March' },
@@ -26,59 +26,78 @@ const MONTHS = [
   { value: '12', label: 'December' },
 ]
 
-const YEARS = ['All Years', '2023', '2024', '2025', '2026', '2027']
+const YEARS = ['2023', '2024', '2025', '2026', '2027']
 
 export default function SearchEnginePage() {
   const [activeTab, setActiveTab] = useState('jms') // 'jms' or 'invoice'
-
-  // JMS Search Filters
-  const [jmsQuery, setJmsQuery]           = useState('')
-  const [jmsWorkOrder, setJmsWorkOrder]   = useState('all')
-  const [jmsStartDate, setJmsStartDate]   = useState('')
-  const [jmsEndDate, setJmsEndDate]       = useState('')
-
-  // Invoice Search Filters
-  const [invQuery, setInvQuery]           = useState('')
-  const [invMonth, setInvMonth]           = useState('all')
-  const [invYear, setInvYear]             = useState('All Years')
-  const [invWorkOrder, setInvWorkOrder]   = useState('all')
-
-  const [selectedRecord, setSelectedRecord] = useState(null)
 
   // Fetch Database Data
   const { data: jmsList = [], isLoading: jmsLoading }         = useQuery({ queryKey: ['jms', 'all'],     queryFn: () => jmsDb.listAll() })
   const { data: invoiceList = [], isLoading: invoiceLoading } = useQuery({ queryKey: ['invoices', 'all'], queryFn: () => invoiceDb.listAll() })
   const { data: budgetList = [] }                             = useQuery({ queryKey: ['budget', 'all'],   queryFn: () => budgetDb.listAll() })
 
-  // Extract unique Work Orders for filter dropdowns
+  // JMS Search Filters (Multi-Select)
+  const [selectedJmsNos, setSelectedJmsNos]         = useState([])
+  const [selectedJmsWorkOrders, setSelectedJmsWorkOrders] = useState([])
+  const [jmsStartDate, setJmsStartDate]             = useState('')
+  const [jmsEndDate, setJmsEndDate]                 = useState('')
+  const [jmsKeyword, setJmsKeyword]                 = useState('')
+
+  // Invoice Search Filters (Multi-Select)
+  const [selectedInvNos, setSelectedInvNos]         = useState([])
+  const [selectedInvWorkOrders, setSelectedInvWorkOrders] = useState([])
+  const [selectedInvMonths, setSelectedInvMonths]   = useState([])
+  const [selectedInvYears, setSelectedInvYears]     = useState([])
+  const [invKeyword, setInvKeyword]                 = useState('')
+
+  const [selectedRecord, setSelectedRecord] = useState(null)
+
+  // Options for Dropdowns
+  const allJmsNoOptions = useMemo(() => {
+    const set = new Set()
+    jmsList.forEach(j => j.jms_no && set.add(j.jms_no.trim()))
+    return Array.from(set).sort().map(val => ({ value: val, label: `JMS #${val}` }))
+  }, [jmsList])
+
+  const allInvNoOptions = useMemo(() => {
+    const set = new Set()
+    invoiceList.forEach(i => i.inv_number && set.add(i.inv_number.trim()))
+    return Array.from(set).sort().map(val => ({ value: val, label: `INV #${val}` }))
+  }, [invoiceList])
+
   const workOrderOptions = useMemo(() => {
     const set = new Set()
     jmsList.forEach(j => j.work_order_number && set.add(j.work_order_number.trim()))
     invoiceList.forEach(i => i.work_order_number && set.add(i.work_order_number.trim()))
     budgetList.forEach(b => b.work_order_number && set.add(b.work_order_number.trim()))
-    return Array.from(set).sort()
+    return Array.from(set).sort().map(val => ({ value: val, label: `WO: ${val}` }))
   }, [jmsList, invoiceList, budgetList])
 
   // ── JMS Filtered Results & Aggregations ────────────────────────
   const filteredJms = useMemo(() => {
     return jmsList.filter(j => {
-      // 1. JMS Numbers / Keyword Search (supports comma-separated list like "JMS-101, JMS-102")
-      if (jmsQuery.trim()) {
-        const terms = jmsQuery.toLowerCase().split(',').map(t => t.trim()).filter(Boolean)
+      // 1. Multi-Select JMS Numbers
+      if (selectedJmsNos.length > 0) {
+        const jmsNo = String(j.jms_no || '').trim()
+        if (!selectedJmsNos.includes(jmsNo)) return false
+      }
+
+      // 2. Multi-Select Work Orders
+      if (selectedJmsWorkOrders.length > 0) {
+        const wo = String(j.work_order_number || '').trim()
+        if (!selectedJmsWorkOrders.includes(wo)) return false
+      }
+
+      // 3. Keyword Search
+      if (jmsKeyword.trim()) {
+        const q = jmsKeyword.toLowerCase().trim()
         const jmsNo = String(j.jms_no || '').toLowerCase()
         const desc  = String(j.work_description || '').toLowerCase()
         const site  = String(j.site || '').toLowerCase()
-        const matches = terms.some(t => jmsNo.includes(t) || desc.includes(t) || site.includes(t))
-        if (!matches) return false
+        if (!jmsNo.includes(q) && !desc.includes(q) && !site.includes(q)) return false
       }
 
-      // 2. Work Order Filter
-      if (jmsWorkOrder !== 'all') {
-        const wo = String(j.work_order_number || '').trim().toLowerCase()
-        if (wo !== jmsWorkOrder.toLowerCase()) return false
-      }
-
-      // 3. Date Range Filter (by jms_create_date or inv_date)
+      // 4. Date Range Filter
       const dateStr = j.jms_create_date || j.inv_date || j.a1_release_date || j.created_at
       if (dateStr) {
         const d = new Date(dateStr)
@@ -97,7 +116,7 @@ export default function SearchEnginePage() {
 
       return true
     })
-  }, [jmsList, jmsQuery, jmsWorkOrder, jmsStartDate, jmsEndDate])
+  }, [jmsList, selectedJmsNos, selectedJmsWorkOrders, jmsKeyword, jmsStartDate, jmsEndDate])
 
   const totalJmsNetValue = useMemo(() => {
     return filteredJms.reduce((sum, j) => sum + (Number(j.net_amount) || 0), 0)
@@ -110,9 +129,34 @@ export default function SearchEnginePage() {
   // ── Invoice Filtered Results & Aggregations ───────────────────
   const filteredInvoices = useMemo(() => {
     return invoiceList.filter(inv => {
-      // 1. Invoice Number / Keyword Search
-      if (invQuery.trim()) {
-        const q = invQuery.toLowerCase().trim()
+      // 1. Multi-Select Invoice Numbers
+      if (selectedInvNos.length > 0) {
+        const invNo = String(inv.inv_number || '').trim()
+        if (!selectedInvNos.includes(invNo)) return false
+      }
+
+      // 2. Multi-Select Work Orders
+      if (selectedInvWorkOrders.length > 0) {
+        const wo = String(inv.work_order_number || '').trim()
+        if (!selectedInvWorkOrders.includes(wo)) return false
+      }
+
+      // 3. Multi-Select Months & Years
+      const dateStr = inv.inv_date || inv.full_amount_received_date || inv.created_at
+      if (dateStr) {
+        const d = new Date(dateStr)
+        if (!isNaN(d.getTime())) {
+          const m = (d.getMonth() + 1).toString()
+          const y = d.getFullYear().toString()
+
+          if (selectedInvMonths.length > 0 && !selectedInvMonths.includes(m)) return false
+          if (selectedInvYears.length > 0 && !selectedInvYears.includes(y)) return false
+        }
+      }
+
+      // 4. Keyword Search
+      if (invKeyword.trim()) {
+        const q = invKeyword.toLowerCase().trim()
         const invNo = String(inv.inv_number || '').toLowerCase()
         const jmsNo = String(inv.jms_no || '').toLowerCase()
         const desc  = String(inv.work_description || '').toLowerCase()
@@ -120,28 +164,9 @@ export default function SearchEnginePage() {
         if (!invNo.includes(q) && !jmsNo.includes(q) && !desc.includes(q) && !site.includes(q)) return false
       }
 
-      // 2. Work Order Filter
-      if (invWorkOrder !== 'all') {
-        const wo = String(inv.work_order_number || '').trim().toLowerCase()
-        if (wo !== invWorkOrder.toLowerCase()) return false
-      }
-
-      // 3. Month & Year Filter
-      const dateStr = inv.inv_date || inv.full_amount_received_date || inv.created_at
-      if (dateStr) {
-        const d = new Date(dateStr)
-        if (!isNaN(d.getTime())) {
-          const m = d.getMonth() + 1 // 1 to 12
-          const y = d.getFullYear().toString()
-
-          if (invMonth !== 'all' && m.toString() !== invMonth) return false
-          if (invYear !== 'All Years' && y !== invYear) return false
-        }
-      }
-
       return true
     })
-  }, [invoiceList, invQuery, invWorkOrder, invMonth, invYear])
+  }, [invoiceList, selectedInvNos, selectedInvWorkOrders, selectedInvMonths, selectedInvYears, invKeyword])
 
   const totalInvGrandTotal = useMemo(() => {
     return filteredInvoices.reduce((sum, i) => sum + (Number(i.grand_total) || 0), 0)
@@ -151,22 +176,22 @@ export default function SearchEnginePage() {
     return filteredInvoices.reduce((sum, i) => sum + (Number(i.received_bill_amount) || 0), 0)
   }, [filteredInvoices])
 
-  // Reset Filters
   const resetJmsFilters = () => {
-    setJmsQuery('')
-    setJmsWorkOrder('all')
+    setSelectedJmsNos([])
+    setSelectedJmsWorkOrders([])
     setJmsStartDate('')
     setJmsEndDate('')
+    setJmsKeyword('')
   }
 
   const resetInvFilters = () => {
-    setInvQuery('')
-    setInvWorkOrder('all')
-    setInvMonth('all')
-    setInvYear('All Years')
+    setSelectedInvNos([])
+    setSelectedInvWorkOrders([])
+    setSelectedInvMonths([])
+    setSelectedInvYears([])
+    setInvKeyword('')
   }
 
-  // Export search results
   const handleExportJms = () => {
     exportToExcel(filteredJms, `JMS_Search_Results.xlsx`, 'JMS Results')
   }
@@ -202,11 +227,11 @@ export default function SearchEnginePage() {
     <div className="space-y-6">
       {/* Header Banner */}
       <ModuleHeader
-        title="Search Engine & Analytical Query Suite"
-        subtitle="Search specific JMS numbers to aggregate total value, filter work orders by date range, and query monthly/yearly invoice totals."
+        title="SEARCH"
+        subtitle="Multi-select query engine for JMS numbers, Work Orders, date ranges, and monthly/yearly invoice aggregations."
       />
 
-      {/* Main Search Mode Tabs: JMS Query Engine vs Invoice Query Engine */}
+      {/* Main Search Mode Tabs */}
       <div className="flex bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 backdrop-blur-md w-fit">
         <button
           onClick={() => setActiveTab('jms')}
@@ -217,7 +242,7 @@ export default function SearchEnginePage() {
           }`}
         >
           <FileText size={15} />
-          JMS Search & Total Value Engine
+          JMS Search & Multi-Select Engine
         </button>
 
         <button
@@ -229,7 +254,7 @@ export default function SearchEnginePage() {
           }`}
         >
           <Receipt size={15} />
-          Invoice Monthly / Yearly Search Engine
+          Invoice Search & Multi-Select Engine
         </button>
       </div>
 
@@ -240,7 +265,7 @@ export default function SearchEnginePage() {
           <div className="glass-card p-5 space-y-4 border-l-4 border-l-purple-500">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Search size={16} className="text-purple-400" /> JMS Multi-Parameter Search Controls
+                <Search size={16} className="text-purple-400" /> JMS Multi-Select Query Controls
               </h2>
               <button onClick={resetJmsFilters} className="btn-ghost text-xs">
                 <RefreshCw size={13} /> Reset Filters
@@ -248,35 +273,30 @@ export default function SearchEnginePage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* 1. JMS Numbers Input (Comma Separated) */}
+              {/* 1. Multi-Select JMS Numbers */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  JMS Numbers / Keywords:
+                  Multi-Select JMS Numbers:
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g. JMS-101, JMS-102..."
-                  value={jmsQuery}
-                  onChange={e => setJmsQuery(e.target.value)}
-                  className="input-field"
+                <MultiSelectDropdown
+                  options={allJmsNoOptions}
+                  selected={selectedJmsNos}
+                  onChange={setSelectedJmsNos}
+                  placeholder="All JMS Numbers"
                 />
               </div>
 
-              {/* 2. Work Order Selector */}
+              {/* 2. Multi-Select Work Orders */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Filter by Work Order:
+                  Multi-Select Work Orders:
                 </label>
-                <select
-                  value={jmsWorkOrder}
-                  onChange={e => setJmsWorkOrder(e.target.value)}
-                  className="select-field"
-                >
-                  <option value="all">All Work Orders ({workOrderOptions.length})</option>
-                  {workOrderOptions.map(wo => (
-                    <option key={wo} value={wo}>{wo}</option>
-                  ))}
-                </select>
+                <MultiSelectDropdown
+                  options={workOrderOptions}
+                  selected={selectedJmsWorkOrders}
+                  onChange={setSelectedJmsWorkOrders}
+                  placeholder="All Work Orders"
+                />
               </div>
 
               {/* 3. Start Date */}
@@ -288,7 +308,7 @@ export default function SearchEnginePage() {
                   type="date"
                   value={jmsStartDate}
                   onChange={e => setJmsStartDate(e.target.value)}
-                  className="input-field"
+                  className="input-field py-1.5"
                 />
               </div>
 
@@ -301,7 +321,7 @@ export default function SearchEnginePage() {
                   type="date"
                   value={jmsEndDate}
                   onChange={e => setJmsEndDate(e.target.value)}
-                  className="input-field"
+                  className="input-field py-1.5"
                 />
               </div>
             </div>
@@ -312,13 +332,13 @@ export default function SearchEnginePage() {
             <div className="rounded-2xl border border-purple-800/50 bg-purple-950/30 p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-purple-300 uppercase tracking-wider mb-1">Matching JMS Records</p>
               <p className="text-xl font-extrabold text-white">{filteredJms.length}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Selected Query Results</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Selected Multi-Query Results</p>
             </div>
 
             <div className="rounded-2xl border border-emerald-800/50 bg-emerald-950/30 p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider mb-1">Total JMS Net Value</p>
               <p className="text-xl font-extrabold text-emerald-400 font-mono">{formatINR(totalJmsNetValue)}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Aggregated Value for Period</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Aggregated Net Amount</p>
             </div>
 
             <div className="rounded-2xl border border-blue-800/50 bg-blue-950/30 p-4 backdrop-blur-md">
@@ -338,7 +358,7 @@ export default function SearchEnginePage() {
           <div className="glass-card p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <FileText size={14} className="text-purple-400" /> JMS Search Query Results ({filteredJms.length} rows)
+                <FileText size={14} className="text-purple-400" /> JMS Multi-Select Query Results ({filteredJms.length} rows)
               </h3>
               <button onClick={handleExportJms} className="btn-ghost text-xs">
                 <Download size={13} /> Export Results to Excel
@@ -349,7 +369,7 @@ export default function SearchEnginePage() {
               columns={jmsColumns}
               data={filteredJms}
               loading={jmsLoading}
-              emptyMessage="No JMS records match your search query and date range criteria"
+              emptyMessage="No JMS records match your selected criteria"
               onRowClick={(row) => setSelectedRecord({ record: row, type: 'jms' })}
             />
           </div>
@@ -363,7 +383,7 @@ export default function SearchEnginePage() {
           <div className="glass-card p-5 space-y-4 border-l-4 border-l-cyan-500">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Search size={16} className="text-cyan-400" /> Invoice Monthly & Yearly Query Controls
+                <Search size={16} className="text-cyan-400" /> Invoice Multi-Select Query Controls
               </h2>
               <button onClick={resetInvFilters} className="btn-ghost text-xs">
                 <RefreshCw size={13} /> Reset Filters
@@ -371,66 +391,55 @@ export default function SearchEnginePage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* 1. Month Selector */}
+              {/* 1. Multi-Select Invoices */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Select Month:
+                  Multi-Select Invoices:
                 </label>
-                <select
-                  value={invMonth}
-                  onChange={e => setInvMonth(e.target.value)}
-                  className="select-field"
-                >
-                  {MONTHS.map(m => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
-                  ))}
-                </select>
+                <MultiSelectDropdown
+                  options={allInvNoOptions}
+                  selected={selectedInvNos}
+                  onChange={setSelectedInvNos}
+                  placeholder="All Invoices"
+                />
               </div>
 
-              {/* 2. Year Selector */}
+              {/* 2. Multi-Select Work Orders */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Select Year:
+                  Multi-Select Work Orders:
                 </label>
-                <select
-                  value={invYear}
-                  onChange={e => setInvYear(e.target.value)}
-                  className="select-field"
-                >
-                  {YEARS.map(y => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
+                <MultiSelectDropdown
+                  options={workOrderOptions}
+                  selected={selectedInvWorkOrders}
+                  onChange={setSelectedInvWorkOrders}
+                  placeholder="All Work Orders"
+                />
               </div>
 
-              {/* 3. Work Order Selector */}
+              {/* 3. Multi-Select Months */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Filter by Work Order:
+                  Multi-Select Months:
                 </label>
-                <select
-                  value={invWorkOrder}
-                  onChange={e => setInvWorkOrder(e.target.value)}
-                  className="select-field"
-                >
-                  <option value="all">All Work Orders ({workOrderOptions.length})</option>
-                  {workOrderOptions.map(wo => (
-                    <option key={wo} value={wo}>{wo}</option>
-                  ))}
-                </select>
+                <MultiSelectDropdown
+                  options={MONTHS}
+                  selected={selectedInvMonths}
+                  onChange={setSelectedInvMonths}
+                  placeholder="All Months"
+                />
               </div>
 
-              {/* 4. Invoice Number / Keyword Search */}
+              {/* 4. Multi-Select Years */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Invoice Number / Keyword:
+                  Multi-Select Years:
                 </label>
-                <input
-                  type="text"
-                  placeholder="Search invoice number..."
-                  value={invQuery}
-                  onChange={e => setInvQuery(e.target.value)}
-                  className="input-field"
+                <MultiSelectDropdown
+                  options={YEARS.map(y => ({ value: y, label: y }))}
+                  selected={selectedInvYears}
+                  onChange={setSelectedInvYears}
+                  placeholder="All Years"
                 />
               </div>
             </div>
@@ -441,9 +450,7 @@ export default function SearchEnginePage() {
             <div className="rounded-2xl border border-cyan-800/50 bg-cyan-950/30 p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-cyan-300 uppercase tracking-wider mb-1">Number of Invoices</p>
               <p className="text-xl font-extrabold text-white">{filteredInvoices.length}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Issued in {invMonth === 'all' ? 'All Months' : MONTHS.find(m=>m.value===invMonth)?.label} {invYear}
-              </p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Matching Invoices Count</p>
             </div>
 
             <div className="rounded-2xl border border-emerald-800/50 bg-emerald-950/30 p-4 backdrop-blur-md">
@@ -471,7 +478,7 @@ export default function SearchEnginePage() {
           <div className="glass-card p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <Receipt size={14} className="text-cyan-400" /> Monthly / Yearly Invoice Results ({filteredInvoices.length} invoices)
+                <Receipt size={14} className="text-cyan-400" /> Multi-Select Invoice Query Results ({filteredInvoices.length} invoices)
               </h3>
               <button onClick={handleExportInvoices} className="btn-ghost text-xs">
                 <Download size={13} /> Export Results to Excel
@@ -482,7 +489,7 @@ export default function SearchEnginePage() {
               columns={invColumns}
               data={filteredInvoices}
               loading={invoiceLoading}
-              emptyMessage="No invoices match your selected month, year, and search criteria"
+              emptyMessage="No invoices match your selected criteria"
               onRowClick={(row) => setSelectedRecord({ record: row, type: 'invoice' })}
             />
           </div>
