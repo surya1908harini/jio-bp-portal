@@ -7,6 +7,7 @@ import JmsPage from './pages/JmsPage'
 import InvoicePage from './pages/InvoicePage'
 import BudgetPage from './pages/BudgetPage'
 import NotificationPage from './pages/NotificationPage'
+import SearchEnginePage from './pages/SearchEnginePage'
 import AdminPage from './pages/AdminPage'
 import ErrorBoundary from './components/ErrorBoundary'
 
@@ -48,6 +49,9 @@ export default function App() {
 
           {/* Notifications */}
           <Route path="notifications" element={<NotificationPage />} />
+
+          {/* Search Engine */}
+          <Route path="search"        element={<SearchEnginePage />} />
 
           {/* Admin */}
           <Route path="admin"        element={<AdminRoute><AdminPage /></AdminRoute>} />
