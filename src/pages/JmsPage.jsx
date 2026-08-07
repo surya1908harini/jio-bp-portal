@@ -324,12 +324,6 @@ export default function JmsPage() {
             )}
           </div>
         }
-        stats={[
-          { icon: FileText, label: 'Total JMS Records', value: sortedRecords.length, sub: activeFy === 'overall' ? 'All FY' : `FY ${activeFy}`, color: 'purple' },
-          { icon: Clock, label: 'Pending Approval', value: totalPending, sub: 'Pending A1/A2/QSD/A3', color: 'amber' },
-          { icon: CheckCircle, label: 'Released by A3', value: totalReleased, sub: 'Ready to Invoice', color: 'green' },
-          { icon: Receipt, label: 'Total Net Amount', value: formatINR(totalNet), sub: 'Total Value', color: 'cyan' },
-        ]}
       />
 
       {/* FY Tabs Control Box */}

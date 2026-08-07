@@ -362,12 +362,6 @@ export default function InvoicePage() {
             )}
           </div>
         }
-        stats={[
-          { icon: Receipt, label: 'Total Invoices', value: records.length, sub: activeFy === 'overall' ? 'All FY' : `FY ${activeFy}`, color: 'purple' },
-          { icon: DollarSign, label: 'Grand Total Value', value: formatINR(totalGT), sub: 'Inclusive of GST', color: 'green' },
-          { icon: CheckCircle2, label: 'Fully Paid Invoices', value: fullPaidCnt, sub: `${records.length ? Math.round((fullPaidCnt/records.length)*100) : 0}% Paid`, color: 'cyan' },
-          { icon: FileCheck, label: 'Received Bill Amount', value: formatINR(totalRec), sub: 'Total Collections', color: 'amber' },
-        ]}
       />
 
       {/* FY Selection Tabs */}
