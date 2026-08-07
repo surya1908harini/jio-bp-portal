@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar, FileText, Clock, CheckCircle, Receipt } from 'lucide-react'
+import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar, FileText, Clock, CheckCircle, Receipt, Search } from 'lucide-react'
 import ModuleHeader from '../components/ModuleHeader'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
@@ -148,6 +148,7 @@ export default function JmsPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [editRow,    setEditRow]    = useState(null)
   const [form,       setForm]       = useState(EMPTY_FORM)
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
 
   // Fetch all records to support flexible splitting
   const { data: allRecords = [], isLoading } = useQuery({
