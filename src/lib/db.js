@@ -108,6 +108,8 @@ function clean(obj) {
     synced.full_amount_received_date = synced.amount_received_date
   }
   delete synced.amount_received_date // Remove old column key so PostgREST schema cache error is prevented!
+  delete synced.expected_payment_date // Remove computed key so PostgREST schema cache error is prevented!
+  delete synced.payment_timeframe_days // Remove computed key so PostgREST schema cache error is prevented!
 
   const result = {}
   for (const [k, v] of Object.entries(synced)) {
