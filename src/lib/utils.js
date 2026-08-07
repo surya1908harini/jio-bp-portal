@@ -213,37 +213,70 @@ export function getBudgetRecordFy(r) {
 }
 
 // ──────────────────────────────────────────────
-// Auto-Sync Full Amount Received Date & GST Amount Received Date
-// For invoices issued on/after 01.04.2026 (FY 2026-27 onwards):
-// If full amount date is given but GST date is blank -> GST date = full date
-// Conversely if GST date is given but full amount date is blank -> full date = GST date
+// Date & Payment Status Auto-Calculation Rules:
+//
+// RULE 1: Invoices issued between 01.04.2024 and 31.03.2026 (FY 24-25 & FY 25-26):
+// If full_amount_received_date is specified & gst_amount_received_date is blank:
+//   -> gst_amount_received_date = full_amount_received_date
+//   -> payment_status becomes 'Full Payment Received'
+//
+// RULE 2: Invoices issued on or after 01.04.2026 (FY 26-27 onwards):
+// If full_amount_received_date is specified & gst_amount_received_date is blank:
+//   -> Record entry automatically with payment_status = 'Net Amount Received'
+// If gst_amount_received_date is specified & full_amount_received_date is blank:
+//   -> Record entry automatically with payment_status = 'GST Payment Only Received'
+// If BOTH dates are specified:
+//   -> payment_status = 'Full Payment Received'
 // ──────────────────────────────────────────────
-export function applyGstDateAutoSync(record) {
+export function applyInvoiceDateAndStatusRules(record) {
   if (!record) return record
   const synced = { ...record }
-  synced.payment_status = derivePaymentStatus(synced)
+
+  const invDateStr = synced.inv_date ? String(synced.inv_date).trim() : ''
+  let fullDate = (synced.full_amount_received_date || synced.amount_received_date)
+    ? String(synced.full_amount_received_date || synced.amount_received_date).trim()
+    : ''
+  let gstDate = synced.gst_amount_received_date ? String(synced.gst_amount_received_date).trim() : ''
+
+  if (invDateStr) {
+    const invDate = new Date(invDateStr)
+    if (!isNaN(invDate.getTime())) {
+      const startDate2024 = new Date('2024-04-01')
+      const endDate2026   = new Date('2026-03-31')
+
+      // Rule for Invoices between 01.04.2024 and 31.03.2026
+      if (invDate >= startDate2024 && invDate <= endDate2026) {
+        if (fullDate && !gstDate) {
+          gstDate = fullDate
+          synced.gst_amount_received_date = fullDate
+        }
+      }
+    }
+  }
+
+  if (synced.amount_received_date && !synced.full_amount_received_date) {
+    synced.full_amount_received_date = synced.amount_received_date
+  }
+
+  if (fullDate && gstDate) {
+    synced.payment_status = 'Full Payment Received'
+  } else if (fullDate && !gstDate) {
+    synced.payment_status = 'Net Amount Received'
+  } else if (!fullDate && gstDate) {
+    synced.payment_status = 'GST Payment Only Received'
+  } else {
+    synced.payment_status = synced.payment_status || 'Pending'
+  }
+
   return synced
 }
 
-// ──────────────────────────────────────────────
-// Derive Payment Status automatically from date fields:
-// 1. Full Payment Received Date only -> 'Net Amount Received'
-// 2. GST Payment Received Date only -> 'GST Payment Only Received'
-// 3. Both Full & GST Dates entered -> 'Full Payment Received'
-// 4. Neither entered -> 'Pending' (or existing status)
-// ──────────────────────────────────────────────
-export function derivePaymentStatus(record) {
-  if (!record) return 'Pending'
-  const fullDate = (record.full_amount_received_date || record.amount_received_date) ? String(record.full_amount_received_date || record.amount_received_date).trim() : ''
-  const gstDate  = record.gst_amount_received_date ? String(record.gst_amount_received_date).trim() : ''
+export function applyGstDateAutoSync(record) {
+  return applyInvoiceDateAndStatusRules(record)
+}
 
-  if (fullDate && gstDate) {
-    return 'Full Payment Received'
-  } else if (fullDate && !gstDate) {
-    return 'Net Amount Received'
-  } else if (!fullDate && gstDate) {
-    return 'GST Payment Only Received'
-  }
-  return record.payment_status || 'Pending'
+export function derivePaymentStatus(record) {
+  const synced = applyInvoiceDateAndStatusRules(record)
+  return synced.payment_status
 }
 
