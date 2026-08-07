@@ -5,8 +5,8 @@ import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Cale
 import ModuleHeader from '../components/ModuleHeader'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
-import { jmsDb } from '../lib/db'
-import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS, JMS_STATUSES, CURRENT_FY, getFinancialYear } from '../lib/utils'
+import { jmsDb, budgetDb } from '../lib/db'
+import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS, JMS_STATUSES, CURRENT_FY, getFinancialYear, calculateExpectedPaymentDate } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
@@ -158,6 +158,21 @@ export default function JmsPage() {
     queryFn:  () => jmsDb.listAll(),
   })
 
+  const { data: budgetList = [] } = useQuery({
+    queryKey: ['budget', 'all'],
+    queryFn: () => budgetDb.listAll(),
+  })
+
+  const budgetTimeframeMap = useMemo(() => {
+    const map = {}
+    budgetList.forEach(b => {
+      if (b.work_order_number) {
+        map[b.work_order_number.trim().toLowerCase()] = b.payment_timeframe_days || 30
+      }
+    })
+    return map
+  }, [budgetList])
+
   // Helper to determine record FY always based on jms_create_date first, falling back to other dates if empty
   const getRecordFy = (r) => {
     const date = r.jms_create_date || r.inv_date || r.a1_release_date || r.a2_release_date || r.qsd_release_date || r.inv_posting_date || r.payment_date;
@@ -171,15 +186,28 @@ export default function JmsPage() {
   const fyRecords = activeFy === 'overall' ? allRecords : allRecords.filter(r => getRecordFy(r) === activeFy)
 
   // Apply slot filter based on status
-  const records = fyRecords.filter(r => {
-    if (activeSlot === 'all') return true
-    if (activeSlot === 'pending_a1') return r.status === 'Pending A1' || r.status === 'Pending' || r.status === 'A1'
-    if (activeSlot === 'pending_a2') return r.status === 'Pending A2' || r.status === 'A2'
-    if (activeSlot === 'pending_qsd') return r.status === 'Pending QSD' || r.status === 'QSD'
-    if (activeSlot === 'pending_a3') return r.status === 'Pending A3' || r.status === 'A3'
-    if (activeSlot === 'released_a3') return r.status === 'Released by A3' || r.status === 'Invoiced'
-    return true
-  })
+  const records = useMemo(() => {
+    const rawFiltered = fyRecords.filter(r => {
+      if (activeSlot === 'all') return true
+      if (activeSlot === 'pending_a1') return r.status === 'Pending A1' || r.status === 'Pending' || r.status === 'A1'
+      if (activeSlot === 'pending_a2') return r.status === 'Pending A2' || r.status === 'A2'
+      if (activeSlot === 'pending_qsd') return r.status === 'Pending QSD' || r.status === 'QSD'
+      if (activeSlot === 'pending_a3') return r.status === 'Pending A3' || r.status === 'A3'
+      if (activeSlot === 'released_a3') return r.status === 'Released by A3' || r.status === 'Invoiced'
+      return true
+    })
+
+    return rawFiltered.map(r => {
+      const woKey = String(r.work_order_number || '').trim().toLowerCase()
+      const timeframeDays = budgetTimeframeMap[woKey] || 30
+      const baseDate = r.inv_posting_date || r.jms_create_date || r.inv_date || r.a1_release_date
+      return {
+        ...r,
+        payment_timeframe_days: timeframeDays,
+        expected_payment_date: calculateExpectedPaymentDate(baseDate, timeframeDays),
+      }
+    })
+  }, [fyRecords, activeSlot, budgetTimeframeMap])
 
   // Sort records: Current FY on top, then newest on top by JMS Date (or fallback date), then JMS No
   const sortedRecords = useMemo(() => {
@@ -282,6 +310,14 @@ export default function JmsPage() {
     { key: 'site',             header: 'Site' },
     { key: 'work_description', header: 'Description' },
     { key: 'status',           header: 'Status',         render: r => <StatusBadge status={r.status} /> },
+    {
+      key: 'expected_payment_date', header: 'Expected Payment Date',
+      render: r => (
+        <span className="text-amber-300 font-semibold font-mono text-xs">
+          {formatDate(r.expected_payment_date) || '—'}
+        </span>
+      )
+    },
     {
       key: 'pdf', header: 'PDF', sortable: false,
       render: r => (

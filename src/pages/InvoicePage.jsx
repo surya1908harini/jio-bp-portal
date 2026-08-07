@@ -150,7 +150,9 @@ export default function InvoicePage() {
       const woKey = String(r.work_order_number || '').trim().toLowerCase()
       const timeframeDays = budgetTimeframeMap[woKey] || 30
       synced.payment_timeframe_days = timeframeDays
-      synced.expected_payment_date = calculateExpectedPaymentDate(synced.inv_date, timeframeDays)
+      // Link Posting Date to Expected Payment Timeframe (Days)
+      const baseDate = synced.inv_posting_date || synced.inv_date
+      synced.expected_payment_date = calculateExpectedPaymentDate(baseDate, timeframeDays)
       return synced
     })
   }, [allRecords, activeFy, budgetTimeframeMap])
