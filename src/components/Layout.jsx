@@ -16,20 +16,28 @@ const NAV = [
   { label: 'JMS', icon: FileText, path: '/jms' },
   { label: 'Invoices', icon: Receipt, path: '/invoices' },
   { label: 'Budget', icon: PieChart, path: '/budget' },
+  { label: 'Notifications', icon: Bell, path: '/notifications', badgeKey: 'notif' },
 ]
 
-function NavItem({ item, collapsed }) {
+function NavItem({ item, collapsed, unreadCount }) {
   const location = useLocation()
   const isActive = location.pathname.startsWith(item.path)
 
   return (
     <Link
       to={item.path}
-      className={`sidebar-link ${isActive ? 'active' : ''}`}
+      className={`sidebar-link flex items-center justify-between ${isActive ? 'active' : ''}`}
       title={item.label}
     >
-      <item.icon size={18} />
-      {!collapsed && <span>{item.label}</span>}
+      <div className="flex items-center gap-2.5 min-w-0">
+        <item.icon size={18} className="flex-shrink-0" />
+        {!collapsed && <span className="truncate">{item.label}</span>}
+      </div>
+      {!collapsed && item.badgeKey === 'notif' && unreadCount > 0 && (
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-slate-950 shadow-sm animate-pulse">
+          {unreadCount}
+        </span>
+      )}
     </Link>
   )
 }
@@ -282,7 +290,7 @@ export default function Layout() {
       {/* Nav Items */}
       <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
         {NAV.map(item => (
-          <NavItem key={item.label} item={item} collapsed={collapsed} />
+          <NavItem key={item.label} item={item} collapsed={collapsed} unreadCount={unreadNotifications.length} />
         ))}
         {isAdmin && (
           <Link
@@ -525,7 +533,16 @@ export default function Layout() {
 
         {/* Main Outlet */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 animate-fade-in">
-          <Outlet />
+          <Outlet context={{
+            allNotifications,
+            unreadNotifications,
+            readNotifications,
+            markAsRead,
+            markAllAsRead,
+            clearReadHistory,
+            setSelectedNotif,
+            notifCount: unreadNotifications.length
+          }} />
         </main>
       </div>
 

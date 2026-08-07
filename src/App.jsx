@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage'
 import JmsPage from './pages/JmsPage'
 import InvoicePage from './pages/InvoicePage'
 import BudgetPage from './pages/BudgetPage'
+import NotificationPage from './pages/NotificationPage'
 import AdminPage from './pages/AdminPage'
 import ErrorBoundary from './components/ErrorBoundary'
 
@@ -44,6 +45,9 @@ export default function App() {
           {/* Budget */}
           <Route path="budget"       element={<BudgetPage />} />
           <Route path="budget/:fy"   element={<BudgetPage />} />
+
+          {/* Notifications */}
+          <Route path="notifications" element={<NotificationPage />} />
 
           {/* Admin */}
           <Route path="admin"        element={<AdminRoute><AdminPage /></AdminRoute>} />
