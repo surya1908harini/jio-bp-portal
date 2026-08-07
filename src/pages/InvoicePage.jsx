@@ -76,16 +76,16 @@ function StatCard({ label, value, sub, color = 'blue' }) {
     cyan: 'border-cyan-800/40 bg-cyan-900/20 text-cyan-400',
   }
   return (
-    <div className={`rounded-xl border p-2.5 backdrop-blur-sm min-w-0 overflow-hidden transition-all hover:scale-[1.02] ${cls[color]}`}>
-      <p className="text-[9px] sm:text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1 truncate">{label}</p>
-      <p className="text-xs sm:text-sm font-extrabold text-white tracking-tight truncate" title={value}>{value}</p>
-      {sub && <p className="text-[10px] text-slate-400 mt-0.5 truncate">{sub}</p>}
+    <div className={`rounded-2xl border p-3.5 sm:p-4 backdrop-blur-sm transition-all hover:scale-[1.02] ${cls[color]}`}>
+      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1 whitespace-nowrap">{label}</p>
+      <p className="text-base sm:text-lg font-bold text-white tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{value}</p>
+      {sub && <p className="text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">{sub}</p>}
     </div>
   )
 }
 
 function getRecordFy(r) {
-  const date = r.inv_date || r.full_amount_received_date || r.amount_received_date || r.gst_amount_received_date;
+  const date = r.inv_date || r.amount_received_date || r.gst_amount_received_date;
   if (date) {
     const fy = getFinancialYear(date)
     if (fy) return fy
@@ -121,18 +121,14 @@ export default function InvoicePage() {
     { key: 'full_paid',     label: 'Full Payment Received' },
   ]
 
-  const { data: rawRecords = [], isLoading } = useQuery({
+  const { data: allRecords = [], isLoading } = useQuery({
     queryKey: ['invoices', 'all'],
     queryFn: () => invoiceDb.listAll(),
   })
 
-  const allRecords = useMemo(() => {
-    return rawRecords.map(r => applyInvoiceDateAndStatusRules(r))
-  }, [rawRecords])
-
   const records = useMemo(() => {
-    if (activeFy === 'overall') return allRecords
-    return allRecords.filter(r => getRecordFy(r) === activeFy)
+    const rawList = activeFy === 'overall' ? allRecords : allRecords.filter(r => getRecordFy(r) === activeFy)
+    return rawList.map(r => applyInvoiceDateAndStatusRules(r))
   }, [allRecords, activeFy])
 
   const sortedRecords = useMemo(() => {
@@ -398,7 +394,7 @@ export default function InvoicePage() {
           <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
             <TrendingUp size={15} className="text-jio-blue-400" /> FY {activeFy} Summary
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3.5">
             <StatCard label="Total Invoices"  value={records.length}          color="blue"   />
             <StatCard label="Grand Total"     value={formatINR(totalGT)}      color="green"  />
             <StatCard label="TDS"             value={formatINR(totalTDS)}     color="amber"  />
