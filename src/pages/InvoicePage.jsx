@@ -6,7 +6,7 @@ import ModuleHeader from '../components/ModuleHeader'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { invoiceDb } from '../lib/db'
-import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS, PAYMENT_STATUSES, CURRENT_FY, getFinancialYear, applyGstDateAutoSync } from '../lib/utils'
+import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS, PAYMENT_STATUSES, CURRENT_FY, getFinancialYear, applyGstDateAutoSync, applyInvoiceDateAndStatusRules } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
@@ -76,16 +76,16 @@ function StatCard({ label, value, sub, color = 'blue' }) {
     cyan: 'border-cyan-800/40 bg-cyan-900/20 text-cyan-400',
   }
   return (
-    <div className={`rounded-2xl border p-4 backdrop-blur-sm transition-all hover:scale-[1.02] ${cls[color]}`}>
-      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
-      <p className="text-lg font-bold text-white tracking-tight">{value}</p>
-      {sub && <p className="text-[11px] text-slate-400 mt-0.5">{sub}</p>}
+    <div className={`rounded-xl border p-2.5 backdrop-blur-sm min-w-0 overflow-hidden transition-all hover:scale-[1.02] ${cls[color]}`}>
+      <p className="text-[9px] sm:text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1 truncate">{label}</p>
+      <p className="text-xs sm:text-sm font-extrabold text-white tracking-tight truncate" title={value}>{value}</p>
+      {sub && <p className="text-[10px] text-slate-400 mt-0.5 truncate">{sub}</p>}
     </div>
   )
 }
 
 function getRecordFy(r) {
-  const date = r.inv_date || r.amount_received_date || r.gst_amount_received_date;
+  const date = r.inv_date || r.full_amount_received_date || r.amount_received_date || r.gst_amount_received_date;
   if (date) {
     const fy = getFinancialYear(date)
     if (fy) return fy
@@ -121,10 +121,14 @@ export default function InvoicePage() {
     { key: 'full_paid',     label: 'Full Payment Received' },
   ]
 
-  const { data: allRecords = [], isLoading } = useQuery({
+  const { data: rawRecords = [], isLoading } = useQuery({
     queryKey: ['invoices', 'all'],
     queryFn: () => invoiceDb.listAll(),
   })
+
+  const allRecords = useMemo(() => {
+    return rawRecords.map(r => applyInvoiceDateAndStatusRules(r))
+  }, [rawRecords])
 
   const records = useMemo(() => {
     if (activeFy === 'overall') return allRecords
