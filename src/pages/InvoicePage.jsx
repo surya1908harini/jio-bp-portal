@@ -19,7 +19,7 @@ const EMPTY_FORM = {
   sac_code: '', work_description: '', site: '', type_of_ro: '', ro_code: '',
   total: '', igst: '', cgst: '', sgst: '', grand_total: '', hb_rb: '', tds: '',
   gst_amount_deduction: '', gst_tds_2pct_iocl: '', sd_retention: '',
-  tcs_credit_note: '', received_bill_amount: '', amount_received_date: '',
+  tcs_credit_note: '', received_bill_amount: '', full_amount_received_date: '',
   gst_amount_received_date: '', payment_status: 'Pending',
 }
 
@@ -45,7 +45,7 @@ const IMPORT_MAP = {
   'SD / Retention': 'sd_retention', 'SD/Retention': 'sd_retention', 'sd_retention': 'sd_retention',
   'TCS / credit note': 'tcs_credit_note', 'TCS/Credit': 'tcs_credit_note', 'tcs_credit_note': 'tcs_credit_note',
   'Received Bill amount': 'received_bill_amount', 'received_bill_amount': 'received_bill_amount',
-  'Full Amount Received Date': 'amount_received_date', 'Full Amount Received DATE': 'amount_received_date', 'Full Received Date': 'amount_received_date', 'Amount Received DATE': 'amount_received_date', 'amount_received_date': 'amount_received_date',
+  'Full Amount Received Date': 'full_amount_received_date', 'Full Amount Received DATE': 'full_amount_received_date', 'Full Received Date': 'full_amount_received_date', 'Amount Received DATE': 'full_amount_received_date', 'amount_received_date': 'full_amount_received_date', 'full_amount_received_date': 'full_amount_received_date',
   'GST Amount Received Date': 'gst_amount_received_date', 'GST Amount Received DATE': 'gst_amount_received_date', 'GST Received Date': 'gst_amount_received_date', 'gst_amount_received_date': 'gst_amount_received_date',
   'Payment Status': 'payment_status', 'payment_status': 'payment_status',
 }
@@ -54,7 +54,7 @@ const INV_IMPORT_COLUMNS = [
   'inv_date','jms_no','work_order_number','gst_no','inv_number','sac_code',
   'work_description','site','type_of_ro','ro_code','total','igst','cgst','sgst',
   'grand_total','hb_rb','tds','gst_amount_deduction','gst_tds_2pct_iocl',
-  'sd_retention','tcs_credit_note','received_bill_amount','amount_received_date','gst_amount_received_date','payment_status',
+  'sd_retention','tcs_credit_note','received_bill_amount','full_amount_received_date','gst_amount_received_date','payment_status',
 ]
 
 function PaymentBadge({ status }) {
@@ -185,7 +185,7 @@ export default function InvoicePage() {
       if (name === 'total') {
         next = updateCalculations(next, taxMode)
       }
-      if (['inv_date', 'amount_received_date', 'gst_amount_received_date'].includes(name)) {
+      if (['inv_date', 'full_amount_received_date', 'amount_received_date', 'gst_amount_received_date'].includes(name)) {
         next = applyGstDateAutoSync(next)
       }
       return next
@@ -296,7 +296,7 @@ export default function InvoicePage() {
     { name: 'sd_retention', label: 'SD / Retention', type: 'number' },
     { name: 'tcs_credit_note', label: 'TCS / Credit Note', type: 'number' },
     { name: 'received_bill_amount', label: 'Received Bill Amount', type: 'number' },
-    { name: 'amount_received_date', label: 'Full Amount Received Date', type: 'date' },
+    { name: 'full_amount_received_date', label: 'Full Amount Received Date', type: 'date' },
     { name: 'gst_amount_received_date', label: 'GST Amount Received Date', type: 'date' },
   ]
 
@@ -323,7 +323,7 @@ export default function InvoicePage() {
     { key: 'sd_retention',             header: 'SD/Retention',       render: r => formatINR(r.sd_retention) },
     { key: 'tcs_credit_note',          header: 'TCS/Credit',         render: r => formatINR(r.tcs_credit_note) },
     { key: 'received_bill_amount',     header: 'Received Amt',       render: r => <span className="text-amber-400">{formatINR(r.received_bill_amount)}</span> },
-    { key: 'amount_received_date',     header: 'Full Received Date', render: r => formatDate(r.full_amount_received_date || r.amount_received_date) },
+    { key: 'full_amount_received_date',header: 'Full Received Date', render: r => formatDate(r.full_amount_received_date || r.amount_received_date) },
     { key: 'gst_amount_received_date', header: 'GST Received Date',  render: r => formatDate(r.gst_amount_received_date) },
     { key: 'payment_status',           header: 'Payment Status',     render: r => <PaymentBadge status={r.payment_status} /> },
     {

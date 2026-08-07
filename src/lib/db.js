@@ -61,6 +61,11 @@ function cleanBudgetRecord(obj) {
 // ── helper: format dates & strip empty/null values before insert/update ──
 function clean(obj) {
   const synced = applyGstDateAutoSync({ ...obj })
+  if (synced.amount_received_date && !synced.full_amount_received_date) {
+    synced.full_amount_received_date = synced.amount_received_date
+  }
+  delete synced.amount_received_date // Remove old column key so PostgREST schema cache error is prevented!
+
   const result = {}
   for (const [k, v] of Object.entries(synced)) {
     if (k === 'fy') continue // ignore invalid 'fy' property not present in schema
