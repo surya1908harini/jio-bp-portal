@@ -5,7 +5,7 @@ import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Cale
 import ModuleHeader from '../components/ModuleHeader'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
-import { invoiceDb } from '../lib/db'
+import { invoiceDb, budgetDb } from '../lib/db'
 import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS, PAYMENT_STATUSES, CURRENT_FY, getFinancialYear, applyGstDateAutoSync, applyInvoiceDateAndStatusRules } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
@@ -13,6 +13,7 @@ import ImportModal from '../components/ImportModal'
 import FyTabs from '../components/FyTabs'
 import SlotTabs from '../components/SlotTabs'
 import PdfCell from '../components/PdfCell'
+import SummaryModal from '../components/SummaryModal'
 
 const EMPTY_FORM = {
   inv_date: '', jms_no: '', work_order_number: '', gst_no: '', inv_number: '',
@@ -107,6 +108,7 @@ export default function InvoicePage() {
   const [form, setForm]             = useState(EMPTY_FORM)
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [activeSlot, setActiveSlot] = useState('all')
+  const [selectedRow, setSelectedRow] = useState(null)
 
   useEffect(() => {
     const s = searchParams.get('search')
@@ -125,6 +127,34 @@ export default function InvoicePage() {
     queryKey: ['invoices', 'all'],
     queryFn: () => invoiceDb.listAll(),
   })
+
+  const { data: budgetList = [] } = useQuery({
+    queryKey: ['budget', 'all'],
+    queryFn: () => budgetDb.listAll(),
+  })
+
+  // Create budget lookup map by Work Order Number
+  const budgetMapByWo = useMemo(() => {
+    const map = {}
+    budgetList.forEach(b => {
+      if (b.work_order_number) {
+        map[String(b.work_order_number).trim().toLowerCase()] = b
+      }
+    })
+    return map
+  }, [budgetList])
+
+  const getExpectedPaymentDate = (r) => {
+    if (!r.inv_date) return null
+    const wo = String(r.work_order_number || '').trim().toLowerCase()
+    const budget = budgetMapByWo[wo]
+    const days = budget?.payment_timeframe_days ? Number(budget.payment_timeframe_days) : 30
+    const invDate = new Date(r.inv_date)
+    if (isNaN(invDate.getTime())) return null
+    const expDate = new Date(invDate)
+    expDate.setDate(expDate.getDate() + days)
+    return expDate.toISOString().split('T')[0]
+  }
 
   const records = useMemo(() => {
     const rawList = activeFy === 'overall' ? allRecords : allRecords.filter(r => getRecordFy(r) === activeFy)
@@ -274,7 +304,7 @@ export default function InvoicePage() {
   }
 
   const handleClose = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
-  const handleDelete = (id) => { if (window.confirm('Delete this invoice?')) deleteMutation.mutate(id) }
+  const handleDelete = (e, id) => { e?.stopPropagation?.(); if (window.confirm('Delete this invoice?')) deleteMutation.mutate(id) }
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
   const handleExport = () => { exportToExcel(sortedRecords, `Invoices_${activeFy}.xlsx`, 'Invoices'); toast.success('Excel downloaded') }
 
@@ -301,45 +331,44 @@ export default function InvoicePage() {
   ]
 
   const columns = [
+    { key: 'inv_number',               header: 'Invoice Number',     render: r => <span className="font-bold text-white">{r.inv_number || '—'}</span> },
     { key: 'inv_date',                 header: 'Inv Date',           render: r => formatDate(r.inv_date) },
-    { key: 'jms_no',                   header: 'JMS No',             render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
-    { key: 'work_order_number',        header: 'Work Order' },
-    { key: 'gst_no',                   header: 'GST No' },
-    { key: 'inv_number',               header: 'Inv Number' },
-    { key: 'sac_code',                 header: 'SAC Code' },
-    { key: 'work_description',         header: 'Description' },
+    {
+      key: 'expected_payment_date',    header: 'Expected Payment Date',
+      render: r => {
+        const expDate = getExpectedPaymentDate(r)
+        return expDate ? (
+          <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-purple-950/80 text-purple-300 border border-purple-800/60 font-mono">
+            {formatDate(expDate)}
+          </span>
+        ) : '—'
+      }
+    },
+    { key: 'jms_no',                   header: 'JMS No',             render: r => <span className="font-semibold text-purple-300">{r.jms_no || '—'}</span> },
     { key: 'site',                     header: 'Site' },
-    { key: 'type_of_ro',               header: 'Type of RO' },
-    { key: 'ro_code',                  header: 'RO Code' },
-    { key: 'total',                    header: 'Total',              render: r => <span className="text-blue-400">{formatINR(r.total)}</span> },
+    { key: 'work_description',         header: 'Description' },
+    { key: 'total',                    header: 'Net Amount',         render: r => <span className="text-blue-400 font-semibold">{formatINR(r.total)}</span> },
     { key: 'igst',                     header: 'IGST',               render: r => formatINR(r.igst) },
     { key: 'cgst',                     header: 'CGST',               render: r => formatINR(r.cgst) },
     { key: 'sgst',                     header: 'SGST',               render: r => formatINR(r.sgst) },
-    { key: 'grand_total',              header: 'Grand Total',        render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.grand_total)}</span> },
-    { key: 'hb_rb',                    header: 'HB/RB' },
-    { key: 'tds',                      header: 'TDS',                render: r => formatINR(r.tds) },
-    { key: 'gst_amount_deduction',     header: 'GST Deduction',      render: r => formatINR(r.gst_amount_deduction) },
-    { key: 'gst_tds_2pct_iocl',       header: 'GST TDS 2%',        render: r => formatINR(r.gst_tds_2pct_iocl) },
-    { key: 'sd_retention',             header: 'SD/Retention',       render: r => formatINR(r.sd_retention) },
-    { key: 'tcs_credit_note',          header: 'TCS/Credit',         render: r => formatINR(r.tcs_credit_note) },
-    { key: 'received_bill_amount',     header: 'Received Amt',       render: r => <span className="text-amber-400">{formatINR(r.received_bill_amount)}</span> },
-    { key: 'full_amount_received_date',header: 'Full Received Date', render: r => formatDate(r.full_amount_received_date || r.amount_received_date) },
-    { key: 'gst_amount_received_date', header: 'GST Received Date',  render: r => formatDate(r.gst_amount_received_date) },
-    { key: 'payment_status',           header: 'Payment Status',     render: r => <PaymentBadge status={r.payment_status} /> },
+    { key: 'grand_total',              header: 'Grand Total',        render: r => <span className="text-emerald-400 font-bold">{formatINR(r.grand_total)}</span> },
+    { key: 'payment_status',           header: 'Status',             render: r => <PaymentBadge status={r.payment_status} /> },
     {
       key: 'pdf', header: 'PDF', sortable: false,
       render: r => (
-        <PdfCell pdfUrl={r.pdf_url} folder="invoices" isAdmin={isAdmin}
-          onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url: url })}
-          onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url: null })} />
+        <div onClick={e => e.stopPropagation()}>
+          <PdfCell pdfUrl={r.pdf_url} folder="invoices" isAdmin={isAdmin}
+            onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url: url })}
+            onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url: null })} />
+        </div>
       )
     },
     ...(isAdmin ? [{
       key: '_actions', header: 'Actions', sortable: false,
       render: r => (
-        <div className="flex gap-1">
-          <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-jio-blue-800/50 text-jio-blue-400 hover:text-white transition-colors"><Pencil size={14} /></button>
-          <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors"><Trash2 size={14} /></button>
+        <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+          <button onClick={(e) => { e.stopPropagation(); openEdit(r) }} className="p-1.5 rounded-lg hover:bg-jio-blue-800/50 text-jio-blue-400 hover:text-white transition-colors"><Pencil size={14} /></button>
+          <button onClick={(e) => handleDelete(e, r.id)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors"><Trash2 size={14} /></button>
         </div>
       )
     }] : []),
@@ -367,20 +396,22 @@ export default function InvoicePage() {
       {/* FY Selection Tabs */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <FyTabs basePath="/invoices" activeFy={activeFy} stats={fyStats} />
-        <div className="relative w-full sm:w-64">
-          <input
-            type="text"
-            placeholder="Search invoices..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="input-field pl-9 py-2 text-xs"
-          />
-          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        </div>
+        <SlotTabs slots={PAYMENT_SLOTS} active={activeSlot} setActive={setActiveSlot} />
       </div>
 
-      {/* Payment Status Filter Pills */}
-      <SlotTabs slots={PAYMENT_SLOTS} activeSlot={activeSlot} onChange={setActiveSlot} />
+      {/* Search Input Bar */}
+      <div className="flex items-center justify-between gap-3 flex-wrap bg-slate-900/80 p-2.5 rounded-2xl border border-slate-800">
+        <div className="relative max-w-sm w-full">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search invoices by number, WO, JMS..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          />
+        </div>
+      </div>
 
       {/* Table & Overview Summary */}
       {activeFy !== 'overall' && (
@@ -403,7 +434,8 @@ export default function InvoicePage() {
 
       <div className="glass-card p-4">
         <DataTable columns={columns} data={sortedRecords} loading={isLoading}
-          emptyMessage={activeFy === 'overall' ? 'No invoices found' : `No invoices for FY ${activeFy}`} />
+          emptyMessage={activeFy === 'overall' ? 'No invoices found' : `No invoices for FY ${activeFy}`}
+          onRowClick={(row) => setSelectedRow(row)} />
       </div>
 
       <Modal open={formOpen} onClose={handleClose} title={editRow ? 'Edit Invoice' : 'Add Invoice'}>
@@ -467,6 +499,13 @@ export default function InvoicePage() {
 
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)}
         onImport={importRecords} columnMap={INV_IMPORT_COLUMNS} title="Import Invoice Records" />
+
+      {/* On-Screen Record Detail Modal */}
+      <SummaryModal
+        row={selectedRow}
+        onClose={() => setSelectedRow(null)}
+        expectedPaymentDate={selectedRow ? getExpectedPaymentDate(selectedRow) : null}
+      />
     </div>
   )
 }

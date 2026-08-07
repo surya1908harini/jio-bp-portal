@@ -178,25 +178,6 @@ export default function JmsPage() {
     return true
   })
 
-  // Sort records: Current FY on top, then newest on top by JMS Date (or fallback date), then JMS No
-  const sortedRecords = useMemo(() => {
-    return [...records].sort((a, b) => {
-      const fyA = getRecordFy(a)
-      const fyB = getRecordFy(b)
-      if (fyA !== fyB) {
-        if (fyA === CURRENT_FY) return -1
-        if (fyB === CURRENT_FY) return 1
-        return fyB.localeCompare(fyA)
-      }
-      const dateA = a.jms_create_date || a.inv_date || a.a1_release_date || a.created_at || ''
-      const dateB = b.jms_create_date || b.inv_date || b.a1_release_date || b.created_at || ''
-      if (dateA !== dateB) {
-        return dateB.localeCompare(dateA)
-      }
-      return String(b.jms_no || '').localeCompare(String(a.jms_no || ''), undefined, { numeric: true })
-    })
-  }, [records])
-
   // Per-FY stats for Overall View
   const fyStats = FINANCIAL_YEARS.map(f => {
     const rows = allRecords.filter(r => getRecordFy(r) === f)
@@ -211,12 +192,49 @@ export default function JmsPage() {
   })
 
   // Current records stats (for specific FY view)
-  const totalNetAmount = records.reduce((s, r) => s + (r.net_amount || 0), 0)
-  const byStatus = JMS_STATUSES.reduce((acc, s) => ({ ...acc, [s]: records.filter(r => (STATUS_DISPLAY[r.status] || r.status) === s).length }), {})
+  const sortedRecords = useMemo(() => {
+    let result = records.filter(r => {
+      const st = r.status || ''
+      if (activeSlot === 'pending_a1'  && !['Pending A1', 'Pending', 'A1'].includes(st)) return false
+      if (activeSlot === 'pending_a2'  && !['Pending A2', 'A2'].includes(st)) return false
+      if (activeSlot === 'pending_qsd' && !['Pending QSD', 'QSD'].includes(st)) return false
+      if (activeSlot === 'pending_a3'  && !['Pending A3', 'A3'].includes(st)) return false
+      if (activeSlot === 'released_a3' && !['Released by A3', 'Invoiced'].includes(st)) return false
+
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase()
+        const jmsNo = String(r.jms_no || '').toLowerCase()
+        const wo = String(r.work_order_number || '').toLowerCase()
+        const arc = String(r.arc_number || '').toLowerCase()
+        const site = String(r.site || '').toLowerCase()
+        const desc = String(r.work_description || '').toLowerCase()
+        return jmsNo.includes(q) || wo.includes(q) || arc.includes(q) || site.includes(q) || desc.includes(q)
+      }
+      return true
+    })
+
+    return [...result].sort((a, b) => {
+      const da = new Date(a.jms_create_date || a.created_at || 0)
+      const db = new Date(b.jms_create_date || b.created_at || 0)
+      return db - da
+    })
+  }, [records, activeSlot, searchQuery])
+
+  const byStatus = useMemo(() => {
+    const map = {}
+    records.forEach(r => {
+      const s = r.status || 'Pending A1'
+      map[s] = (map[s] || 0) + 1
+    })
+    return map
+  }, [records])
+
+  const totalNetAmount = useMemo(() => {
+    return records.reduce((sum, r) => sum + (r.net_amount || 0), 0)
+  }, [records])
 
   const saveMutation = useMutation({
     mutationFn: (payload) => {
-      // Convert UI status to database-compatible value before sending to Supabase
       const dbStatus = getDbStatus(payload.status)
       const cleanPayload = { ...payload, status: dbStatus }
 
@@ -233,7 +251,7 @@ export default function JmsPage() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: jmsDb.delete,
+    mutationFn: id => jmsDb.delete(id),
     onSuccess: () => { qc.invalidateQueries(['jms']); toast.success('JMS deleted') },
     onError:   (e) => toast.error(e?.message || 'Delete failed'),
   })
@@ -243,10 +261,10 @@ export default function JmsPage() {
       const rec = {}
       for (const [k, v] of Object.entries(raw)) {
         const dbKey = IMPORT_MAP[k] ?? IMPORT_MAP[k.trim()]
-        if (dbKey && v !== '' && v !== null && v !== undefined) rec[dbKey] = v
+        if (dbKey && v !== '' && v !== null && v !== undefined) {
+          rec[dbKey] = (dbKey === 'status') ? getDbStatus(v) : v
+        }
       }
-      // Ensure status is valid for database constraint
-      rec.status = getDbStatus(rec.status)
       rec.financial_year = getRecordFy(rec)
       return rec
     }).filter(r => r.jms_no)
@@ -266,46 +284,29 @@ export default function JmsPage() {
   const openAdd  = ()    => { setEditRow(null); setForm(EMPTY_FORM); setFormOpen(true) }
   const handleClose  = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
-  const handleDelete = (id) => { if (window.confirm('Delete this JMS record?')) deleteMutation.mutate(id) }
+  const handleDelete = (e, id) => { e?.stopPropagation?.(); if (window.confirm('Delete this JMS record?')) deleteMutation.mutate(id) }
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
   const handleExport = () => { exportToExcel(sortedRecords, `JMS_${activeFy}.xlsx`, 'JMS Records'); toast.success('Excel downloaded') }
 
   const columns = [
-        { key: 'jms_no',           header: 'JMS No',        render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
-        { key: 'period_of_work',   header: 'Period' },
-        { key: 'work_order_number',header: 'Work Order' },
-        { key: 'arc_number',       header: 'ARC No' },
-        { key: 'net_amount',       header: 'Net Amount',     render: r => <span className="text-emerald-400 font-medium">{formatINR(r.net_amount)}</span> },
-        { key: 'jms_create_date',  header: 'JMS Date',       render: r => formatDate(r.jms_create_date || r.inv_date || r.a1_release_date) },
-        { key: 'site',             header: 'Site' },
-        { key: 'ro_code',          header: 'RO Code' },
-        { key: 'work_description', header: 'Description' },
-        { key: 'status',           header: 'Status',         render: r => <StatusBadge status={r.status} /> },
-        { key: 'a1_name',          header: 'A1 Name' },
-        { key: 'a1_release_date',  header: 'A1 Date',        render: r => formatDate(r.a1_release_date) },
-        { key: 'a2_name',          header: 'A2 Name' },
-        { key: 'a2_release_date',  header: 'A2 Date',        render: r => formatDate(r.a2_release_date) },
-        { key: 'qsd_name',         header: 'QSD Name' },
-        { key: 'qsd_release_date', header: 'QSD Date',       render: r => formatDate(r.qsd_release_date) },
-        { key: 'a3_name',          header: 'A3 Name' },
-        { key: 'inv_number',       header: 'Inv No' },
-        { key: 'inv_date',        header: 'Inv Date', render: r => formatDate(r.inv_date) },
-        { key: 'inv_posting_date',header: 'Inv Posting', render: r => formatDate(r.inv_posting_date) },
-        { key: 'payment_date',    header: 'Payment Date', render: r => formatDate(r.payment_date) },
-        ...(isAdmin ? [{
-          key: '_actions', header: 'Actions', sortable: false,
-          render: r => (
-            <div className="flex gap-1">
-              <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-jio-blue-800/50 text-jio-blue-400 hover:text-white transition-colors"><Pencil size={14} /></button>
-              <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors"><Trash2 size={14} /></button>
-            </div>
-          )
-        }] : []),
+    { key: 'jms_no',           header: 'JMS No',        render: r => <span className="font-bold text-white">{r.jms_no}</span> },
+    { key: 'jms_create_date',  header: 'JMS Date',       render: r => formatDate(r.jms_create_date || r.inv_date || r.a1_release_date) },
+    { key: 'period_of_work',   header: 'Period' },
+    { key: 'work_order_number',header: 'Work Order' },
+    { key: 'net_amount',       header: 'Net Amount',     render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.net_amount)}</span> },
+    { key: 'site',             header: 'Site' },
+    { key: 'work_description', header: 'Description' },
+    { key: 'status',           header: 'Status',         render: r => <StatusBadge status={r.status} /> },
+    ...(isAdmin ? [{
+      key: '_actions', header: 'Actions', sortable: false,
+      render: r => (
+        <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+          <button onClick={(e) => { e.stopPropagation(); openEdit(r) }} className="p-1.5 rounded-lg hover:bg-jio-blue-800/50 text-jio-blue-400 hover:text-white transition-colors"><Pencil size={14} /></button>
+          <button onClick={(e) => handleDelete(e, r.id)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors"><Trash2 size={14} /></button>
+        </div>
+      )
+    }] : []),
   ]
-
-  const totalNet = sortedRecords.reduce((s, r) => s + (r.net_amount || 0), 0)
-  const totalReleased = sortedRecords.filter(r => r.status === 'Released by A3' || r.status === 'Invoiced').length
-  const totalPending = sortedRecords.filter(r => !['Released by A3', 'Invoiced'].includes(r.status)).length
 
   return (
     <div className="space-y-5">
@@ -410,7 +411,8 @@ export default function JmsPage() {
       {/* Table */}
       <div className="glass-card p-4">
         <DataTable columns={columns} data={sortedRecords} loading={isLoading}
-          emptyMessage={activeFy === 'overall' ? 'No JMS records found' : `No JMS records for FY ${activeFy}`} />
+          emptyMessage={activeFy === 'overall' ? 'No JMS records found' : `No JMS records for FY ${activeFy}`}
+          onRowClick={(row) => setSelectedRow(row)} />
       </div>
 
       {/* Add / Edit Modal */}
@@ -464,6 +466,9 @@ export default function JmsPage() {
 
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)}
         onImport={importRecords} columnMap={JMS_IMPORT_COLUMNS} title="Import JMS Records" />
+
+      {/* Summary Modal - opens when a row is clicked */}
+      <SummaryModal row={selectedRow} onClose={() => setSelectedRow(null)} />
     </div>
   )
 }

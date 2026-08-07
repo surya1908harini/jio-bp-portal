@@ -20,7 +20,7 @@ import ModuleHeader from '../components/ModuleHeader'
 
 const EMPTY_FORM = {
   operation: '', description: '', arc_number: '', work_order_number: '',
-  validity_of_contract: '', fo_total_budget: '',
+  validity_of_contract: '', fo_total_budget: '', payment_timeframe_days: '30', status: 'Open',
 }
 
 const IMPORT_MAP = {
@@ -31,11 +31,13 @@ const IMPORT_MAP = {
   'Work order number': 'work_order_number', 'Work Order Number': 'work_order_number', 'Work Order No': 'work_order_number', 'work_order_number': 'work_order_number',
   'Validity of Contract': 'validity_of_contract', 'Validity': 'validity_of_contract', 'validity_of_contract': 'validity_of_contract',
   'FO Total Budget': 'fo_total_budget', 'FO Total Budget Amount': 'fo_total_budget', 'fo_total_budget': 'fo_total_budget',
+  'Payment Timeframe': 'payment_timeframe_days', 'Payment Timeframe (Days)': 'payment_timeframe_days', 'payment_timeframe_days': 'payment_timeframe_days',
+  'Status': 'status', 'WO Status': 'status', 'status': 'status',
 }
 
 const BUDGET_IMPORT_COLUMNS = [
   'operation','description','arc_number','work_order_number',
-  'validity_of_contract','fo_total_budget',
+  'validity_of_contract','fo_total_budget','payment_timeframe_days','status',
 ]
 
 const ITEMS_PER_PAGE = 9
@@ -265,6 +267,27 @@ export default function BudgetPage() {
         return (
           <span className={`font-bold text-xs ${isPositive ? 'text-emerald-400' : 'text-jio-red-400'}`}>
             {formatINR(remaining)}
+          </span>
+        )
+      }
+    },
+    {
+      key: 'payment_timeframe_days', header: 'Payment Timeframe',
+      render: r => (
+        <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-800 text-purple-300 border border-slate-700">
+          {r.payment_timeframe_days || '30'} Days
+        </span>
+      )
+    },
+    {
+      key: 'status', header: 'WO Status',
+      render: r => {
+        const isClosed = r.status === 'Closed'
+        return (
+          <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider border ${
+            isClosed ? 'bg-purple-950/80 text-purple-300 border-purple-700/60' : 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
+          }`}>
+            {isClosed ? 'WO Closed' : 'Open (Active)'}
           </span>
         )
       }
@@ -572,6 +595,33 @@ export default function BudgetPage() {
                 required={f.required} className="input-field" step={f.type === 'number' ? '0.01' : undefined} />
             </div>
           ))}
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1">Expected Payment Timeframe</label>
+            <select
+              name="payment_timeframe_days"
+              value={form.payment_timeframe_days || '30'}
+              onChange={handleChange}
+              className="input-field"
+            >
+              <option value="15">15 Days</option>
+              <option value="30">30 Days</option>
+              <option value="45">45 Days</option>
+              <option value="60">60 Days</option>
+              <option value="90">90 Days</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1">WO Status</label>
+            <select
+              name="status"
+              value={form.status || 'Open'}
+              onChange={handleChange}
+              className="input-field"
+            >
+              <option value="Open">Open (Active Work Order)</option>
+              <option value="Closed">Closed (WO Closed)</option>
+            </select>
+          </div>
           <div className="col-span-2">
             <label className="block text-xs font-medium text-slate-400 mb-1">Description</label>
             <textarea name="description" value={form.description || ''} onChange={handleChange} rows={2} className="input-field resize-none" />

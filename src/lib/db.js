@@ -22,6 +22,8 @@ const BUDGET_ALLOWED_KEYS = new Set([
   'work_order_number',
   'validity_of_contract',
   'fo_total_budget',
+  'payment_timeframe_days',
+  'status',
   'pdf_url',
   'created_by',
   'financial_year'
