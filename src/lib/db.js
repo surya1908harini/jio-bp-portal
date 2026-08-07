@@ -260,24 +260,51 @@ export const budgetDb = {
   },
 
   create: async (payload, userId) => {
-    const cleaned = cleanBudgetRecord({ ...payload, created_by: userId })
-    const { data, error } = await supabase
+    let cleaned = cleanBudgetRecord({ ...payload, created_by: userId })
+    let { data, error } = await supabase
       .from('budget_records')
       .insert(cleaned)
       .select()
       .single()
+
+    if (error && (error.message?.includes('payment_timeframe_days') || error.message?.includes('schema cache') || error.code === 'PGRST204')) {
+      delete cleaned.payment_timeframe_days
+      delete cleaned.status
+      const retry = await supabase
+        .from('budget_records')
+        .insert(cleaned)
+        .select()
+        .single()
+      if (retry.error) throw retry.error
+      return retry.data
+    }
+
     if (error) throw error
     return data
   },
 
   update: async (id, payload) => {
-    const cleaned = cleanBudgetRecord(payload)
-    const { data, error } = await supabase
+    let cleaned = cleanBudgetRecord(payload)
+    let { data, error } = await supabase
       .from('budget_records')
       .update(cleaned)
       .eq('id', id)
       .select()
       .single()
+
+    if (error && (error.message?.includes('payment_timeframe_days') || error.message?.includes('schema cache') || error.code === 'PGRST204')) {
+      delete cleaned.payment_timeframe_days
+      delete cleaned.status
+      const retry = await supabase
+        .from('budget_records')
+        .update(cleaned)
+        .eq('id', id)
+        .select()
+        .single()
+      if (retry.error) throw retry.error
+      return retry.data
+    }
+
     if (error) throw error
     return data
   },
@@ -288,8 +315,18 @@ export const budgetDb = {
   },
 
   bulkInsert: async (rows, userId) => {
-    const cleaned = rows.map(r => cleanBudgetRecord({ ...r, created_by: userId }))
-    const { error } = await supabase.from('budget_records').insert(cleaned)
+    let cleaned = rows.map(r => cleanBudgetRecord({ ...r, created_by: userId }))
+    let { error } = await supabase.from('budget_records').insert(cleaned)
+    if (error && (error.message?.includes('payment_timeframe_days') || error.message?.includes('schema cache') || error.code === 'PGRST204')) {
+      cleaned = cleaned.map(c => {
+        delete c.payment_timeframe_days
+        delete c.status
+        return c
+      })
+      const retry = await supabase.from('budget_records').insert(cleaned)
+      if (retry.error) throw retry.error
+      return cleaned.length
+    }
     if (error) throw error
     return cleaned.length
   },
