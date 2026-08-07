@@ -4,7 +4,7 @@
  * RLS policies handle security on the DB side.
  */
 import { supabase } from './supabase'
-import { FINANCIAL_YEARS } from './utils'
+import { FINANCIAL_YEARS, applyGstDateAutoSync } from './utils'
 
 // ── helper: clean budget record fields to remove view-computed fields before DB insert/update ──
 const BUDGET_ALLOWED_KEYS = new Set([
@@ -35,8 +35,9 @@ function cleanBudgetRecord(obj) {
 
 // ── helper: format dates & strip empty/null values before insert/update ──
 function clean(obj) {
+  const synced = applyGstDateAutoSync({ ...obj })
   const result = {}
-  for (const [k, v] of Object.entries(obj)) {
+  for (const [k, v] of Object.entries(synced)) {
     if (k === 'fy') continue // ignore invalid 'fy' property not present in schema
     if (v === '' || v === null || v === undefined) continue
     if (v instanceof Date) {

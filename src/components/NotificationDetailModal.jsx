@@ -55,7 +55,8 @@ export default function NotificationDetailModal({ notif, onClose, onNavigate }) 
                 <DetailRow label="Grand Total Amount" value={formatINR(record.grand_total)} color="text-emerald-400" />
                 <DetailRow label="Payment Status" value={record.payment_status || 'Pending'} color={record.payment_status === 'Full Payment Received' ? 'text-emerald-400' : 'text-rose-400'} />
                 <DetailRow label="Received Bill Amount" value={formatINR(record.received_bill_amount)} />
-                <DetailRow label="Amount Received Date" value={formatDate(record.amount_received_date)} />
+                <DetailRow label="Full Amount Received Date" value={formatDate(record.amount_received_date)} />
+                <DetailRow label="GST Amount Received Date" value={formatDate(record.gst_amount_received_date)} />
               </>
             )}
 

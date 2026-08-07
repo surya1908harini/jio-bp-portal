@@ -212,3 +212,34 @@ export function getBudgetRecordFy(r) {
   return r.financial_year || '2024-25'
 }
 
+// ──────────────────────────────────────────────
+// Auto-Sync Full Amount Received Date & GST Amount Received Date
+// For invoices issued on/after 01.04.2026 (FY 2026-27 onwards):
+// If full amount date is given but GST date is blank -> GST date = full date
+// Conversely if GST date is given but full amount date is blank -> full date = GST date
+// ──────────────────────────────────────────────
+export function applyGstDateAutoSync(record) {
+  if (!record) return record
+  const invDateStr = record.inv_date ? String(record.inv_date).trim() : ''
+  if (!invDateStr) return record
+
+  const d = new Date(invDateStr)
+  if (isNaN(d.getTime())) return record
+
+  // Check if invoice date is dated on or after 2026-04-01 (FY 2026-27)
+  const isFy2026OrLater = d >= new Date('2026-04-01')
+
+  if (isFy2026OrLater) {
+    const fullDate = record.amount_received_date ? String(record.amount_received_date).trim() : ''
+    const gstDate  = record.gst_amount_received_date ? String(record.gst_amount_received_date).trim() : ''
+
+    if (fullDate && !gstDate) {
+      record.gst_amount_received_date = fullDate
+    } else if (gstDate && !fullDate) {
+      record.amount_received_date = gstDate
+    }
+  }
+
+  return record
+}
+

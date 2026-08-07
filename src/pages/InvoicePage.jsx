@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar, Calculator, Receipt, DollarSign, CheckCircle2, FileCheck } from 'lucide-react'
@@ -6,7 +6,7 @@ import ModuleHeader from '../components/ModuleHeader'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { invoiceDb } from '../lib/db'
-import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS, PAYMENT_STATUSES, CURRENT_FY, getFinancialYear } from '../lib/utils'
+import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS, PAYMENT_STATUSES, CURRENT_FY, getFinancialYear, applyGstDateAutoSync } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
@@ -20,7 +20,7 @@ const EMPTY_FORM = {
   total: '', igst: '', cgst: '', sgst: '', grand_total: '', hb_rb: '', tds: '',
   gst_amount_deduction: '', gst_tds_2pct_iocl: '', sd_retention: '',
   tcs_credit_note: '', received_bill_amount: '', amount_received_date: '',
-  payment_status: 'Pending',
+  gst_amount_received_date: '', payment_status: 'Pending',
 }
 
 const IMPORT_MAP = {
@@ -45,7 +45,8 @@ const IMPORT_MAP = {
   'SD / Retention': 'sd_retention', 'SD/Retention': 'sd_retention', 'sd_retention': 'sd_retention',
   'TCS / credit note': 'tcs_credit_note', 'TCS/Credit': 'tcs_credit_note', 'tcs_credit_note': 'tcs_credit_note',
   'Received Bill amount': 'received_bill_amount', 'received_bill_amount': 'received_bill_amount',
-  'Amount Received DATE': 'amount_received_date', 'amount_received_date': 'amount_received_date',
+  'Full Amount Received Date': 'amount_received_date', 'Full Amount Received DATE': 'amount_received_date', 'Full Received Date': 'amount_received_date', 'Amount Received DATE': 'amount_received_date', 'amount_received_date': 'amount_received_date',
+  'GST Amount Received Date': 'gst_amount_received_date', 'GST Amount Received DATE': 'gst_amount_received_date', 'GST Received Date': 'gst_amount_received_date', 'gst_amount_received_date': 'gst_amount_received_date',
   'Payment Status': 'payment_status', 'payment_status': 'payment_status',
 }
 
@@ -53,104 +54,108 @@ const INV_IMPORT_COLUMNS = [
   'inv_date','jms_no','work_order_number','gst_no','inv_number','sac_code',
   'work_description','site','type_of_ro','ro_code','total','igst','cgst','sgst',
   'grand_total','hb_rb','tds','gst_amount_deduction','gst_tds_2pct_iocl',
-  'sd_retention','tcs_credit_note','received_bill_amount','amount_received_date','payment_status',
+  'sd_retention','tcs_credit_note','received_bill_amount','amount_received_date','gst_amount_received_date','payment_status',
 ]
 
 function PaymentBadge({ status }) {
   const map = {
     'Pending': 'badge-pending',
-    'GST Payment Only Received': 'badge-gst-only',
-    'Net Amount Received': 'badge-net',
-    'Full Payment Received': 'badge-full',
+    'GST Payment Only Received': 'badge-qsd',
+    'Net Amount Received': 'badge-a2',
+    'Full Payment Received': 'badge-invoiced',
   }
-  return <span className={`badge ${map[status] || 'badge-pending'} text-[11px]`}>{status || 'Pending'}</span>
+  return <span className={`badge ${map[status] || 'badge-pending'}`}>{status || 'Pending'}</span>
 }
 
-function StatCard({ label, value, color = 'slate' }) {
+function StatCard({ label, value, sub, color = 'blue' }) {
   const cls = {
-    blue: 'border-jio-blue-700/40 bg-jio-blue-900/30', green: 'border-emerald-700/40 bg-emerald-900/20',
-    amber: 'border-amber-700/40 bg-amber-900/20', purple: 'border-purple-700/40 bg-purple-900/20',
-    cyan: 'border-cyan-700/40 bg-cyan-900/20', red: 'border-jio-red-700/40 bg-jio-red-900/20',
-    slate: 'border-slate-700/40 bg-slate-800/40',
+    blue: 'border-jio-blue-800/40 bg-jio-blue-900/30 text-jio-blue-400',
+    green: 'border-emerald-800/40 bg-emerald-900/20 text-emerald-400',
+    amber: 'border-amber-800/40 bg-amber-900/20 text-amber-400',
+    purple: 'border-purple-800/40 bg-purple-900/20 text-purple-400',
+    cyan: 'border-cyan-800/40 bg-cyan-900/20 text-cyan-400',
   }
   return (
-    <div className={`rounded-xl border p-3 ${cls[color]}`}>
-      <p className="text-[11px] font-medium text-slate-400 mb-1">{label}</p>
-      <p className="text-base font-bold text-white">{value}</p>
+    <div className={`rounded-2xl border p-4 backdrop-blur-sm transition-all hover:scale-[1.02] ${cls[color]}`}>
+      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-lg font-bold text-white tracking-tight">{value}</p>
+      {sub && <p className="text-[11px] text-slate-400 mt-0.5">{sub}</p>}
     </div>
   )
 }
 
-export default function InvoicePage() {
-  const { fy } = useParams()
-  const activeFy = fy || CURRENT_FY
-  const [searchParams] = useSearchParams()
-  const initialSlot = searchParams.get('slot') || 'all'
+function getRecordFy(r) {
+  const date = r.inv_date || r.amount_received_date || r.gst_amount_received_date;
+  if (date) {
+    const fy = getFinancialYear(date)
+    if (fy) return fy
+  }
+  return r.financial_year || '2024-25'
+}
 
+export default function InvoicePage() {
   const { user, isAdmin } = useAuth()
+  const { fy } = useParams()
+  const [searchParams] = useSearchParams()
+  const activeFy = fy || CURRENT_FY
   const qc = useQueryClient()
 
-  // Slot filtering for invoice payment statuses
-  const INVOICE_SLOTS = [
-    { key: 'all', label: 'All' },
-    { key: 'pending', label: 'Pending Payment' },
-    { key: 'gst', label: 'Pending GST' },
-    { key: 'full', label: 'Full Payment Received' },
-    { key: 'sd', label: 'Pending SD Amount' },
-  ]
-  const [activeSlot, setActiveSlot] = useState(initialSlot)
-
-  const [formOpen, setFormOpen] = useState(false)
+  const [formOpen, setFormOpen]     = useState(false)
   const [importOpen, setImportOpen] = useState(false)
-  const [editRow, setEditRow] = useState(null)
-  const [form, setForm] = useState(EMPTY_FORM)
-  const [taxMode, setTaxMode] = useState('CGST_SGST') // 'CGST_SGST' or 'IGST'
+  const [editRow, setEditRow]       = useState(null)
+  const [taxMode, setTaxMode]       = useState('CGST_SGST') // 'CGST_SGST' or 'IGST'
+  const [form, setForm]             = useState(EMPTY_FORM)
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
+  const [activeSlot, setActiveSlot] = useState('all')
+
+  useEffect(() => {
+    const s = searchParams.get('search')
+    if (s) setSearchQuery(s)
+  }, [searchParams])
+
+  const PAYMENT_SLOTS = [
+    { key: 'all',           label: 'All Invoices' },
+    { key: 'pending',       label: 'Pending' },
+    { key: 'gst_only',      label: 'GST Only Received' },
+    { key: 'net_received',  label: 'Net Amount Received' },
+    { key: 'full_paid',     label: 'Full Payment Received' },
+  ]
 
   const { data: allRecords = [], isLoading } = useQuery({
     queryKey: ['invoices', 'all'],
     queryFn: () => invoiceDb.listAll(),
   })
 
-  // Helper to determine record FY based on invoice date
-  const getRecordFy = (r) => {
-    if (r.inv_date) {
-      return getFinancialYear(r.inv_date)
-    }
-    return r.financial_year || '2024-25'
-  }
+  const records = useMemo(() => {
+    if (activeFy === 'overall') return allRecords
+    return allRecords.filter(r => getRecordFy(r) === activeFy)
+  }, [allRecords, activeFy])
 
-  // Active records for table
-  const fyRecords = activeFy === 'overall' ? allRecords : allRecords.filter(r => getRecordFy(r) === activeFy)
-
-  // Apply slot (payment status) filter
-  const records = fyRecords.filter(r => {
-    if (activeSlot === 'all') return true
-    if (activeSlot === 'pending') return r.payment_status === 'Pending'
-    if (activeSlot === 'gst') return r.payment_status === 'GST Payment Only Received'
-    if (activeSlot === 'full') return r.payment_status === 'Full Payment Received'
-    if (activeSlot === 'sd') return (r.sd_retention && r.sd_retention > 0) && r.payment_status !== 'Full Payment Received'
-    return true
-  })
-
-  // Sort records: Newest on top by Invoice Date, then Invoice Number
-  // Sort records: Current FY on top, then newest date first
   const sortedRecords = useMemo(() => {
-    return [...records].sort((a, b) => {
-      const fyA = getRecordFy(a)
-      const fyB = getRecordFy(b)
-      if (fyA !== fyB) {
-        if (fyA === CURRENT_FY) return -1
-        if (fyB === CURRENT_FY) return 1
-        return fyB.localeCompare(fyA)
+    let result = records.filter(r => {
+      if (activeSlot === 'pending' && r.payment_status !== 'Pending') return false
+      if (activeSlot === 'gst_only' && r.payment_status !== 'GST Payment Only Received') return false
+      if (activeSlot === 'net_received' && r.payment_status !== 'Net Amount Received') return false
+      if (activeSlot === 'full_paid' && r.payment_status !== 'Full Payment Received') return false
+
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase()
+        const invNo = String(r.inv_number || '').toLowerCase()
+        const wo = String(r.work_order_number || '').toLowerCase()
+        const jms = String(r.jms_no || '').toLowerCase()
+        const desc = String(r.work_description || '').toLowerCase()
+        const site = String(r.site || '').toLowerCase()
+        return invNo.includes(q) || wo.includes(q) || jms.includes(q) || desc.includes(q) || site.includes(q)
       }
-      const dateA = a.inv_date || a.amount_received_date || a.created_at || ''
-      const dateB = b.inv_date || b.amount_received_date || b.created_at || ''
-      if (dateA !== dateB) {
-        return dateB.localeCompare(dateA) // newest date first
-      }
-      return String(b.inv_number || '').localeCompare(String(a.inv_number || ''), undefined, { numeric: true })
+      return true
     })
-  }, [records])
+
+    return [...result].sort((a, b) => {
+      const da = new Date(a.inv_date || 0)
+      const db = new Date(b.inv_date || 0)
+      return db - da
+    })
+  }, [records, activeSlot, searchQuery])
 
   // Auto-calculate GST and Grand Total from Total
   const updateCalculations = (newForm, currentTaxMode) => {
@@ -176,9 +181,12 @@ export default function InvoicePage() {
   const handleFieldChange = (e) => {
     const { name, value } = e.target
     setForm(prev => {
-      const next = { ...prev, [name]: value }
+      let next = { ...prev, [name]: value }
       if (name === 'total') {
-        return updateCalculations(next, taxMode)
+        next = updateCalculations(next, taxMode)
+      }
+      if (['inv_date', 'amount_received_date', 'gst_amount_received_date'].includes(name)) {
+        next = applyGstDateAutoSync(next)
       }
       return next
     })
@@ -194,9 +202,8 @@ export default function InvoicePage() {
     const rows = allRecords.filter(r => getRecordFy(r) === f)
     return {
       fy: f,
-      total:       rows.length,
+      count:       rows.length,
       grandTotal:  rows.reduce((s, r) => s + (r.grand_total || 0), 0),
-      tds:         rows.reduce((s, r) => s + (r.tds || 0), 0),
       received:    rows.reduce((s, r) => s + (r.received_bill_amount || 0), 0),
       fullPaid:    rows.filter(r => r.payment_status === 'Full Payment Received').length,
       pending:     rows.filter(r => r.payment_status === 'Pending').length,
@@ -214,9 +221,12 @@ export default function InvoicePage() {
   const netAmtCnt    = records.filter(r => r.payment_status === 'Net Amount Received').length
 
   const saveMutation = useMutation({
-    mutationFn: (payload) => editRow
-      ? invoiceDb.update(editRow.id, payload)
-      : invoiceDb.create({ ...payload, financial_year: getRecordFy(payload) }, user?.id),
+    mutationFn: (payload) => {
+      const syncedPayload = applyGstDateAutoSync({ ...payload })
+      return editRow
+        ? invoiceDb.update(editRow.id, syncedPayload)
+        : invoiceDb.create({ ...syncedPayload, financial_year: getRecordFy(syncedPayload) }, user?.id)
+    },
     onSuccess: () => { qc.invalidateQueries(['invoices']); toast.success(editRow ? 'Invoice updated ✓' : 'Invoice created ✓'); handleClose() },
     onError:   (e) => toast.error(e?.message || 'Save failed'),
   })
@@ -240,7 +250,7 @@ export default function InvoicePage() {
         if (dbKey && v !== '' && v !== null && v !== undefined) rec[dbKey] = v
       }
       rec.financial_year = getRecordFy(rec)
-      return rec
+      return applyGstDateAutoSync(rec)
     }).filter(r => r.inv_number || r.jms_no)
     if (!mapped.length) throw new Error('No valid rows found. Check column headers match expected format.')
     const count = await invoiceDb.bulkInsert(mapped, user?.id)
@@ -252,7 +262,7 @@ export default function InvoicePage() {
     setEditRow(row)
     const initialMode = (row.igst && Number(row.igst) > 0) ? 'IGST' : 'CGST_SGST'
     setTaxMode(initialMode)
-    setForm({ ...EMPTY_FORM, ...row })
+    setForm(applyGstDateAutoSync({ ...EMPTY_FORM, ...row }))
     setFormOpen(true)
   }
 
@@ -286,34 +296,36 @@ export default function InvoicePage() {
     { name: 'sd_retention', label: 'SD / Retention', type: 'number' },
     { name: 'tcs_credit_note', label: 'TCS / Credit Note', type: 'number' },
     { name: 'received_bill_amount', label: 'Received Bill Amount', type: 'number' },
-    { name: 'amount_received_date', label: 'Amount Received Date', type: 'date' },
+    { name: 'amount_received_date', label: 'Full Amount Received Date', type: 'date' },
+    { name: 'gst_amount_received_date', label: 'GST Amount Received Date', type: 'date' },
   ]
 
   const columns = [
-    { key: 'inv_date',            header: 'Inv Date',      render: r => formatDate(r.inv_date) },
-    { key: 'jms_no',              header: 'JMS No',        render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
-    { key: 'work_order_number',   header: 'Work Order' },
-    { key: 'gst_no',              header: 'GST No' },
-    { key: 'inv_number',          header: 'Inv Number' },
-    { key: 'sac_code',            header: 'SAC Code' },
-    { key: 'work_description',    header: 'Description' },
-    { key: 'site',                header: 'Site' },
-    { key: 'type_of_ro',          header: 'Type of RO' },
-    { key: 'ro_code',             header: 'RO Code' },
-    { key: 'total',               header: 'Total',         render: r => <span className="text-blue-400">{formatINR(r.total)}</span> },
-    { key: 'igst',                header: 'IGST',          render: r => formatINR(r.igst) },
-    { key: 'cgst',                header: 'CGST',          render: r => formatINR(r.cgst) },
-    { key: 'sgst',                header: 'SGST',          render: r => formatINR(r.sgst) },
-    { key: 'grand_total',         header: 'Grand Total',   render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.grand_total)}</span> },
-    { key: 'hb_rb',               header: 'HB/RB' },
-    { key: 'tds',                 header: 'TDS',           render: r => formatINR(r.tds) },
-    { key: 'gst_amount_deduction',header: 'GST Deduction', render: r => formatINR(r.gst_amount_deduction) },
-    { key: 'gst_tds_2pct_iocl',  header: 'GST TDS 2%',   render: r => formatINR(r.gst_tds_2pct_iocl) },
-    { key: 'sd_retention',        header: 'SD/Retention',  render: r => formatINR(r.sd_retention) },
-    { key: 'tcs_credit_note',     header: 'TCS/Credit',    render: r => formatINR(r.tcs_credit_note) },
-    { key: 'received_bill_amount',header: 'Received Amt',  render: r => <span className="text-amber-400">{formatINR(r.received_bill_amount)}</span> },
-    { key: 'amount_received_date',header: 'Received Date', render: r => formatDate(r.amount_received_date) },
-    { key: 'payment_status',      header: 'Payment Status',render: r => <PaymentBadge status={r.payment_status} /> },
+    { key: 'inv_date',                 header: 'Inv Date',           render: r => formatDate(r.inv_date) },
+    { key: 'jms_no',                   header: 'JMS No',             render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
+    { key: 'work_order_number',        header: 'Work Order' },
+    { key: 'gst_no',                   header: 'GST No' },
+    { key: 'inv_number',               header: 'Inv Number' },
+    { key: 'sac_code',                 header: 'SAC Code' },
+    { key: 'work_description',         header: 'Description' },
+    { key: 'site',                     header: 'Site' },
+    { key: 'type_of_ro',               header: 'Type of RO' },
+    { key: 'ro_code',                  header: 'RO Code' },
+    { key: 'total',                    header: 'Total',              render: r => <span className="text-blue-400">{formatINR(r.total)}</span> },
+    { key: 'igst',                     header: 'IGST',               render: r => formatINR(r.igst) },
+    { key: 'cgst',                     header: 'CGST',               render: r => formatINR(r.cgst) },
+    { key: 'sgst',                     header: 'SGST',               render: r => formatINR(r.sgst) },
+    { key: 'grand_total',              header: 'Grand Total',        render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.grand_total)}</span> },
+    { key: 'hb_rb',                    header: 'HB/RB' },
+    { key: 'tds',                      header: 'TDS',                render: r => formatINR(r.tds) },
+    { key: 'gst_amount_deduction',     header: 'GST Deduction',      render: r => formatINR(r.gst_amount_deduction) },
+    { key: 'gst_tds_2pct_iocl',       header: 'GST TDS 2%',        render: r => formatINR(r.gst_tds_2pct_iocl) },
+    { key: 'sd_retention',             header: 'SD/Retention',       render: r => formatINR(r.sd_retention) },
+    { key: 'tcs_credit_note',          header: 'TCS/Credit',         render: r => formatINR(r.tcs_credit_note) },
+    { key: 'received_bill_amount',     header: 'Received Amt',       render: r => <span className="text-amber-400">{formatINR(r.received_bill_amount)}</span> },
+    { key: 'amount_received_date',     header: 'Full Received Date', render: r => formatDate(r.amount_received_date) },
+    { key: 'gst_amount_received_date', header: 'GST Received Date',  render: r => formatDate(r.gst_amount_received_date) },
+    { key: 'payment_status',           header: 'Payment Status',     render: r => <PaymentBadge status={r.payment_status} /> },
     {
       key: 'pdf', header: 'PDF', sortable: false,
       render: r => (
@@ -332,10 +344,6 @@ export default function InvoicePage() {
       )
     }] : []),
   ]
-
-  const totalGrand = records.reduce((s, r) => s + (r.grand_total || 0), 0)
-  const totalReceived = records.reduce((s, r) => s + (r.received_bill_amount || 0), 0)
-  const totalPaidCount = records.filter(r => r.payment_status === 'Full Payment Received').length
 
   return (
     <div className="space-y-5">
@@ -356,78 +364,32 @@ export default function InvoicePage() {
         }
         stats={[
           { icon: Receipt, label: 'Total Invoices', value: records.length, sub: activeFy === 'overall' ? 'All FY' : `FY ${activeFy}`, color: 'purple' },
-          { icon: DollarSign, label: 'Grand Total Value', value: formatINR(totalGrand), sub: 'Total Billed', color: 'cyan' },
-          { icon: CheckCircle2, label: 'Received Amount', value: formatINR(totalReceived), sub: `${totalPaidCount} Fully Paid`, color: 'green' },
-          { icon: FileCheck, label: 'Pending Received', value: formatINR(totalGrand - totalReceived), sub: 'Balance Due', color: 'amber' },
+          { icon: DollarSign, label: 'Grand Total Value', value: formatINR(totalGT), sub: 'Inclusive of GST', color: 'green' },
+          { icon: CheckCircle2, label: 'Fully Paid Invoices', value: fullPaidCnt, sub: `${records.length ? Math.round((fullPaidCnt/records.length)*100) : 0}% Paid`, color: 'cyan' },
+          { icon: FileCheck, label: 'Received Bill Amount', value: formatINR(totalRec), sub: 'Total Collections', color: 'amber' },
         ]}
       />
 
-      {/* FY Tabs Control Box */}
-      <div className="flex items-center justify-between gap-3 flex-wrap bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
-        <FyTabs basePath="/invoices" />
-        <SlotTabs slots={INVOICE_SLOTS} active={activeSlot} setActive={setActiveSlot} />
-        <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
-          <span className="text-slate-400 font-medium px-2.5 flex items-center gap-1">
-            <Filter size={12} className="text-jio-blue-400" /> Split FY By:
-          </span>
-          <div className="px-3 py-1.5 rounded-lg font-semibold text-slate-300 flex items-center gap-1">
-            <Calendar size={12} /> Invoice Date
-          </div>
+      {/* FY Selection Tabs */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <FyTabs basePath="/invoices" activeFy={activeFy} stats={fyStats} />
+        <div className="relative w-full sm:w-64">
+          <input
+            type="text"
+            placeholder="Search invoices..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="input-field pl-9 py-2 text-xs"
+          />
+          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         </div>
       </div>
 
-      {activeFy === 'overall' ? (
-        /* ═══ ALL FY OVERALL ══════════════════════════════════ */
-        <div className="glass-card p-5">
-          <h2 className="text-sm font-semibold text-white mb-4 flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <Globe size={15} className="text-jio-blue-400" /> All Financial Years — Overall View
-            </span>
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="text-left text-xs font-semibold text-slate-400 pb-2 pr-4">FY</th>
-                  <th className="text-right text-xs font-semibold text-slate-400 pb-2 px-3">Invoices</th>
-                  <th className="text-right text-xs font-semibold text-slate-400 pb-2 px-3">Grand Total</th>
-                  <th className="text-right text-xs font-semibold text-slate-400 pb-2 px-3">TDS</th>
-                  <th className="text-right text-xs font-semibold text-slate-400 pb-2 px-3">Received</th>
-                  <th className="text-right text-xs font-semibold text-slate-400 pb-2 px-3">Full Paid</th>
-                  <th className="text-right text-xs font-semibold text-slate-400 pb-2 pl-3">Pending</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fyStats.map(s => (
-                  <tr key={s.fy} className={`border-b border-slate-800/60`}>
-                    <td className="py-2.5 pr-4 font-semibold">
-                      <span className="text-white">FY {s.fy}</span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-white font-medium">{s.total}</td>
-                    <td className="py-2.5 px-3 text-right text-emerald-400 font-medium">{formatINR(s.grandTotal)}</td>
-                    <td className="py-2.5 px-3 text-right text-amber-400">{formatINR(s.tds)}</td>
-                    <td className="py-2.5 px-3 text-right text-cyan-400">{formatINR(s.received)}</td>
-                    <td className="py-2.5 px-3 text-right text-emerald-400">{s.fullPaid}</td>
-                    <td className="py-2.5 pl-3 text-right text-jio-red-400">{s.pending}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-slate-600">
-                  <td className="py-2.5 pr-4 text-xs font-bold text-slate-300">TOTAL</td>
-                  <td className="py-2.5 px-3 text-right font-bold text-white">{fyStats.reduce((s,r)=>s+r.total,0)}</td>
-                  <td className="py-2.5 px-3 text-right font-bold text-emerald-400">{formatINR(fyStats.reduce((s,r)=>s+r.grandTotal,0))}</td>
-                  <td className="py-2.5 px-3 text-right font-bold text-amber-400">{formatINR(fyStats.reduce((s,r)=>s+r.tds,0))}</td>
-                  <td className="py-2.5 px-3 text-right font-bold text-cyan-400">{formatINR(fyStats.reduce((s,r)=>s+r.received,0))}</td>
-                  <td className="py-2.5 px-3 text-right font-bold text-emerald-400">{fyStats.reduce((s,r)=>s+r.fullPaid,0)}</td>
-                  <td className="py-2.5 pl-3 text-right font-bold text-jio-red-400">{fyStats.reduce((s,r)=>s+r.pending,0)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      ) : (
-        /* ═══ CURRENT FY SUMMARY ══════════════════════════════ */
+      {/* Payment Status Filter Pills */}
+      <SlotTabs slots={PAYMENT_SLOTS} activeSlot={activeSlot} onChange={setActiveSlot} />
+
+      {/* Table & Overview Summary */}
+      {activeFy !== 'overall' && (
         <div className="glass-card p-5">
           <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
             <TrendingUp size={15} className="text-jio-blue-400" /> FY {activeFy} Summary
