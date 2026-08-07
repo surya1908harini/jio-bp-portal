@@ -286,13 +286,13 @@ export default function JmsPage() {
       key: 'pdf', header: 'PDF', sortable: false,
       render: r => (
         <div onClick={e => e.stopPropagation()}>
-          <PdfCell pdfUrl={r.pdf_url} folder="jms" isAdmin={true}
+          <PdfCell pdfUrl={r.pdf_url} folder="jms" isAdmin={isAdmin}
             onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url: url })}
             onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url: null })} />
         </div>
       )
     },
-    {
+    ...(isAdmin ? [{
       key: '_actions', header: 'Actions', sortable: false,
       render: r => (
         <div className="flex gap-1" onClick={e => e.stopPropagation()}>
@@ -300,7 +300,7 @@ export default function JmsPage() {
           <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors" title="Delete JMS"><Trash2 size={14} /></button>
         </div>
       )
-    },
+    }] : []),
   ]
 
   const totalNet = sortedRecords.reduce((s, r) => s + (r.net_amount || 0), 0)

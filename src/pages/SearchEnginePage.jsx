@@ -8,6 +8,7 @@ import ModuleHeader from '../components/ModuleHeader'
 import DataTable from '../components/DataTable'
 import RecordDetailModal from '../components/RecordDetailModal'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
+import { useAuth } from '../context/AuthContext'
 import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
 import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS } from '../lib/utils'
 
@@ -29,6 +30,7 @@ const MONTHS = [
 const YEARS = ['2023', '2024', '2025', '2026', '2027']
 
 export default function SearchEnginePage() {
+  const { isAdmin } = useAuth()
   const [activeTab, setActiveTab] = useState('jms') // 'jms' or 'invoice'
 
   // Fetch Database Data
@@ -502,7 +504,7 @@ export default function SearchEnginePage() {
           record={selectedRecord.record}
           type={selectedRecord.type}
           onClose={() => setSelectedRecord(null)}
-          isAdmin={true}
+          isAdmin={isAdmin}
         />
       )}
     </div>

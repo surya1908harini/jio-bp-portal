@@ -348,13 +348,13 @@ export default function InvoicePage() {
       key: 'pdf', header: 'PDF', sortable: false,
       render: r => (
         <div onClick={e => e.stopPropagation()}>
-          <PdfCell pdfUrl={r.pdf_url} folder="invoices" isAdmin={true}
+          <PdfCell pdfUrl={r.pdf_url} folder="invoices" isAdmin={isAdmin}
             onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url: url })}
             onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url: null })} />
         </div>
       )
     },
-    {
+    ...(isAdmin ? [{
       key: '_actions', header: 'Actions', sortable: false,
       render: r => (
         <div className="flex gap-1" onClick={e => e.stopPropagation()}>
@@ -362,7 +362,7 @@ export default function InvoicePage() {
           <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors" title="Delete Invoice"><Trash2 size={14} /></button>
         </div>
       )
-    },
+    }] : []),
   ]
 
   return (

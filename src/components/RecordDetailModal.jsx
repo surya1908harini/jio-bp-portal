@@ -160,7 +160,7 @@ export default function RecordDetailModal({ record, type = 'invoice', onClose, o
           </div>
 
           <div className="flex items-center gap-2">
-            {onEdit && (
+            {isAdmin && onEdit && (
               <button
                 onClick={() => { onClose(); onEdit(record) }}
                 className="btn-ghost text-jio-blue-400 hover:text-white"
@@ -168,7 +168,7 @@ export default function RecordDetailModal({ record, type = 'invoice', onClose, o
                 Edit Record
               </button>
             )}
-            {onDelete && (
+            {isAdmin && onDelete && (
               <button
                 onClick={() => { onClose(); onDelete(record.id) }}
                 className="btn-ghost text-rose-400 hover:text-white"
