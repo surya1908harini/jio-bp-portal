@@ -6,6 +6,14 @@
 import { supabase } from './supabase'
 import { FINANCIAL_YEARS, applyGstDateAutoSync } from './utils'
 
+const NUMERIC_KEYS = new Set([
+  'total', 'igst', 'cgst', 'sgst', 'grand_total', 'tds',
+  'gst_amount_deduction', 'gst_tds_2pct_iocl', 'sd_retention',
+  'tcs_credit_note', 'received_bill_amount', 'net_amount',
+  'fo_total_budget', 'total_consumed', 'a3_released_amount',
+  'pending_amount', 'invoiced_amount', 'balance_available'
+])
+
 // ── helper: clean budget record fields to remove view-computed fields before DB insert/update ──
 const BUDGET_ALLOWED_KEYS = new Set([
   'operation',
@@ -24,8 +32,25 @@ function cleanBudgetRecord(obj) {
   for (const [k, v] of Object.entries(obj)) {
     if (!BUDGET_ALLOWED_KEYS.has(k)) continue
     if (v === '' || v === null || v === undefined) continue
+
+    if (NUMERIC_KEYS.has(k)) {
+      if (typeof v === 'string') {
+        const cleanedStr = v.replace(/,/g, '').trim()
+        if (cleanedStr === '' || cleanedStr === '.' || cleanedStr === '-' || isNaN(Number(cleanedStr))) continue
+        result[k] = Number(cleanedStr)
+      } else if (typeof v === 'number') {
+        if (isNaN(v)) continue
+        result[k] = v
+      }
+      continue
+    }
+
     if (v instanceof Date) {
       result[k] = v.toISOString().split('T')[0]
+    } else if (typeof v === 'string') {
+      const trimmed = v.trim()
+      if (trimmed === '.' || trimmed === '') continue
+      result[k] = trimmed
     } else {
       result[k] = v
     }
@@ -40,8 +65,25 @@ function clean(obj) {
   for (const [k, v] of Object.entries(synced)) {
     if (k === 'fy') continue // ignore invalid 'fy' property not present in schema
     if (v === '' || v === null || v === undefined) continue
+
+    if (NUMERIC_KEYS.has(k)) {
+      if (typeof v === 'string') {
+        const cleanedStr = v.replace(/,/g, '').trim()
+        if (cleanedStr === '' || cleanedStr === '.' || cleanedStr === '-' || isNaN(Number(cleanedStr))) continue
+        result[k] = Number(cleanedStr)
+      } else if (typeof v === 'number') {
+        if (isNaN(v)) continue
+        result[k] = v
+      }
+      continue
+    }
+
     if (v instanceof Date) {
       result[k] = v.toISOString().split('T')[0]
+    } else if (typeof v === 'string') {
+      const trimmed = v.trim()
+      if (trimmed === '.' || trimmed === '') continue
+      result[k] = trimmed
     } else {
       result[k] = v
     }
@@ -59,15 +101,15 @@ async function fetchPagedData(baseQueryFn) {
     const query = baseQueryFn().range(from, from + step - 1)
     const { data, error } = await query
     if (error) throw error
-    if (!data || data.length === 0) {
-      hasMore = false
-    } else {
-      allRows.push(...data)
+    if (data && data.length > 0) {
+      allRows = allRows.concat(data)
       if (data.length < step) {
         hasMore = false
       } else {
         from += step
       }
+    } else {
+      hasMore = false
     }
   }
   return allRows
@@ -117,13 +159,9 @@ export const jmsDb = {
     return data
   },
 
-  bulkDelete: async (ids) => {
-    const { error } = await supabase
-      .from('jms_records')
-      .delete()
-      .in('id', ids)
+  delete: async (id) => {
+    const { error } = await supabase.from('jms_records').delete().eq('id', id)
     if (error) throw error
-    return ids.length
   },
 
   bulkInsert: async (rows, userId) => {
@@ -242,50 +280,10 @@ export const budgetDb = {
     if (error) throw error
   },
 
-  bulkInsert: async (rows, userId, activeFy) => {
-    const cleaned = rows.map(r => {
-      const { fy, ...rest } = r
-      const fyVal = r.financial_year || (activeFy && activeFy !== 'overall' ? activeFy : undefined)
-      return cleanBudgetRecord({ ...rest, ...(fyVal ? { financial_year: fyVal } : {}), created_by: userId })
-    })
+  bulkInsert: async (rows, userId) => {
+    const cleaned = rows.map(r => cleanBudgetRecord({ ...r, created_by: userId }))
     const { error } = await supabase.from('budget_records').insert(cleaned)
     if (error) throw error
     return cleaned.length
-  },
-
-  syncMissingFromJms: async (userId) => {
-    const { data: jmsRows, error: jmsErr } = await supabase.from('jms_records').select('work_order_number, financial_year, net_amount')
-    const { data: budgetRows, error: bgErr } = await supabase.from('budget_records').select('work_order_number')
-
-    if (jmsErr) throw jmsErr
-    if (bgErr) throw bgErr
-
-    const budgetWos = new Set(budgetRows?.map(b => String(b.work_order_number).trim()).filter(Boolean))
-    const missingMap = new Map()
-
-    jmsRows?.forEach(j => {
-      const wo = String(j.work_order_number || '').trim()
-      if (wo && !budgetWos.has(wo)) {
-        if (!missingMap.has(wo)) {
-          missingMap.set(wo, {
-            work_order_number: wo,
-            financial_year: j.financial_year || '2024-25',
-            operation: 'JMS Work Order',
-            description: 'Auto-synced from JMS records',
-            fo_total_budget: Number(j.net_amount || 0),
-            created_by: userId,
-          })
-        } else {
-          missingMap.get(wo).fo_total_budget += Number(j.net_amount || 0)
-        }
-      }
-    })
-
-    const newEntries = Array.from(missingMap.values())
-    if (newEntries.length === 0) return 0
-
-    const { error } = await supabase.from('budget_records').insert(newEntries)
-    if (error) throw error
-    return newEntries.length
   },
 }
