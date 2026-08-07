@@ -193,7 +193,7 @@ export default function BudgetPage() {
     return count
   }
 
-  const openEdit = (row) => { setEditRow(row); setForm({ ...EMPTY_FORM, ...row }); setFormOpen(true) }
+  const openEdit = (row) => { setEditRow(row); setForm({ ...EMPTY_FORM, ...row, payment_timeframe_days: String(row.payment_timeframe_days || '30'), status: row.status || 'Active' }); setFormOpen(true) }
   const openAdd  = ()    => { setEditRow(null); setForm(EMPTY_FORM); setFormOpen(true) }
   const handleClose  = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))

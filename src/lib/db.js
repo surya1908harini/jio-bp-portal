@@ -29,6 +29,47 @@ const BUDGET_ALLOWED_KEYS = new Set([
   'financial_year'
 ])
 
+function parseBudgetMetadata(r) {
+  if (!r) return r
+  let timeframe = r.payment_timeframe_days
+  let status = r.status
+
+  const desc = r.description || ''
+
+  if (!timeframe) {
+    const tfMatch = desc.match(/\[Timeframe:\s*(\d+)\s*days\]/i)
+    if (tfMatch) timeframe = Number(tfMatch[1])
+  }
+
+  if (!status) {
+    const stMatch = desc.match(/\[WO Status:\s*([^\]]+)\]/i)
+    if (stMatch) status = stMatch[1].trim()
+  }
+
+  return {
+    ...r,
+    payment_timeframe_days: timeframe ? Number(timeframe) : 30,
+    status: status || 'Active',
+  }
+}
+
+function encodeBudgetMetadata(payload) {
+  let desc = payload.description || ''
+  const tf = payload.payment_timeframe_days || 30
+  const st = payload.status || 'Active'
+
+  desc = desc.replace(/\[Timeframe:\s*\d+\s*days\]/gi, '').replace(/\[WO Status:\s*[^\]]+\]/gi, '').trim()
+  const metaTag = `[Timeframe: ${tf} days] [WO Status: ${st}]`
+  const finalDesc = desc ? `${desc} ${metaTag}` : metaTag
+
+  return {
+    ...payload,
+    description: finalDesc,
+    payment_timeframe_days: Number(tf),
+    status: st,
+  }
+}
+
 function cleanBudgetRecord(obj) {
   const result = {}
   for (const [k, v] of Object.entries(obj)) {
@@ -241,26 +282,29 @@ export const invoiceDb = {
 // ═══════════════════════════════════════════════════════════
 export const budgetDb = {
   list: async (fy) => {
-    return fetchPagedData(() =>
+    const records = await fetchPagedData(() =>
       supabase
         .from('budget_summary')
         .select('*')
         .eq('financial_year', fy)
         .order('created_at', { ascending: false })
     )
+    return records.map(parseBudgetMetadata)
   },
 
   listAll: async () => {
-    return fetchPagedData(() =>
+    const records = await fetchPagedData(() =>
       supabase
         .from('budget_summary')
         .select('*')
         .order('financial_year')
     )
+    return records.map(parseBudgetMetadata)
   },
 
   create: async (payload, userId) => {
-    const cleaned = cleanBudgetRecord({ ...payload, created_by: userId })
+    const encoded = encodeBudgetMetadata({ ...payload, created_by: userId })
+    const cleaned = cleanBudgetRecord(encoded)
     let { data, error } = await supabase
       .from('budget_records')
       .insert(cleaned)
@@ -279,11 +323,12 @@ export const budgetDb = {
       error = retry.error
     }
     if (error) throw error
-    return data
+    return parseBudgetMetadata(data)
   },
 
   update: async (id, payload) => {
-    const cleaned = cleanBudgetRecord(payload)
+    const encoded = encodeBudgetMetadata(payload)
+    const cleaned = cleanBudgetRecord(encoded)
     let { data, error } = await supabase
       .from('budget_records')
       .update(cleaned)
@@ -304,7 +349,7 @@ export const budgetDb = {
       error = retry.error
     }
     if (error) throw error
-    return data
+    return parseBudgetMetadata(data)
   },
 
   delete: async (id) => {
