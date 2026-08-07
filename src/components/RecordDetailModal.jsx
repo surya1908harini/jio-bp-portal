@@ -82,6 +82,7 @@ export default function RecordDetailModal({ record, type = 'invoice', onClose, o
               <DetailItem label="SGST (9%)" value={formatINR(record.sgst)} color="text-purple-300" />
               <DetailItem label="Grand Total" value={formatINR(record.grand_total)} color="text-emerald-400" highlight />
 
+              <DetailItem label="Invoice Posting Date" value={formatDate(record.inv_posting_date)} color="text-cyan-300" highlight />
               <DetailItem label="Expected Timeframe" value={`${record.payment_timeframe_days || 30} Days`} color="text-amber-400" />
               <DetailItem label="Expected Payment Date" value={formatDate(record.expected_payment_date)} color="text-amber-300" highlight />
 

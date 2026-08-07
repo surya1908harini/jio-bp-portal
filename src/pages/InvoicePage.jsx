@@ -5,7 +5,7 @@ import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Cale
 import ModuleHeader from '../components/ModuleHeader'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
-import { invoiceDb, budgetDb } from '../lib/db'
+import { invoiceDb, budgetDb, jmsDb } from '../lib/db'
 import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS, PAYMENT_STATUSES, CURRENT_FY, getFinancialYear, applyGstDateAutoSync, applyInvoiceDateAndStatusRules, calculateExpectedPaymentDate } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
@@ -133,6 +133,11 @@ export default function InvoicePage() {
     queryFn: () => budgetDb.listAll(),
   })
 
+  const { data: jmsList = [] } = useQuery({
+    queryKey: ['jms', 'all'],
+    queryFn: () => jmsDb.listAll(),
+  })
+
   const budgetTimeframeMap = useMemo(() => {
     const map = {}
     budgetList.forEach(b => {
@@ -143,19 +148,33 @@ export default function InvoicePage() {
     return map
   }, [budgetList])
 
+  const jmsPostingDateMap = useMemo(() => {
+    const map = {}
+    jmsList.forEach(j => {
+      if (j.jms_no && (j.inv_posting_date || j.inv_date)) {
+        map[String(j.jms_no).trim().toLowerCase()] = j.inv_posting_date || j.inv_date
+      }
+    })
+    return map
+  }, [jmsList])
+
   const records = useMemo(() => {
     const rawList = activeFy === 'overall' ? allRecords : allRecords.filter(r => getRecordFy(r) === activeFy)
     return rawList.map(r => {
       const synced = applyInvoiceDateAndStatusRules(r)
       const woKey = String(r.work_order_number || '').trim().toLowerCase()
+      const jmsKey = String(r.jms_no || '').trim().toLowerCase()
+      
       const timeframeDays = budgetTimeframeMap[woKey] || 30
       synced.payment_timeframe_days = timeframeDays
-      // Link Posting Date to Expected Payment Timeframe (Days)
-      const baseDate = synced.inv_posting_date || synced.inv_date
-      synced.expected_payment_date = calculateExpectedPaymentDate(baseDate, timeframeDays)
+
+      // Link Invoice Posting Date from invoice or linked JMS record (#2559541)
+      const effectivePostingDate = synced.inv_posting_date || jmsPostingDateMap[jmsKey] || synced.inv_date
+      synced.inv_posting_date = effectivePostingDate
+      synced.expected_payment_date = calculateExpectedPaymentDate(effectivePostingDate, timeframeDays)
       return synced
     })
-  }, [allRecords, activeFy, budgetTimeframeMap])
+  }, [allRecords, activeFy, budgetTimeframeMap, jmsPostingDateMap])
 
   const sortedRecords = useMemo(() => {
     let result = records.filter(r => {

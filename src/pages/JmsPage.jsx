@@ -5,7 +5,7 @@ import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Cale
 import ModuleHeader from '../components/ModuleHeader'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
-import { jmsDb, budgetDb } from '../lib/db'
+import { jmsDb, budgetDb, invoiceDb } from '../lib/db'
 import { formatINR, formatDate, exportToExcel, FINANCIAL_YEARS, JMS_STATUSES, CURRENT_FY, getFinancialYear, calculateExpectedPaymentDate } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
@@ -185,6 +185,24 @@ export default function JmsPage() {
   // Active records for table
   const fyRecords = activeFy === 'overall' ? allRecords : allRecords.filter(r => getRecordFy(r) === activeFy)
 
+  const { data: invoiceList = [] } = useQuery({
+    queryKey: ['invoices', 'all'],
+    queryFn: () => invoiceDb.listAll(),
+  })
+
+  const invPostingDateMap = useMemo(() => {
+    const map = {}
+    invoiceList.forEach(inv => {
+      if (inv.jms_no && inv.inv_posting_date) {
+        map[String(inv.jms_no).trim().toLowerCase()] = inv.inv_posting_date
+      }
+      if (inv.inv_number && inv.inv_posting_date) {
+        map[String(inv.inv_number).trim().toLowerCase()] = inv.inv_posting_date
+      }
+    })
+    return map
+  }, [invoiceList])
+
   // Apply slot filter based on status
   const records = useMemo(() => {
     const rawFiltered = fyRecords.filter(r => {
@@ -199,15 +217,19 @@ export default function JmsPage() {
 
     return rawFiltered.map(r => {
       const woKey = String(r.work_order_number || '').trim().toLowerCase()
+      const jmsKey = String(r.jms_no || '').trim().toLowerCase()
+      const invKey = String(r.inv_number || '').trim().toLowerCase()
+
       const timeframeDays = budgetTimeframeMap[woKey] || 30
-      const baseDate = r.inv_posting_date || r.jms_create_date || r.inv_date || r.a1_release_date
+      const baseDate = r.inv_posting_date || invPostingDateMap[jmsKey] || invPostingDateMap[invKey] || r.jms_create_date || r.inv_date
       return {
         ...r,
+        inv_posting_date: baseDate,
         payment_timeframe_days: timeframeDays,
         expected_payment_date: calculateExpectedPaymentDate(baseDate, timeframeDays),
       }
     })
-  }, [fyRecords, activeSlot, budgetTimeframeMap])
+  }, [fyRecords, activeSlot, budgetTimeframeMap, invPostingDateMap])
 
   // Sort records: Current FY on top, then newest on top by JMS Date (or fallback date), then JMS No
   const sortedRecords = useMemo(() => {
