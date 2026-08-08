@@ -50,17 +50,17 @@
 }
 
 .glass-card:hover {
-  border-color: rgba(168, 85, 247, 0.35);
-  box-shadow: 0 16px 36px -12px rgba(147, 51, 234, 0.2);
+  border-color: rgba(168, 85, 247, 0.4);
+  box-shadow: 0 14px 35px -10px rgba(147, 51, 234, 0.2);
 }
 
 @layer components {
-  /* Primary button with click scale, hover glow, and smooth press feedback */
+  /* Primary button with click scale, hover glow, expansion, and smooth press feedback */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 
            bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 text-white font-bold
            rounded-xl text-xs sm:text-sm tracking-wide shadow-lg shadow-purple-600/25
-           hover:shadow-xl hover:shadow-purple-600/40 hover:-translate-y-0.5 hover:scale-[1.02] hover:brightness-110
+           hover:shadow-2xl hover:shadow-purple-500/40 hover:-translate-y-0.5 hover:scale-[1.02] hover:brightness-110
            active:scale-95 active:translate-y-0 active:shadow-md
            transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed
            relative overflow-hidden cursor-pointer select-none;
@@ -73,7 +73,7 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
     transition: left 0.6s ease;
   }
 
@@ -86,7 +86,7 @@
     @apply inline-flex items-center justify-center gap-2 px-4 py-2.5
            bg-gradient-to-r from-rose-600 to-red-500 text-white font-bold
            rounded-xl text-xs sm:text-sm tracking-wide shadow-lg shadow-rose-600/25
-           hover:shadow-xl hover:shadow-rose-600/40 hover:-translate-y-0.5 hover:scale-[1.02] hover:brightness-110
+           hover:shadow-2xl hover:shadow-rose-600/40 hover:-translate-y-0.5 hover:scale-[1.02] hover:brightness-110
            active:scale-95 active:translate-y-0 active:shadow-md
            transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed
            cursor-pointer select-none;
@@ -143,32 +143,32 @@
     @apply px-4 py-3 text-slate-300 whitespace-nowrap;
   }
 
-  /* Status badges */
+  /* Status badges with hover scale pop */
   .badge {
     @apply inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide transition-all duration-200 hover:scale-105 select-none;
   }
 
-  .badge-pending   { @apply bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm shadow-amber-500/10 hover:border-amber-400; }
-  .badge-a1        { @apply bg-blue-500/15 text-blue-400 border border-blue-500/30 shadow-sm shadow-blue-500/10 hover:border-blue-400; }
-  .badge-a2        { @apply bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 shadow-sm shadow-indigo-500/10 hover:border-indigo-400; }
-  .badge-qsd       { @apply bg-purple-500/15 text-purple-400 border border-purple-500/30 shadow-sm shadow-purple-500/10 hover:border-purple-400; }
-  .badge-a3        { @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-500/10 hover:border-emerald-400; }
-  .badge-invoiced  { @apply bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 shadow-sm shadow-cyan-500/10 hover:border-cyan-400; }
+  .badge-pending   { @apply bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm shadow-amber-500/10 hover:bg-amber-500/25; }
+  .badge-a1        { @apply bg-blue-500/15 text-blue-400 border border-blue-500/30 shadow-sm shadow-blue-500/10 hover:bg-blue-500/25; }
+  .badge-a2        { @apply bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 shadow-sm shadow-indigo-500/10 hover:bg-indigo-500/25; }
+  .badge-qsd       { @apply bg-purple-500/15 text-purple-400 border border-purple-500/30 shadow-sm shadow-purple-500/10 hover:bg-purple-500/25; }
+  .badge-a3        { @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-500/10 hover:bg-emerald-500/25; }
+  .badge-invoiced  { @apply bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 shadow-sm shadow-cyan-500/10 hover:bg-cyan-500/25; }
 
-  .badge-gst-only  { @apply bg-amber-500/15 text-amber-400 border border-amber-500/30; }
-  .badge-net       { @apply bg-blue-500/15 text-blue-400 border border-blue-500/30; }
-  .badge-full      { @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/30; }
-  .badge-cancelled { @apply bg-rose-500/20 text-rose-400 border border-rose-500/30 font-extrabold; }
+  .badge-gst-only  { @apply bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25; }
+  .badge-net       { @apply bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25; }
+  .badge-full      { @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25; }
+  .badge-cancelled { @apply bg-rose-500/20 text-rose-400 border border-rose-500/30 font-extrabold hover:bg-rose-500/30; }
 
-  /* KPI Card with Elevation */
+  /* KPI Card */
   .kpi-card {
-    @apply glass-card p-5 flex flex-col gap-1 hover:border-purple-500/50 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-purple-600/20 transition-all duration-300;
+    @apply glass-card p-5 flex flex-col gap-1 hover:border-purple-500/40 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300;
   }
 
   /* Sidebar link */
   .sidebar-link {
     @apply flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:text-white
-           hover:bg-slate-800/80 hover:translate-x-1 active:scale-95 transition-all duration-200 text-sm font-medium select-none;
+           hover:bg-slate-800/80 active:scale-95 transition-all duration-150 text-sm font-medium select-none;
   }
 
   .sidebar-link.active {
@@ -187,7 +187,39 @@
   }
 }
 
-/* ── Animation Keyframes & Utilities ────────────────────────────── */
+/* ── Scroll-Triggered & Interactive Animation Keyframes ─────────── */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-on-scroll.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Card Elevation on Hover */
+.hover-elevate {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+}
+
+.hover-elevate:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px -12px rgba(147, 51, 234, 0.25);
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+.hover-elevate-sm {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-elevate-sm:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px -8px rgba(147, 51, 234, 0.2);
+}
+
 @keyframes backdropFadeIn {
   from { opacity: 0; backdrop-filter: blur(0px); }
   to   { opacity: 1; backdrop-filter: blur(8px); }
@@ -207,7 +239,7 @@
 @keyframes pageEnter {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.99);
+    transform: translateY(12px) scale(0.995);
   }
   to {
     opacity: 1;
@@ -216,42 +248,13 @@
 }
 
 @keyframes floatSoft {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50%      { transform: translateY(-7px) rotate(1deg); }
-}
-
-@keyframes floatSlow {
-  0%, 100% { transform: translateY(0px) scale(1); }
-  50%      { transform: translateY(-12px) scale(1.03); }
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
 }
 
 @keyframes pulseGlow {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50%      { opacity: 0.95; transform: scale(1.08); }
-}
-
-/* Scroll-Triggered Fade-In & Slide-Up Utilities */
-.scroll-reveal {
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
-}
-
-.scroll-reveal.revealed {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.card-elevation {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.card-elevation:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 20px 40px -15px rgba(147, 51, 234, 0.25);
-  border-color: rgba(168, 85, 247, 0.5);
-  filter: brightness(1.05);
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 0.95; transform: scale(1.04); }
 }
 
 @layer utilities {
@@ -264,15 +267,16 @@
   }
 
   .animate-float {
-    animation: floatSoft 3.5s ease-in-out infinite;
-  }
-
-  .animate-float-slow {
-    animation: floatSlow 6s ease-in-out infinite;
+    animation: floatSoft 4s ease-in-out infinite;
   }
 
   .animate-pulse-glow {
     animation: pulseGlow 3s ease-in-out infinite;
+  }
+
+  /* Card and Button interactive click feedback */
+  .interactive-card {
+    @apply transition-all duration-300 ease-out hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-purple-500/15 active:scale-[0.98] cursor-pointer;
   }
 
   .clickable-btn {

@@ -503,7 +503,7 @@ export default function JmsPage() {
 
       {activeFy === 'overall' ? (
         /* ═══ OVERALL — ALL FINANCIAL YEARS ═══════════════════ */
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 reveal-on-scroll">
           <h2 className="text-sm font-semibold text-white mb-4 flex items-center justify-between">
             <span className="flex items-center gap-2">
               <Globe size={15} className="text-jio-blue-400" /> All Financial Years — Overall View
@@ -552,7 +552,7 @@ export default function JmsPage() {
         </div>
       ) : (
         /* ═══ CURRENT FY OVERALL ══════════════════════════════ */
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 reveal-on-scroll">
           <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
             <TrendingUp size={15} className="text-jio-blue-400" /> FY {activeFy} Summary
           </h2>

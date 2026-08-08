@@ -389,7 +389,7 @@ export default function BudgetPage() {
       <FyTabs basePath="/budget" />
 
       {/* Filter & View Controls Bar */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 backdrop-blur-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 backdrop-blur-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 reveal-on-scroll">
         {/* Search Bar */}
         <div className="relative w-full md:w-80">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -477,7 +477,7 @@ export default function BudgetPage() {
                 return (
                   <div
                     key={b.id}
-                    className="rounded-3xl border border-slate-800 bg-slate-900/70 backdrop-blur-xl shadow-xl overflow-hidden group hover:border-purple-500/50 transition-all duration-300 flex flex-col justify-between"
+                    className="rounded-3xl border border-slate-800 bg-slate-900/70 backdrop-blur-xl shadow-xl overflow-hidden group hover-elevate interactive-card flex flex-col justify-between"
                     onClick={() => setSelectedRow(b)}
                   >
                     {/* Top Cover Banner */}

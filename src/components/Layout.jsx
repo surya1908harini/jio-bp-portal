@@ -6,6 +6,7 @@ import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
 import { supabase } from '../lib/supabase'
 import { formatINR, formatDate, parseValidity, applyInvoiceDateAndStatusRules } from '../lib/utils'
 import NotificationDetailModal from './NotificationDetailModal'
+import useScrollReveal from '../hooks/useScrollReveal'
 import {
   LayoutDashboard, FileText, Receipt, PieChart, Settings, Database,
   ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2, CheckCircle2
@@ -278,6 +279,9 @@ export default function Layout() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Automatically handle scroll reveal animations on route changes
+  useScrollReveal()
 
   const handleSearchSubmit = (e) => {
     e.preventDefault()
