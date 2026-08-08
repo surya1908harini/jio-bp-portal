@@ -124,21 +124,22 @@ export default function Layout() {
 
     // 1. Long Payment Pending Invoices (> 15 days) — EXCLUDED automatically when payment_status === 'Full Payment Received'
     invoiceList.forEach(inv => {
-      const isPaid = inv.payment_status === 'Full Payment Received'
+      const syncedInv = applyInvoiceDateAndStatusRules(inv)
+      const isPaid = syncedInv.payment_status === 'Full Payment Received'
       if (!isPaid) {
-        const invDate = inv.inv_date ? new Date(inv.inv_date) : (inv.created_at ? new Date(inv.created_at) : null)
+        const invDate = syncedInv.inv_date ? new Date(syncedInv.inv_date) : (syncedInv.created_at ? new Date(syncedInv.created_at) : null)
         const daysPending = invDate ? Math.floor((now - invDate) / (1000 * 60 * 60 * 24)) : 0
-        if (daysPending >= 15 || !inv.payment_status) {
-          const invNo = inv.inv_number || String(inv.id)
+        if (daysPending >= 15 || !syncedInv.payment_status) {
+          const invNo = syncedInv.inv_number || String(syncedInv.id)
           list.push({
-            id: `inv-${inv.id}`,
+            id: `inv-${syncedInv.id}`,
             category: 'invoice',
             title: `Payment Pending: INV #${invNo}`,
-            sub: `Amount: ${formatINR(inv.grand_total)} · Pending for ${daysPending > 0 ? `${daysPending} days` : 'review'}`,
+            sub: `Amount: ${formatINR(syncedInv.grand_total)} · Pending for ${daysPending > 0 ? `${daysPending} days` : 'review'}`,
             days: daysPending,
             severity: daysPending > 45 ? 'high' : 'medium',
             link: `/invoices?search=${encodeURIComponent(invNo)}`,
-            record: inv,
+            record: syncedInv,
             icon: DollarSign,
             color: 'text-rose-400 bg-rose-950/80 border-rose-800/60'
           })
