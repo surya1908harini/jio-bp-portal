@@ -12,8 +12,8 @@ import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
 import FyTabs from '../components/FyTabs'
 import SlotTabs from '../components/SlotTabs'
-import RecordDetailModal from '../components/RecordDetailModal'
 import PdfCell from '../components/PdfCell'
+import { loadMasters } from '../lib/masters'
 
 const EMPTY_FORM = {
   jms_no: '', period_of_work: '', work_order_number: '', arc_number: '',
