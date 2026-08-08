@@ -84,8 +84,12 @@ export default function BudgetPage() {
 
   const filteredRecords = useMemo(() => {
     return fyRecords.filter(r => {
+      const isClosed = r.status === 'Closed'
+      // Closed work orders do not belong in expired/expiring warning slots
+      if (isClosed && ['expiring_soon', 'critical', 'expired'].includes(activeSlot)) return false
+
       const { daysRemaining } = parseValidity(r.validity_of_contract)
-      if (activeSlot === 'active' && !(daysRemaining === null || daysRemaining > 90)) return false
+      if (activeSlot === 'active' && !isClosed && !(daysRemaining === null || daysRemaining > 90)) return false
       if (activeSlot === 'expiring_soon' && !(daysRemaining !== null && daysRemaining <= 90 && daysRemaining > 0)) return false
       if (activeSlot === 'critical' && !(daysRemaining !== null && daysRemaining <= 30 && daysRemaining > 0)) return false
       if (activeSlot === 'expired' && !(daysRemaining !== null && daysRemaining <= 0)) return false
@@ -240,8 +244,12 @@ export default function BudgetPage() {
           formattedValidity = valStr
         }
 
+        const isClosed = r.status === 'Closed'
+
         const badgeColor =
-          status === 'active'
+          isClosed
+            ? 'bg-slate-800 text-slate-400 border-slate-700'
+            : status === 'active'
             ? 'bg-emerald-950/80 text-emerald-400 border-emerald-700/50'
             : status === 'expiring_soon'
             ? 'bg-amber-950/80 text-amber-400 border-amber-700/50'
@@ -250,7 +258,9 @@ export default function BudgetPage() {
             : 'bg-slate-800 text-slate-400 border-slate-700'
 
         const badgeText =
-          daysRemaining === null || daysRemaining === undefined
+          isClosed
+            ? 'WO Closed'
+            : daysRemaining === null || daysRemaining === undefined
             ? 'No Expiry'
             : daysRemaining <= 0
             ? 'Expired'

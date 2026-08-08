@@ -364,6 +364,8 @@ export default function InvoicePage() {
         </span>
       )
     },
+    { key: 'full_amount_received_date',header: 'Full Received Date', render: r => <span className="font-mono text-emerald-300">{formatDate(r.full_amount_received_date || r.amount_received_date) || '—'}</span> },
+    { key: 'gst_amount_received_date', header: 'GST Received Date',  render: r => <span className="font-mono text-emerald-300">{formatDate(r.gst_amount_received_date) || '—'}</span> },
     { key: 'payment_status',           header: 'Payment Status',     render: r => <PaymentBadge status={r.payment_status} /> },
     {
       key: 'pdf', header: 'PDF', sortable: false,
