@@ -22,16 +22,18 @@ export default function ModuleHeader({
 
   return (
     <div className="space-y-5">
-      {/* ── Top Hero Gradient Banner (Matches Dashboard Theme 100%) ── */}
-      <div className="rounded-3xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 p-6 text-white shadow-2xl relative overflow-hidden">
-        <div className="absolute -right-10 -bottom-10 w-80 h-80 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+      {/* ── Top Hero Gradient Banner (With Floating Decorative Elements) ── */}
+      <div className="rounded-3xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 p-6 text-white shadow-2xl relative overflow-hidden scroll-reveal">
+        <div className="absolute -right-10 -bottom-10 w-80 h-80 bg-white/10 rounded-full blur-2xl pointer-events-none animate-float-slow" />
+        <div className="absolute right-32 top-3 w-16 h-16 bg-white/10 rounded-full blur-lg pointer-events-none animate-float" />
+        
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-4">
-            <img src="/mmc_logo.jpg" alt="MMC Logo" className="w-14 h-14 rounded-2xl object-cover ring-2 ring-white/40 shadow-xl" />
+            <img src="/mmc_logo.jpg" alt="MMC Logo" className="w-14 h-14 rounded-2xl object-cover ring-2 ring-white/40 shadow-xl animate-float" />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-extrabold text-white tracking-tight">{title}</h1>
-                <span className="px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-white/20 text-white border border-white/30 backdrop-blur-md">
+                <span className="px-3 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-white/20 text-white border border-white/30 backdrop-blur-md animate-pulse-glow">
                   {isAdmin ? 'MMC Admin' : 'User Portal'}
                 </span>
               </div>
@@ -40,8 +42,8 @@ export default function ModuleHeader({
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/20 text-white border border-white/30 backdrop-blur-md text-xs font-semibold">
-              <Calendar size={14} />
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/20 text-white border border-white/30 backdrop-blur-md text-xs font-semibold shadow-sm">
+              <Calendar size={14} className="animate-float" />
               <span>FY {CURRENT_FY}</span>
             </div>
             {actions}
@@ -49,24 +51,26 @@ export default function ModuleHeader({
         </div>
       </div>
 
-      {/* ── 4 Executive Stat Cards Grid ──────────────────────────── */}
+      {/* ── 4 Executive Stat Cards Grid with Card Elevation ──────────────────────────── */}
       {stats.length > 0 && (
-        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${Math.min(stats.length, 4)} gap-4`}>
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${Math.min(stats.length, 4)} gap-4 scroll-reveal`}>
           {stats.map((st, i) => {
             const Icon = st.icon
             return (
               <div
                 key={i}
-                className="rounded-3xl border border-purple-100/80 bg-white dark:bg-slate-900/70 p-4 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col justify-between"
+                className="rounded-3xl border border-slate-800 bg-slate-900/80 p-4 backdrop-blur-xl shadow-xl card-elevation flex flex-col justify-between"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{st.label}</span>
-                  <div className={`w-9 h-9 rounded-2xl ${statColors[st.color || 'purple']} flex items-center justify-center shadow-md`}>
-                    <Icon size={18} />
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{st.label}</span>
+                  <div className={`p-2 rounded-2xl shadow-lg ${statColors[st.color || 'purple']} animate-float`}>
+                    <Icon size={16} />
                   </div>
                 </div>
-                <p className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">{st.value}</p>
-                {st.sub && <p className="text-[11px] font-medium text-slate-400 mt-1">{st.sub}</p>}
+                <div>
+                  <p className="text-xl font-extrabold text-white tracking-tight leading-none my-1">{st.value}</p>
+                  <p className="text-[11px] text-slate-400 font-medium truncate mt-1">{st.sub}</p>
+                </div>
               </div>
             )
           })}

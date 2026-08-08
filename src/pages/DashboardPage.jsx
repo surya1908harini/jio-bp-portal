@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
 import { formatINR, formatDate, CURRENT_FY, getFinancialYear, getBudgetRecordFy } from '../lib/utils'
+import { useScrollReveal } from '../lib/useScrollReveal'
 import {
   FileText, Receipt, PieChart as PieChartIcon, Clock, CheckCircle, TrendingUp, Calendar,
   ArrowRight, Shield, Activity, Sparkles, Award, Zap, DollarSign, Layers, Plus, ExternalLink
@@ -13,6 +14,9 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieCha
 export default function DashboardPage() {
   const { user, isAdmin } = useAuth()
   const navigate = useNavigate()
+
+  // Register scroll-triggered fade-in & slide-up observer
+  useScrollReveal()
 
   // Fetch data
   const { data: jmsList = [] }     = useQuery({ queryKey: ['jms', 'all'],     queryFn: () => jmsDb.listAll() })
@@ -140,13 +144,18 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* ── Full Width Hero Banner (Purple/Magenta Gradient) ───── */}
-      <div className="w-full rounded-3xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 p-7 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between">
-        <div className="absolute -right-10 -bottom-10 w-96 h-96 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+      {/* ── Full Width Hero Banner with Floating Glassmorphic Accents ───── */}
+      <div className="w-full rounded-3xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 p-7 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between scroll-reveal">
+        {/* Floating Background Glassmorphic Elements */}
+        <div className="absolute -right-10 -bottom-10 w-96 h-96 bg-white/10 rounded-full blur-2xl pointer-events-none animate-float-slow" />
+        <div className="absolute right-12 top-6 w-24 h-24 bg-purple-300/20 rounded-full blur-xl pointer-events-none animate-float" />
+        <div className="absolute right-48 bottom-4 px-3 py-1.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-[10px] font-bold tracking-wider text-white shadow-lg animate-float hidden md:flex items-center gap-1.5">
+          <Award size={13} className="text-yellow-300" /> MMC DIRECTOR SUITE
+        </div>
 
-        <div>
+        <div className="relative z-10">
           <div className="flex items-center gap-2 mb-3">
-            <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-white/20 backdrop-blur-md text-white border border-white/30 flex items-center gap-1.5">
+            <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-white/20 backdrop-blur-md text-white border border-white/30 flex items-center gap-1.5 shadow-sm animate-pulse-glow">
               <Sparkles size={12} /> LIVE · {totalJmsCount} ACTIVE JMS RECORDS
             </span>
           </div>
@@ -161,7 +170,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3 mt-6 flex-wrap">
             <Link
               to="/budget"
-              className="px-5 py-2.5 rounded-full bg-white text-purple-700 font-bold text-xs shadow-lg hover:bg-purple-50 active:scale-95 transition-all flex items-center gap-2"
+              className="px-5 py-2.5 rounded-full bg-white text-purple-700 font-bold text-xs shadow-lg hover:bg-purple-50 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 clickable-btn"
             >
               <PieChartIcon size={15} /> View Budget Status
             </Link>
@@ -169,41 +178,41 @@ export default function DashboardPage() {
         </div>
 
         {/* Mini Stat Boxes Inside Hero Banner: Total JMS | Released A3 | Invoices Value | Pending JMS */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-5 border-t border-white/20">
-          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-5 border-t border-white/20 relative z-10">
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 card-elevation">
             <p className="text-[10px] text-purple-200 uppercase font-semibold">Total JMS</p>
             <p className="text-xl font-extrabold text-white mt-0.5">{totalJmsCount}</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20">
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 card-elevation">
             <p className="text-[10px] text-purple-200 uppercase font-semibold">Released A3</p>
             <p className="text-xl font-extrabold text-emerald-300 mt-0.5">{a3Released}</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20">
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 card-elevation">
             <p className="text-[10px] text-purple-200 uppercase font-semibold">Total Invoices</p>
             <p className="text-xl font-extrabold text-white mt-0.5">{currentInvList.length}</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20">
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 card-elevation">
             <p className="text-[10px] text-purple-200 uppercase font-semibold">Pending JMS</p>
             <p className="text-xl font-extrabold text-amber-300 mt-0.5">{pendingJmsCount}</p>
           </div>
         </div>
       </div>
 
-      {/* ── Focus Cards Grid (Quick Actions for Admin, Summary Cards for User) ── */}
-      <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-5`}>
+      {/* ── Focus Cards Grid (Interactive Elevation Cards) ── */}
+      <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-5 scroll-reveal`}>
         {/* Quick Actions Card (ADMIN ONLY) */}
         {isAdmin && (
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl">
-            <div className="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-md mb-3">
+          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl card-elevation">
+            <div className="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-md mb-3 animate-float">
               <Zap size={20} />
             </div>
             <h3 className="text-base font-bold text-white">Quick Actions</h3>
             <p className="text-xs text-slate-400 mb-3">Jump straight to work</p>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <Link to="/jms" className="p-2.5 rounded-xl bg-purple-950/80 border border-purple-800/60 text-purple-300 font-semibold text-center hover:bg-purple-900 transition-colors">
+              <Link to="/jms" className="p-2.5 rounded-xl bg-purple-950/80 border border-purple-800/60 text-purple-300 font-semibold text-center hover:bg-purple-900 transition-colors clickable-btn">
                 + New JMS
               </Link>
-              <Link to="/invoices" className="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/60 text-pink-300 font-semibold text-center hover:bg-pink-900 transition-colors">
+              <Link to="/invoices" className="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/60 text-pink-300 font-semibold text-center hover:bg-pink-900 transition-colors clickable-btn">
                 + Add Invoice
               </Link>
             </div>
@@ -211,42 +220,42 @@ export default function DashboardPage() {
         )}
 
         {/* Invoicing Summary Card */}
-        <div className="rounded-3xl bg-emerald-600 p-5 text-white shadow-xl flex flex-col justify-between">
+        <div className="rounded-3xl bg-emerald-600 p-5 text-white shadow-xl flex flex-col justify-between card-elevation">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">INVOICING TOTAL</span>
-              <DollarSign size={20} />
+              <DollarSign size={20} className="animate-float" />
             </div>
             <h3 className="text-2xl font-extrabold text-white">{formatINR(totalInvAmt)}</h3>
             <p className="text-xs text-emerald-100 mt-1">{currentInvList.length} Total Invoices Issued</p>
           </div>
           <div className="mt-4 pt-3 border-t border-emerald-500/50 flex items-center justify-between text-xs text-emerald-100">
             <span>FY {CURRENT_FY} Billing</span>
-            <Link to="/invoices" className="font-bold underline hover:text-white">View Invoices →</Link>
+            <Link to="/invoices" className="font-bold underline hover:text-white clickable-btn">View Invoices →</Link>
           </div>
         </div>
 
         {/* Contract Budget Summary Card */}
-        <div className="rounded-3xl bg-purple-600 p-5 text-white shadow-xl flex flex-col justify-between">
+        <div className="rounded-3xl bg-purple-600 p-5 text-white shadow-xl flex flex-col justify-between card-elevation">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-purple-100">CONTRACT BUDGET</span>
-              <PieChartIcon size={20} />
+              <PieChartIcon size={20} className="animate-float" />
             </div>
             <h3 className="text-2xl font-extrabold text-white">{formatINR(totalBudget)}</h3>
             <p className="text-xs text-purple-100 mt-1">Consumed: {formatINR(totalConsumed)}</p>
           </div>
           <div className="mt-4 pt-3 border-t border-purple-500/50 flex items-center justify-between text-xs text-purple-100">
             <span>{currentBudgetList.length} Work Orders Active</span>
-            <Link to="/budget" className="font-bold underline hover:text-white">View Budget →</Link>
+            <Link to="/budget" className="font-bold underline hover:text-white clickable-btn">View Budget →</Link>
           </div>
         </div>
       </div>
 
-      {/* ── Dynamic Area Trend Chart & Donut Chart ────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* ── Dynamic Area Trend Chart & Donut Chart (Animated Data Visualizations) ────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 scroll-reveal">
         {/* Left 2 Cols: Monthly Activity Area Chart */}
-        <div className="lg:col-span-2 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
+        <div className="lg:col-span-2 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl card-elevation">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
             <div>
               <div className="flex items-center gap-2">
@@ -254,7 +263,7 @@ export default function DashboardPage() {
                 <select
                   value={trendFy}
                   onChange={e => setTrendFy(e.target.value)}
-                  className="bg-slate-800 text-purple-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-purple-500/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="bg-slate-800 text-purple-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-purple-500/40 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
                 >
                   <option value="2023-24">FY 2023-24</option>
                   <option value="2024-25">FY 2024-25</option>
@@ -266,10 +275,10 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-4 text-xs font-semibold">
               <span className="flex items-center gap-1.5 text-purple-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-500" /> JMS Records
+                <span className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse-glow" /> JMS Records
               </span>
               <span className="flex items-center gap-1.5 text-pink-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-pink-500" /> Invoices
+                <span className="w-2.5 h-2.5 rounded-full bg-pink-500 animate-pulse-glow" /> Invoices
               </span>
             </div>
           </div>
@@ -292,15 +301,15 @@ export default function DashboardPage() {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
                 />
-                <Area type="monotone" dataKey="jms" name="JMS Records" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorJms)" />
-                <Area type="monotone" dataKey="invoices" name="Invoices" stroke="#ec4899" strokeWidth={3} fillOpacity={1} fill="url(#colorInv)" />
+                <Area type="monotone" dataKey="jms" name="JMS Records" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorJms)" isAnimationActive={true} animationDuration={1600} animationEasing="ease-out" />
+                <Area type="monotone" dataKey="invoices" name="Invoices" stroke="#ec4899" strokeWidth={3} fillOpacity={1} fill="url(#colorInv)" isAnimationActive={true} animationDuration={1800} animationEasing="ease-out" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Right 1 Col: Donut Stage Breakdown Chart */}
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl flex flex-col justify-between">
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl flex flex-col justify-between card-elevation">
           <div>
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-base font-bold text-white">JMS Details</h3>
@@ -319,6 +328,9 @@ export default function DashboardPage() {
                     outerRadius={75}
                     paddingAngle={3}
                     dataKey="value"
+                    isAnimationActive={true}
+                    animationDuration={1500}
+                    animationEasing="ease-out"
                   >
                     {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -336,14 +348,14 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-1.5">
-            {pieData.map(item => (
-              <div key={item.name} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                  <span className="text-slate-300 font-medium">{item.name}</span>
-                </div>
-                <span className="font-extrabold text-white font-mono">{item.value}</span>
+          <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-800 text-[11px]">
+            {pieData.map((item) => (
+              <div key={item.name} className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-slate-400">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                  {item.name}
+                </span>
+                <span className="font-bold text-white font-mono">{item.value}</span>
               </div>
             ))}
           </div>
