@@ -421,7 +421,7 @@ export default function Layout() {
         </header>
 
         {/* Main Outlet */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 animate-fade-in">
+        <main key={location.pathname} className="flex-1 overflow-y-auto p-4 md:p-6 animate-page-enter scroll-smooth">
           <Outlet context={{
             allNotifications,
             unreadNotifications,
