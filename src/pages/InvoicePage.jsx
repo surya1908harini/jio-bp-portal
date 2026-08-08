@@ -228,10 +228,29 @@ export default function InvoicePage() {
     return newForm
   }
 
+  // Unique suggestions for Invoice form
+  const uniqueSites = useMemo(() => Array.from(new Set(allRecords.map(i => i.site?.trim()).concat(jmsList.map(j => j.site?.trim())).filter(Boolean))).sort(), [allRecords, jmsList])
+  const uniqueJmsNos = useMemo(() => Array.from(new Set(jmsList.map(j => String(j.jms_no || '').trim()).filter(Boolean))).sort(), [jmsList])
+
   const handleFieldChange = (e) => {
     const { name, value } = e.target
     setForm(prev => {
       let next = { ...prev, [name]: value }
+      if (name === 'jms_no' && value.trim()) {
+        const match = jmsList.find(j => String(j.jms_no || '').trim().toLowerCase() === value.trim().toLowerCase())
+        if (match) {
+          next.work_order_number = next.work_order_number || match.work_order_number || ''
+          next.arc_number        = next.arc_number || match.arc_number || ''
+          next.site              = next.site || match.site || ''
+          next.ro_code           = next.ro_code || match.ro_code || ''
+          next.work_description  = next.work_description || match.work_description || ''
+          if (!next.total && match.net_amount) {
+            next.total = String(match.net_amount)
+            next = updateCalculations(next, taxMode)
+          }
+          toast.success(`Auto-filled from JMS #${match.jms_no} ✓`, { id: `autofill-${match.jms_no}` })
+        }
+      }
       if (name === 'total') {
         next = updateCalculations(next, taxMode)
       }
@@ -374,10 +393,14 @@ export default function InvoicePage() {
 
   const FORM_FIELDS = [
     { name: 'inv_date', label: 'Invoice Date', type: 'date' },
-    { name: 'jms_no', label: 'JMS Number' }, { name: 'work_order_number', label: 'Work Order Number' },
-    { name: 'gst_no', label: 'GST Number' }, { name: 'inv_number', label: 'Invoice Number' },
-    { name: 'sac_code', label: 'SAC Code' }, { name: 'site', label: 'Site' },
-    { name: 'type_of_ro', label: 'Type of RO' }, { name: 'ro_code', label: 'RO Code' },
+    { name: 'jms_no', label: 'JMS Number', list: 'inv-jms-list' },
+    { name: 'work_order_number', label: 'Work Order Number' },
+    { name: 'gst_no', label: 'GST Number' },
+    { name: 'inv_number', label: 'Invoice Number' },
+    { name: 'sac_code', label: 'SAC Code' },
+    { name: 'site', label: 'Site', list: 'inv-site-list' },
+    { name: 'type_of_ro', label: 'Type of RO' },
+    { name: 'ro_code', label: 'RO Code' },
     { name: 'total', label: 'Total (Before Tax)', type: 'number' },
     { name: 'gst_tds_2pct_iocl', label: 'GST TDS 2% IOCL', type: 'number' },
     { name: 'sd_retention', label: 'SD / Retention', type: 'number' },
@@ -508,6 +531,9 @@ export default function InvoicePage() {
         isAdmin={isAdmin}
       />
 
+      <datalist id="inv-site-list">{uniqueSites.map(s => <option key={s} value={s} />)}</datalist>
+      <datalist id="inv-jms-list">{uniqueJmsNos.map(s => <option key={s} value={s} />)}</datalist>
+
       <Modal open={formOpen} onClose={handleClose} title={editRow ? 'Edit Invoice' : 'Add Invoice'}>
         <form onSubmit={handleSubmit} className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {/* Tax Calculation Selection Box */}
@@ -544,7 +570,7 @@ export default function InvoicePage() {
           {FORM_FIELDS.map(f => (
             <div key={f.name}>
               <label className="block text-xs font-medium text-slate-400 mb-1">{f.label}</label>
-              <input type={f.type || 'text'} name={f.name} value={form[f.name] || ''}
+              <input type={f.type || 'text'} name={f.name} value={form[f.name] || ''} list={f.list}
                 onChange={handleFieldChange} className="input-field" step={f.type === 'number' ? '0.01' : undefined} />
             </div>
           ))}

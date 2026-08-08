@@ -103,14 +103,15 @@ function cleanBudgetRecord(obj) {
 
 // ── helper: format dates & strip empty/null values before insert/update ──
 function clean(obj) {
-  const synced = applyGstDateAutoSync({ ...obj })
+  const synced = { ...obj }
   if (synced.amount_received_date && !synced.full_amount_received_date) {
     synced.full_amount_received_date = synced.amount_received_date
   }
-  delete synced.amount_received_date // Remove old column key so PostgREST schema cache error is prevented!
-  delete synced.expected_payment_date // Remove computed key so PostgREST schema cache error is prevented!
-  delete synced.payment_timeframe_days // Remove computed key so PostgREST schema cache error is prevented!
-  delete synced.inv_posting_date // Remove cross-linked key so PostgREST schema cache error is prevented!
+  delete synced.amount_received_date
+  delete synced.expected_payment_date
+  delete synced.payment_timeframe_days
+  delete synced.inv_posting_date
+  delete synced.status_display
 
   const result = {}
   for (const [k, v] of Object.entries(synced)) {
@@ -143,20 +144,23 @@ function clean(obj) {
 }
 
 function cleanJms(obj) {
-  const synced = { ...obj }
-  delete synced.payment_status // ALWAYS strip payment_status for jms_records so Supabase schema cache error is IMPOSSIBLE!
-  delete synced.payment_date
-  return clean(synced)
+  const cleaned = clean(obj)
+  delete cleaned.payment_status // Explicitly strip payment_status for jms_records so schema cache error is IMPOSSIBLE!
+  delete cleaned.payment_date
+  return cleaned
 }
 
 function cleanInvoice(obj) {
-  const synced = { ...obj }
+  const synced = applyGstDateAutoSync({ ...obj })
   const statusStr = String(synced.payment_status || synced.status || '').toLowerCase()
   if (statusStr.includes('cancel')) {
     if (!String(synced.work_description || '').includes('[Cancelled:')) {
       synced.work_description = `[Cancelled: ${synced.payment_status || 'Invoice Cancelled by some issues'}] ${synced.work_description || ''}`.trim()
     }
-    // Ensures PostgreSQL invoice_records_payment_status_check constraint is NEVER violated!
+    synced.payment_status = 'Pending' // Satisfies PostgreSQL check constraint!
+  }
+  const VALID_PAYMENT_STATUSES = new Set(['Pending', 'GST Payment Only Received', 'Net Amount Received', 'Full Payment Received'])
+  if (!VALID_PAYMENT_STATUSES.has(synced.payment_status)) {
     synced.payment_status = 'Pending'
   }
   return clean(synced)

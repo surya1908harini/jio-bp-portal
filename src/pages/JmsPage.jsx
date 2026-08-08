@@ -431,8 +431,20 @@ export default function JmsPage() {
   const totalReleased = sortedRecords.filter(r => r.status === 'Released by A3' || r.status === 'Invoiced').length
   const totalPending = sortedRecords.filter(r => !['Released by A3', 'Invoiced'].includes(r.status)).length
 
+  // Autocomplete suggestions for names and site
+  const uniqueSites = useMemo(() => Array.from(new Set(allRecords.map(j => j.site?.trim()).filter(Boolean))).sort(), [allRecords])
+  const uniqueA1Names = useMemo(() => Array.from(new Set(allRecords.map(j => j.a1_name?.trim()).filter(Boolean))).sort(), [allRecords])
+  const uniqueA2Names = useMemo(() => Array.from(new Set(allRecords.map(j => j.a2_name?.trim()).filter(Boolean))).sort(), [allRecords])
+  const uniqueQsdNames = useMemo(() => Array.from(new Set(allRecords.map(j => j.qsd_name?.trim()).filter(Boolean))).sort(), [allRecords])
+  const uniqueA3Names = useMemo(() => Array.from(new Set(allRecords.map(j => j.a3_name?.trim()).filter(Boolean))).sort(), [allRecords])
+
   return (
     <div className="space-y-5">
+      <datalist id="site-list">{uniqueSites.map(s => <option key={s} value={s} />)}</datalist>
+      <datalist id="a1-list">{uniqueA1Names.map(s => <option key={s} value={s} />)}</datalist>
+      <datalist id="a2-list">{uniqueA2Names.map(s => <option key={s} value={s} />)}</datalist>
+      <datalist id="qsd-list">{uniqueQsdNames.map(s => <option key={s} value={s} />)}</datalist>
+      <datalist id="a3-list">{uniqueA3Names.map(s => <option key={s} value={s} />)}</datalist>
       {/* Header Banner & Executive Stat Cards */}
       <ModuleHeader
         title="JMS Details Management"
@@ -558,15 +570,15 @@ export default function JmsPage() {
             { name: 'arc_number',       label: 'ARC Number' },
             { name: 'net_amount',       label: 'Net Amount',           type: 'number' },
             { name: 'jms_create_date',  label: 'JMS Create Date',      type: 'date' },
-            { name: 'site',             label: 'Site' },
+            { name: 'site',             label: 'Site',                 list: 'site-list' },
             { name: 'ro_code',          label: 'RO Code' },
-            { name: 'a1_name',          label: 'A1 Name' },
+            { name: 'a1_name',          label: 'A1 Name',              list: 'a1-list' },
             { name: 'a1_release_date',  label: 'A1 Release Date',      type: 'date' },
-            { name: 'a2_name',          label: 'A2 Name' },
+            { name: 'a2_name',          label: 'A2 Name',              list: 'a2-list' },
             { name: 'a2_release_date',  label: 'A2 Release Date',      type: 'date' },
-            { name: 'qsd_name',         label: 'QSD Name' },
+            { name: 'qsd_name',         label: 'QSD Name',             list: 'qsd-list' },
             { name: 'qsd_release_date', label: 'QSD Release Date',     type: 'date' },
-            { name: 'a3_name',          label: 'A3 Name' },
+            { name: 'a3_name',          label: 'A3 Name',              list: 'a3-list' },
             { name: 'inv_number',       label: 'Invoice Number' },
             { name: 'inv_date',         label: 'Invoice Date',         type: 'date' },
             { name: 'inv_posting_date', label: 'Invoice Posting Date', type: 'date' },
@@ -575,7 +587,7 @@ export default function JmsPage() {
             <div key={f.name}>
               <label className="block text-xs font-medium text-slate-400 mb-1">{f.label}{f.required && ' *'}</label>
               <input type={f.type || 'text'} name={f.name} value={form[f.name] || ''} onChange={handleChange}
-                required={f.required} className="input-field" step={f.type === 'number' ? '0.01' : undefined} />
+                list={f.list} required={f.required} className="input-field" step={f.type === 'number' ? '0.01' : undefined} />
             </div>
           ))}
           <div className="col-span-2 md:col-span-3">
