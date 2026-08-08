@@ -1,14 +1,21 @@
-import { Link, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { FINANCIAL_YEARS, CURRENT_FY } from '../lib/utils'
 
 export default function FyTabs({ basePath }) {
   const { fy } = useParams()
-  const activeFy = fy || CURRENT_FY
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const activeFy = fy || searchParams.get('fy') || CURRENT_FY
+
+  const handleSelect = (targetFy) => {
+    navigate(`${basePath}?fy=${targetFy}`, { replace: true })
+  }
 
   return (
     <div className="flex items-center gap-1.5 p-1.5 bg-slate-900/90 border border-slate-800 rounded-2xl w-fit backdrop-blur-xl shadow-lg flex-wrap">
-      <Link
-        to={`${basePath}/overall`}
+      <button
+        type="button"
+        onClick={() => handleSelect('overall')}
         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-150 ${
           activeFy === 'overall'
             ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md shadow-purple-600/30'
@@ -16,11 +23,12 @@ export default function FyTabs({ basePath }) {
         }`}
       >
         Overall FY
-      </Link>
+      </button>
       {FINANCIAL_YEARS.map(f => (
-        <Link
+        <button
+          type="button"
           key={f}
-          to={`${basePath}/${f}`}
+          onClick={() => handleSelect(f)}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-150 ${
             activeFy === f
               ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md shadow-purple-600/30'
@@ -28,7 +36,7 @@ export default function FyTabs({ basePath }) {
           }`}
         >
           FY {f}
-        </Link>
+        </button>
       ))}
     </div>
   )
