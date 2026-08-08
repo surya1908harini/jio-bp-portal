@@ -54,8 +54,8 @@ export default function App() {
           {/* Search Engine */}
           <Route path="search"        element={<SearchEnginePage />} />
 
-          {/* Master Data Settings */}
-          <Route path="masters"       element={<MasterPage />} />
+          {/* Master Data Settings (Admin Only) */}
+          <Route path="masters"       element={<AdminRoute><MasterPage /></AdminRoute>} />
 
           {/* Admin */}
           <Route path="admin"        element={<AdminRoute><AdminPage /></AdminRoute>} />

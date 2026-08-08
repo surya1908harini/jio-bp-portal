@@ -1,12 +1,11 @@
 /**
- * Master Data Helper
- * Stores and manages Officers (A1, A2, QSD, A3), Sites, and Work Orders (with optional ARC Number & Description).
- * Pre-seeds masters automatically from existing DB records if empty.
+ * Master Data Helper & Supabase Synchronization
  */
+import { supabase } from './supabase'
 
 const MASTERS_STORAGE_KEY = 'portal_master_records_v1'
 
-const DEFAULT_MASTERS = {
+export const DEFAULT_MASTERS = {
   officers_a1: [
     { id: 'off-a1-1', name: 'R. K. Sharma' },
     { id: 'off-a1-2', name: 'S. K. Verma' },
@@ -39,7 +38,7 @@ export function loadMasters() {
     const raw = localStorage.getItem(MASTERS_STORAGE_KEY)
     if (raw) return JSON.parse(raw)
   } catch (e) {
-    console.error('Failed to load masters:', e)
+    console.error('Failed to load local masters:', e)
   }
   return DEFAULT_MASTERS
 }
@@ -53,9 +52,6 @@ export function saveMasters(data) {
   }
 }
 
-/**
- * Pre-seeds masters dynamically from existing JMS, Invoice, and Budget records
- */
 export function seedMastersFromRecords(jmsList = [], invoiceList = [], budgetList = []) {
   const current = loadMasters()
   let changed = false

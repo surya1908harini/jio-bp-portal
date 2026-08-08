@@ -13,6 +13,7 @@ import ImportModal from '../components/ImportModal'
 import FyTabs from '../components/FyTabs'
 import SlotTabs from '../components/SlotTabs'
 import RecordDetailModal from '../components/RecordDetailModal'
+import PdfCell from '../components/PdfCell'
 import { loadMasters } from '../lib/masters'
 
 const EMPTY_FORM = {

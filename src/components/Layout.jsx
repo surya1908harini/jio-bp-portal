@@ -16,7 +16,7 @@ const NAV = [
   { label: 'JMS', icon: FileText, path: '/jms' },
   { label: 'Invoices', icon: Receipt, path: '/invoices' },
   { label: 'Budget', icon: PieChart, path: '/budget' },
-  { label: 'Master Data', icon: Database, path: '/masters' },
+  { label: 'Master Data', icon: Database, path: '/masters', adminOnly: true },
   { label: 'SEARCH', icon: Search, path: '/search' },
   { label: 'Notifications', icon: Bell, path: '/notifications', badgeKey: 'notif' },
 ]
@@ -316,7 +316,7 @@ export default function Layout() {
 
       {/* Nav Items */}
       <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
-        {NAV.map(item => (
+        {NAV.filter(item => !item.adminOnly || isAdmin).map(item => (
           <NavItem key={item.label} item={item} collapsed={collapsed} unreadCount={unreadNotifications.length} />
         ))}
         {isAdmin && (
