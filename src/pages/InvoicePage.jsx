@@ -256,14 +256,13 @@ export default function InvoicePage() {
   })
 
   // Current records stats
-  const totalGT      = records.reduce((s, r) => s + (r.grand_total || 0), 0)
-  const totalTDS     = records.reduce((s, r) => s + (r.tds || 0), 0)
-  const totalRec     = records.reduce((s, r) => s + (r.received_bill_amount || 0), 0)
-  const totalSD      = records.reduce((s, r) => s + (r.sd_retention || 0), 0)
-  const fullPaidCnt  = records.filter(r => r.payment_status === 'Full Payment Received').length
-  const pendingCnt   = records.filter(r => r.payment_status === 'Pending').length
-  const gstOnlyCnt   = records.filter(r => r.payment_status === 'GST Payment Only Received').length
-  const netAmtCnt    = records.filter(r => r.payment_status === 'Net Amount Received').length
+  const totalGT        = records.reduce((s, r) => s + (r.grand_total || 0), 0)
+  const totalRec       = records.reduce((s, r) => s + (r.received_bill_amount || 0), 0)
+  const fullPaidCnt    = records.filter(r => r.payment_status === 'Full Payment Received').length
+  
+  const pendingRecords = records.filter(r => r.payment_status === 'Pending' || r.payment_status === 'Net Amount Received' || r.payment_status === 'GST Payment Only Received')
+  const pendingAmount  = pendingRecords.reduce((s, r) => s + (r.grand_total || 0), 0)
+  const pendingCount   = pendingRecords.length
 
   const saveMutation = useMutation({
     mutationFn: (payload) => {
@@ -319,7 +318,23 @@ export default function InvoicePage() {
   }
 
   const handleClose = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
-  const handleDelete = (id) => { if (window.confirm('Delete this invoice?')) deleteMutation.mutate(id) }
+  const handleDelete = (id, row) => {
+    const label = row?.inv_number ? `Invoice #${row.inv_number}` : `Record #${id}`
+    if (window.confirm(`Delete ${label}?`)) {
+      try {
+        const logs = JSON.parse(localStorage.getItem('deleted_records_log') || '[]')
+        logs.unshift({
+          id: `del-inv-${Date.now()}-${id}`,
+          type: 'invoice',
+          title: `Invoice Record Deleted: ${label}`,
+          sub: `${label} was deleted by Admin on ${new Date().toLocaleDateString()}`,
+          timestamp: new Date().toISOString()
+        })
+        localStorage.setItem('deleted_records_log', JSON.stringify(logs.slice(0, 50)))
+      } catch (e) {}
+      deleteMutation.mutate(id)
+    }
+  }
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
   const handleExport = () => { exportToExcel(sortedRecords, `Invoices_${activeFy}.xlsx`, 'Invoices'); toast.success('Excel downloaded') }
 
@@ -329,14 +344,7 @@ export default function InvoicePage() {
     { name: 'gst_no', label: 'GST Number' }, { name: 'inv_number', label: 'Invoice Number' },
     { name: 'sac_code', label: 'SAC Code' }, { name: 'site', label: 'Site' },
     { name: 'type_of_ro', label: 'Type of RO' }, { name: 'ro_code', label: 'RO Code' },
-    { name: 'hb_rb', label: 'HB/RB' },
-    { name: 'total', label: 'Total Value (Before Tax)', type: 'number' },
-    { name: 'igst', label: 'IGST (18%)', type: 'number' },
-    { name: 'cgst', label: 'CGST (9%)', type: 'number' },
-    { name: 'sgst', label: 'SGST (9%)', type: 'number' },
-    { name: 'grand_total', label: 'Grand Total', type: 'number' },
-    { name: 'tds', label: 'TDS', type: 'number' },
-    { name: 'gst_amount_deduction', label: 'GST Amt & Deduction', type: 'number' },
+    { name: 'total', label: 'Total (Before Tax)', type: 'number' },
     { name: 'gst_tds_2pct_iocl', label: 'GST TDS 2% IOCL', type: 'number' },
     { name: 'sd_retention', label: 'SD / Retention', type: 'number' },
     { name: 'tcs_credit_note', label: 'TCS / Credit Note', type: 'number' },
@@ -382,7 +390,7 @@ export default function InvoicePage() {
       render: r => (
         <div className="flex gap-1" onClick={e => e.stopPropagation()}>
           <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-jio-blue-800/50 text-jio-blue-400 hover:text-white transition-colors" title="Edit Invoice"><Pencil size={14} /></button>
-          <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors" title="Delete Invoice"><Trash2 size={14} /></button>
+          <button onClick={() => handleDelete(r.id, r)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors" title="Delete Invoice"><Trash2 size={14} /></button>
         </div>
       )
     }] : []),
@@ -405,6 +413,12 @@ export default function InvoicePage() {
             )}
           </div>
         }
+        stats={[
+          { icon: Receipt, label: 'Total Invoices', value: records.length, sub: `Grand Total: ${formatINR(totalGT)}`, color: 'purple' },
+          { icon: CheckCircle2, label: 'Full Payment Received', value: fullPaidCnt, sub: `Received: ${formatINR(totalRec)}`, color: 'green' },
+          { icon: DollarSign, label: 'Pending Invoice Amount', value: formatINR(pendingAmount), sub: 'Total Pending ₹ Amount', color: 'rose' },
+          { icon: Calculator, label: 'Pending Invoices Count', value: pendingCount, sub: 'Invoices Pending Payment', color: 'amber' },
+        ]}
       />
 
       {/* FY Selection Tabs */}

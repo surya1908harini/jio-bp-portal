@@ -66,7 +66,9 @@ export default function BudgetPage() {
 
   const VALIDITY_SLOTS = [
     { key: 'all',           label: 'All Work Orders' },
-    { key: 'active',        label: 'Active (> 90 Days)' },
+    { key: 'wo_active',     label: 'Active Work Orders' },
+    { key: 'wo_closed',     label: 'Closed Work Orders' },
+    { key: 'active',        label: 'Contract Active (> 90 Days)' },
     { key: 'expiring_soon', label: 'Expiring Soon (≤ 90 Days)' },
     { key: 'critical',      label: 'Critical (≤ 30 Days)' },
     { key: 'expired',       label: 'Expired' },
@@ -85,6 +87,9 @@ export default function BudgetPage() {
   const filteredRecords = useMemo(() => {
     return fyRecords.filter(r => {
       const isClosed = r.status === 'Closed'
+      if (activeSlot === 'wo_active' && isClosed) return false
+      if (activeSlot === 'wo_closed' && !isClosed) return false
+
       // Closed work orders do not belong in expired/expiring warning slots
       if (isClosed && ['expiring_soon', 'critical', 'expired'].includes(activeSlot)) return false
 

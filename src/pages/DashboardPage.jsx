@@ -88,6 +88,11 @@ export default function DashboardPage() {
     { name: 'Released A3', value: a3Released, color: '#10b981' },
   ].filter(d => d.value > 0)
 
+  const [trendFy, setTrendFy] = useState(CURRENT_FY)
+
+  const trendJmsList = useMemo(() => jmsList.filter(j => getJmsFy(j) === trendFy), [jmsList, trendFy])
+  const trendInvList = useMemo(() => invoiceList.filter(i => getInvFy(i) === trendFy), [invoiceList, trendFy])
+
   // Realtime Monthly Activity Trend Data calculated dynamically from DB
   const trendData = useMemo(() => {
     const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar']
@@ -100,14 +105,14 @@ export default function DashboardPage() {
       return d.toLocaleString('default', { month: 'short' })
     }
 
-    currentJmsList.forEach(j => {
+    trendJmsList.forEach(j => {
       const date = j.jms_create_date || j.inv_date || j.a1_release_date || j.created_at
       const m = getMonthAbbrev(date)
       const item = monthCounts.find(x => x.name === m)
       if (item) item.jms += 1
     })
 
-    currentInvList.forEach(inv => {
+    trendInvList.forEach(inv => {
       const date = inv.inv_date || inv.amount_received_date || inv.created_at
       const m = getMonthAbbrev(date)
       const item = monthCounts.find(x => x.name === m)
@@ -115,7 +120,7 @@ export default function DashboardPage() {
     })
 
     return monthCounts
-  }, [currentJmsList, currentInvList])
+  }, [trendJmsList, trendInvList])
 
   return (
     <div className="space-y-6">
@@ -226,10 +231,22 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Monthly Activity Area Chart */}
         <div className="lg:col-span-2 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
             <div>
-              <h3 className="text-base font-bold text-white">Monthly Activity Trend (FY {CURRENT_FY})</h3>
-              <p className="text-xs text-slate-400">Live distribution of JMS entries vs Invoices</p>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-white">Monthly Activity Trend</h3>
+                <select
+                  value={trendFy}
+                  onChange={e => setTrendFy(e.target.value)}
+                  className="bg-slate-800 text-purple-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-purple-500/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="2023-24">FY 2023-24</option>
+                  <option value="2024-25">FY 2024-25</option>
+                  <option value="2025-26">FY 2025-26</option>
+                  <option value="2026-27">FY 2026-27 (Current)</option>
+                </select>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">Live distribution of JMS entries vs Invoices for FY {trendFy}</p>
             </div>
             <div className="flex items-center gap-4 text-xs font-semibold">
               <span className="flex items-center gap-1.5 text-purple-400">

@@ -100,8 +100,9 @@ export default function Layout() {
   }
 
   const markAllAsRead = (allIds) => {
+    const idsToMark = Array.isArray(allIds) ? allIds : allNotifications.map(n => n.id)
     setReadNotifIds(prev => {
-      const updated = Array.from(new Set([...prev, ...allIds]))
+      const updated = Array.from(new Set([...prev, ...idsToMark]))
       localStorage.setItem(storageKey, JSON.stringify(updated))
       return updated
     })
@@ -212,10 +213,30 @@ export default function Layout() {
           link: `/jms?search=${encodeURIComponent(jmsNo)}`,
           record: j,
           icon: Clock,
-          color: 'text-purple-400 bg-purple-950/80 border-purple-800/60'
         })
       }
     })
+
+    // 4. Deleted Records Notifications (JMS and Invoices)
+    try {
+      const deletedLogs = JSON.parse(localStorage.getItem('deleted_records_log') || '[]')
+      deletedLogs.forEach(del => {
+        list.push({
+          id: del.id,
+          category: del.type === 'jms' ? 'jms' : 'invoice',
+          title: del.title,
+          sub: del.sub,
+          days: 0,
+          severity: 'high',
+          link: del.type === 'jms' ? '/jms' : '/invoices',
+          record: del,
+          icon: Trash2,
+          color: 'text-rose-400 bg-rose-950/80 border-rose-800/60'
+        })
+      })
+    } catch (e) {
+      // ignore parse error
+    }
 
     return list.sort((a, b) => {
       if (a.severity === 'high' && b.severity !== 'high') return -1

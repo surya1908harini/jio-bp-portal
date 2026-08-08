@@ -334,9 +334,23 @@ export default function JmsPage() {
   const openAdd  = ()    => { setEditRow(null); setForm(EMPTY_FORM); setFormOpen(true) }
   const handleClose  = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
-  const handleDelete = (id) => { if (window.confirm('Delete this JMS record?')) deleteMutation.mutate(id) }
-  const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
-  const handleExport = () => { exportToExcel(sortedRecords, `JMS_${activeFy}.xlsx`, 'JMS Records'); toast.success('Excel downloaded') }
+  const handleDelete = (id, row) => {
+    const label = row?.jms_no ? `JMS #${row.jms_no}` : `Record #${id}`
+    if (window.confirm(`Delete ${label}?`)) {
+      try {
+        const logs = JSON.parse(localStorage.getItem('deleted_records_log') || '[]')
+        logs.unshift({
+          id: `del-jms-${Date.now()}-${id}`,
+          type: 'jms',
+          title: `JMS Record Deleted: ${label}`,
+          sub: `${label} was deleted by Admin on ${new Date().toLocaleDateString()}`,
+          timestamp: new Date().toISOString()
+        })
+        localStorage.setItem('deleted_records_log', JSON.stringify(logs.slice(0, 50)))
+      } catch (e) {}
+      deleteMutation.mutate(id)
+    }
+  }
 
   const columns = [
     { key: 'jms_no',           header: 'JMS No',               render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
@@ -373,7 +387,7 @@ export default function JmsPage() {
       render: r => (
         <div className="flex gap-1" onClick={e => e.stopPropagation()}>
           <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-jio-blue-800/50 text-jio-blue-400 hover:text-white transition-colors" title="Edit JMS"><Pencil size={14} /></button>
-          <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors" title="Delete JMS"><Trash2 size={14} /></button>
+          <button onClick={() => handleDelete(r.id, r)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors" title="Delete JMS"><Trash2 size={14} /></button>
         </div>
       )
     }] : []),

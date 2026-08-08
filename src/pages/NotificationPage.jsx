@@ -83,7 +83,7 @@ export default function NotificationPage() {
           <div className="flex gap-2 flex-wrap">
             {activeTab === 'unread' && unreadNotifications.length > 0 && (
               <button
-                onClick={() => { markAllAsRead(); toast.success('All notifications marked as read') }}
+                onClick={() => { markAllAsRead(allNotifications.map(n => n.id)); toast.success('All notifications marked as read') }}
                 className="btn-ghost"
               >
                 <CheckCheck size={14} className="text-emerald-400" /> Mark All as Read
