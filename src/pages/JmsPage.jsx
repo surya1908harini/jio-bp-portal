@@ -241,12 +241,13 @@ export default function JmsPage() {
       const jmsKey = String(r.jms_no || '').trim().toLowerCase()
       const invKey = String(r.inv_number || '').trim().toLowerCase()
 
-      const timeframeDays = budgetTimeframeMap[woKey] || 30
-      const baseDate = r.inv_posting_date || invPostingDateMap[jmsKey] || invPostingDateMap[invKey] || r.jms_create_date || r.inv_date
-      const payDate = r.payment_date || r.full_amount_received_date || invPaymentDateMap[jmsKey] || invPaymentDateMap[invKey] || ''
+      const desc = String(r.work_description || '')
+      const st = String(r.status || '').toLowerCase()
+      const isCancelled = desc.includes('[Cancelled:') || st.includes('cancel')
 
       return {
         ...r,
+        status: isCancelled ? 'Cancelled / Deleted' : r.status,
         inv_posting_date: baseDate,
         payment_date: payDate,
         payment_timeframe_days: timeframeDays,
@@ -344,7 +345,25 @@ export default function JmsPage() {
   }
   const openAdd  = ()    => { setEditRow(null); setForm(EMPTY_FORM); setFormOpen(true) }
   const handleClose  = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
-  const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+  const masters = loadMasters()
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setForm(prev => {
+      let updated = { ...prev, [name]: value }
+      if (name === 'work_order_number' && value.trim()) {
+        const matchMaster = (masters.work_orders || []).find(w => w.work_order_number.trim().toLowerCase() === value.trim().toLowerCase())
+        if (matchMaster) {
+          updated.arc_number = matchMaster.arc_number || '' // If ARC number exists, fill it; otherwise leave blank!
+          updated.work_description = updated.work_description || matchMaster.description || ''
+          if (matchMaster.arc_number) {
+            toast.success(`Auto-filled ARC #${matchMaster.arc_number} from Master ✓`, { id: `wo-autofill-${matchMaster.work_order_number}` })
+          }
+        }
+      }
+      return updated
+    })
+  }
   
   const handleDelete = (id, row) => {
     const label = row?.jms_no ? `JMS #${row.jms_no}` : `Record #${id}`
@@ -384,7 +403,15 @@ export default function JmsPage() {
     }
   }
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
-  const handleExport = () => { exportToExcel(sortedRecords, `JMS_${activeFy}.xlsx`, 'JMS Records'); toast.success('Excel downloaded') }
+  const handleExport = () => { exportToExcel(sortedRecords, `JMS_${activeFy}.xlsx`, 'JMS'); toast.success('Excel downloaded') }
+
+  // Autocomplete suggestions combining DB records & Master Data
+  const uniqueSites = useMemo(() => Array.from(new Set(allRecords.map(j => j.site?.trim()).concat((masters.sites || []).map(s => s.name?.trim())).filter(Boolean))).sort(), [allRecords, masters.sites])
+  const uniqueA1Names = useMemo(() => Array.from(new Set(allRecords.map(j => j.a1_name?.trim()).concat((masters.officers_a1 || []).map(o => o.name?.trim())).filter(Boolean))).sort(), [allRecords, masters.officers_a1])
+  const uniqueA2Names = useMemo(() => Array.from(new Set(allRecords.map(j => j.a2_name?.trim()).concat((masters.officers_a2 || []).map(o => o.name?.trim())).filter(Boolean))).sort(), [allRecords, masters.officers_a2])
+  const uniqueQsdNames = useMemo(() => Array.from(new Set(allRecords.map(j => j.qsd_name?.trim()).concat((masters.officers_qsd || []).map(o => o.name?.trim())).filter(Boolean))).sort(), [allRecords, masters.officers_qsd])
+  const uniqueA3Names = useMemo(() => Array.from(new Set(allRecords.map(j => j.a3_name?.trim()).concat((masters.officers_a3 || []).map(o => o.name?.trim())).filter(Boolean))).sort(), [allRecords, masters.officers_a3])
+  const uniqueWorkOrders = useMemo(() => Array.from(new Set(allRecords.map(j => j.work_order_number?.trim()).concat((masters.work_orders || []).map(w => w.work_order_number?.trim())).filter(Boolean))).sort(), [allRecords, masters.work_orders])
 
   const columns = [
     { key: 'jms_no',           header: 'JMS No',               render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
@@ -430,13 +457,6 @@ export default function JmsPage() {
   const totalNet = sortedRecords.reduce((s, r) => s + (r.net_amount || 0), 0)
   const totalReleased = sortedRecords.filter(r => r.status === 'Released by A3' || r.status === 'Invoiced').length
   const totalPending = sortedRecords.filter(r => !['Released by A3', 'Invoiced'].includes(r.status)).length
-
-  // Autocomplete suggestions for names and site
-  const uniqueSites = useMemo(() => Array.from(new Set(allRecords.map(j => j.site?.trim()).filter(Boolean))).sort(), [allRecords])
-  const uniqueA1Names = useMemo(() => Array.from(new Set(allRecords.map(j => j.a1_name?.trim()).filter(Boolean))).sort(), [allRecords])
-  const uniqueA2Names = useMemo(() => Array.from(new Set(allRecords.map(j => j.a2_name?.trim()).filter(Boolean))).sort(), [allRecords])
-  const uniqueQsdNames = useMemo(() => Array.from(new Set(allRecords.map(j => j.qsd_name?.trim()).filter(Boolean))).sort(), [allRecords])
-  const uniqueA3Names = useMemo(() => Array.from(new Set(allRecords.map(j => j.a3_name?.trim()).filter(Boolean))).sort(), [allRecords])
 
   return (
     <div className="space-y-5">
@@ -566,7 +586,7 @@ export default function JmsPage() {
           {[
             { name: 'jms_no',           label: 'JMS Number',          required: true },
             { name: 'period_of_work',   label: 'Period of Work' },
-            { name: 'work_order_number',label: 'Work Order Number' },
+            { name: 'work_order_number',label: 'Work Order Number',   list: 'wo-list' },
             { name: 'arc_number',       label: 'ARC Number' },
             { name: 'net_amount',       label: 'Net Amount',           type: 'number' },
             { name: 'jms_create_date',  label: 'JMS Create Date',      type: 'date' },

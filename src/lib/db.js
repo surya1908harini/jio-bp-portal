@@ -144,7 +144,31 @@ function clean(obj) {
 }
 
 function cleanJms(obj) {
-  const cleaned = clean(obj)
+  const synced = { ...obj }
+  const statusStr = String(synced.status || '').toLowerCase()
+  if (statusStr.includes('cancel')) {
+    if (!String(synced.work_description || '').includes('[Cancelled:')) {
+      synced.work_description = `[Cancelled: ${synced.status || 'Cancelled / Deleted'}] ${synced.work_description || ''}`.trim()
+    }
+    synced.status = 'Pending' // Satisfies PostgreSQL jms_records_status_check constraint!
+  } else {
+    // Map UI statuses to DB status codes
+    const map = {
+      'Pending A1': 'A1', 'A1': 'A1',
+      'Pending A2': 'A2', 'A2': 'A2',
+      'Pending QSD': 'QSD', 'QSD': 'QSD',
+      'Pending A3': 'A3', 'A3': 'A3',
+      'Released by A3': 'Invoiced', 'Invoiced': 'Invoiced',
+    }
+    synced.status = map[synced.status] || synced.status || 'Pending'
+  }
+
+  const VALID_JMS_STATUSES = new Set(['A1', 'A2', 'QSD', 'A3', 'Invoiced', 'Pending'])
+  if (!VALID_JMS_STATUSES.has(synced.status)) {
+    synced.status = 'Pending'
+  }
+
+  const cleaned = clean(synced)
   delete cleaned.payment_status // Explicitly strip payment_status for jms_records so schema cache error is IMPOSSIBLE!
   delete cleaned.payment_date
   return cleaned

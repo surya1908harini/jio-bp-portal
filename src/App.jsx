@@ -9,6 +9,7 @@ import BudgetPage from './pages/BudgetPage'
 import NotificationPage from './pages/NotificationPage'
 import SearchEnginePage from './pages/SearchEnginePage'
 import AdminPage from './pages/AdminPage'
+import MasterPage from './pages/MasterPage'
 import ErrorBoundary from './components/ErrorBoundary'
 
 function PrivateRoute({ children }) {
@@ -52,6 +53,9 @@ export default function App() {
 
           {/* Search Engine */}
           <Route path="search"        element={<SearchEnginePage />} />
+
+          {/* Master Data Settings */}
+          <Route path="masters"       element={<MasterPage />} />
 
           {/* Admin */}
           <Route path="admin"        element={<AdminRoute><AdminPage /></AdminRoute>} />

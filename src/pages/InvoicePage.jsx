@@ -228,14 +228,26 @@ export default function InvoicePage() {
     return newForm
   }
 
-  // Unique suggestions for Invoice form
-  const uniqueSites = useMemo(() => Array.from(new Set(allRecords.map(i => i.site?.trim()).concat(jmsList.map(j => j.site?.trim())).filter(Boolean))).sort(), [allRecords, jmsList])
+  // Master Data & unique suggestions for Invoice form
+  const masters = loadMasters()
+  const uniqueSites = useMemo(() => Array.from(new Set(allRecords.map(i => i.site?.trim()).concat(jmsList.map(j => j.site?.trim())).concat((masters.sites || []).map(s => s.name?.trim())).filter(Boolean))).sort(), [allRecords, jmsList, masters.sites])
   const uniqueJmsNos = useMemo(() => Array.from(new Set(jmsList.map(j => String(j.jms_no || '').trim()).filter(Boolean))).sort(), [jmsList])
+  const uniqueWorkOrders = useMemo(() => Array.from(new Set(allRecords.map(i => i.work_order_number?.trim()).concat(jmsList.map(j => j.work_order_number?.trim())).concat((masters.work_orders || []).map(w => w.work_order_number?.trim())).filter(Boolean))).sort(), [allRecords, jmsList, masters.work_orders])
 
   const handleFieldChange = (e) => {
     const { name, value } = e.target
     setForm(prev => {
       let next = { ...prev, [name]: value }
+      if (name === 'work_order_number' && value.trim()) {
+        const matchMaster = (masters.work_orders || []).find(w => w.work_order_number.trim().toLowerCase() === value.trim().toLowerCase())
+        if (matchMaster) {
+          next.arc_number = matchMaster.arc_number || ''
+          next.work_description = next.work_description || matchMaster.description || ''
+          if (matchMaster.arc_number) {
+            toast.success(`Auto-filled ARC #${matchMaster.arc_number} from Master ✓`, { id: `wo-inv-autofill-${matchMaster.work_order_number}` })
+          }
+        }
+      }
       if (name === 'jms_no' && value.trim()) {
         const match = jmsList.find(j => String(j.jms_no || '').trim().toLowerCase() === value.trim().toLowerCase())
         if (match) {
@@ -394,7 +406,7 @@ export default function InvoicePage() {
   const FORM_FIELDS = [
     { name: 'inv_date', label: 'Invoice Date', type: 'date' },
     { name: 'jms_no', label: 'JMS Number', list: 'inv-jms-list' },
-    { name: 'work_order_number', label: 'Work Order Number' },
+    { name: 'work_order_number', label: 'Work Order Number', list: 'inv-wo-list' },
     { name: 'gst_no', label: 'GST Number' },
     { name: 'inv_number', label: 'Invoice Number' },
     { name: 'sac_code', label: 'SAC Code' },
@@ -533,6 +545,7 @@ export default function InvoicePage() {
 
       <datalist id="inv-site-list">{uniqueSites.map(s => <option key={s} value={s} />)}</datalist>
       <datalist id="inv-jms-list">{uniqueJmsNos.map(s => <option key={s} value={s} />)}</datalist>
+      <datalist id="inv-wo-list">{uniqueWorkOrders.map(s => <option key={s} value={s} />)}</datalist>
 
       <Modal open={formOpen} onClose={handleClose} title={editRow ? 'Edit Invoice' : 'Add Invoice'}>
         <form onSubmit={handleSubmit} className="grid grid-cols-2 md:grid-cols-3 gap-4">

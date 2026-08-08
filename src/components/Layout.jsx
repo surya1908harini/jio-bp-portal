@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase'
 import { formatINR, formatDate, parseValidity, applyInvoiceDateAndStatusRules } from '../lib/utils'
 import NotificationDetailModal from './NotificationDetailModal'
 import {
-  LayoutDashboard, FileText, Receipt, PieChart, Settings,
+  LayoutDashboard, FileText, Receipt, PieChart, Settings, Database,
   ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2, CheckCircle2
 } from 'lucide-react'
 
@@ -16,6 +16,7 @@ const NAV = [
   { label: 'JMS', icon: FileText, path: '/jms' },
   { label: 'Invoices', icon: Receipt, path: '/invoices' },
   { label: 'Budget', icon: PieChart, path: '/budget' },
+  { label: 'Master Data', icon: Database, path: '/masters' },
   { label: 'SEARCH', icon: Search, path: '/search' },
   { label: 'Notifications', icon: Bell, path: '/notifications', badgeKey: 'notif' },
 ]
