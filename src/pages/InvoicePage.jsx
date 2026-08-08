@@ -370,13 +370,40 @@ export default function InvoicePage() {
 
   const handleClose = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
   
-  const handleDelete = (id, row) => {
+  const handleDelete = async (id, row) => {
     const label = row?.inv_number ? `Invoice #${row.inv_number}` : `Record #${id}`
+    const linkedJmsNo = row?.jms_no?.trim()
+
+    // Find the linked JMS record (by jms_no) from the already-loaded list
+    const linkedJms = linkedJmsNo
+      ? allRecords.find(r => String(r.jms_no || '').trim() === linkedJmsNo) ||
+        jmsList.find(r => String(r.jms_no || '').trim() === linkedJmsNo)
+      : null
+
+    const jmsLabel = linkedJmsNo ? ` (and linked JMS ${linkedJmsNo})` : ''
+
     const markCancel = window.confirm(
-      `Do you want to mark ${label} as "Invoice Cancelled by some issues"?\n\n` +
+      `Do you want to mark ${label}${jmsLabel} as "Cancelled by some issues"?\n\n` +
       `• Click OK to mark as Cancelled (Keeps details in table with 0 impact on financials & budget).\n` +
-      `• Click Cancel to permanently delete the row.`
+      `• Click Cancel to permanently delete the row${jmsLabel}.`
     )
+
+    const cancelLinkedJms = async (jmsRecord, reason) => {
+      if (!jmsRecord) return
+      const desc = String(jmsRecord.work_description || '')
+      if (desc.includes('[Cancelled:')) return // already cancelled
+      try {
+        await jmsDb.update(jmsRecord.id, {
+          ...jmsRecord,
+          status: 'Cancelled',
+          work_description: `[Cancelled: ${reason}] ${desc}`.trim(),
+        })
+        qc.invalidateQueries(['jms'])
+      } catch (e) {
+        console.warn('Could not cascade-cancel JMS:', e)
+      }
+    }
+
     if (markCancel) {
       try {
         const logs = JSON.parse(localStorage.getItem('deleted_records_log') || '[]')
@@ -384,26 +411,42 @@ export default function InvoicePage() {
           id: `del-inv-${Date.now()}-${id}`,
           type: 'invoice',
           title: `Invoice Cancelled: ${label}`,
-          sub: `${label} was marked as Cancelled by Admin on ${new Date().toLocaleDateString()}`,
+          sub: `${label} was marked as Cancelled by Admin on ${new Date().toLocaleDateString()}${linkedJmsNo ? ` — Linked JMS ${linkedJmsNo} also cancelled.` : ''}`,
           timestamp: new Date().toISOString()
         })
         localStorage.setItem('deleted_records_log', JSON.stringify(logs.slice(0, 50)))
       } catch (e) {}
+
+      // 1. Cancel the invoice
       saveMutation.mutate({ ...row, id, payment_status: 'Invoice Cancelled by some issues' })
+
+      // 2. Cascade: cancel the linked JMS too
+      if (linkedJms) {
+        await cancelLinkedJms(linkedJms, 'Invoice Cancelled by some issues')
+        toast.success(`Invoice & linked JMS ${linkedJmsNo} both marked as Cancelled`)
+      }
     } else {
-      if (window.confirm(`Permanently delete ${label}? This cannot be undone.`)) {
+      if (window.confirm(`Permanently delete ${label}${jmsLabel}? This cannot be undone.`)) {
         try {
           const logs = JSON.parse(localStorage.getItem('deleted_records_log') || '[]')
           logs.unshift({
             id: `del-inv-${Date.now()}-${id}`,
             type: 'invoice',
             title: `Invoice Record Deleted: ${label}`,
-            sub: `${label} was deleted by Admin on ${new Date().toLocaleDateString()}`,
+            sub: `${label} was deleted by Admin on ${new Date().toLocaleDateString()}${linkedJmsNo ? ` — Linked JMS ${linkedJmsNo} also cancelled.` : ''}`,
             timestamp: new Date().toISOString()
           })
           localStorage.setItem('deleted_records_log', JSON.stringify(logs.slice(0, 50)))
         } catch (e) {}
+
+        // 1. Delete the invoice
         deleteMutation.mutate(id)
+
+        // 2. Cascade: cancel (not delete) the linked JMS — keeps audit trail
+        if (linkedJms) {
+          await cancelLinkedJms(linkedJms, 'Linked Invoice Deleted')
+          toast.success(`Invoice deleted & linked JMS ${linkedJmsNo} marked as Cancelled`)
+        }
       }
     }
   }
