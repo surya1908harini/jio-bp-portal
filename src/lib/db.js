@@ -142,6 +142,26 @@ function clean(obj) {
   return result
 }
 
+function cleanJms(obj) {
+  const synced = { ...obj }
+  delete synced.payment_status // ALWAYS strip payment_status for jms_records so Supabase schema cache error is IMPOSSIBLE!
+  delete synced.payment_date
+  return clean(synced)
+}
+
+function cleanInvoice(obj) {
+  const synced = { ...obj }
+  const statusStr = String(synced.payment_status || synced.status || '').toLowerCase()
+  if (statusStr.includes('cancel')) {
+    if (!String(synced.work_description || '').includes('[Cancelled:')) {
+      synced.work_description = `[Cancelled: ${synced.payment_status || 'Invoice Cancelled by some issues'}] ${synced.work_description || ''}`.trim()
+    }
+    // Ensures PostgreSQL invoice_records_payment_status_check constraint is NEVER violated!
+    synced.payment_status = 'Pending'
+  }
+  return clean(synced)
+}
+
 // ── helper: fetch all pages because Supabase (PostgREST) caps results at 1000 rows per request ──
 async function fetchPagedData(baseQueryFn) {
   let allRows = []
@@ -192,7 +212,7 @@ export const jmsDb = {
   create: async (payload, userId) => {
     const { data, error } = await supabase
       .from('jms_records')
-      .insert(clean({ ...payload, created_by: userId }))
+      .insert(cleanJms({ ...payload, created_by: userId }))
       .select()
       .single()
     if (error) throw error
@@ -202,7 +222,7 @@ export const jmsDb = {
   update: async (id, payload) => {
     const { data, error } = await supabase
       .from('jms_records')
-      .update(clean(payload))
+      .update(cleanJms(payload))
       .eq('id', id)
       .select()
       .single()
@@ -216,7 +236,7 @@ export const jmsDb = {
   },
 
   bulkInsert: async (rows, userId) => {
-    const cleaned = rows.map(r => clean({ ...r, created_by: userId }))
+    const cleaned = rows.map(r => cleanJms({ ...r, created_by: userId }))
     const { error } = await supabase.from('jms_records').insert(cleaned)
     if (error) throw error
     return cleaned.length
@@ -249,7 +269,7 @@ export const invoiceDb = {
   create: async (payload, userId) => {
     const { data, error } = await supabase
       .from('invoice_records')
-      .insert(clean({ ...payload, created_by: userId }))
+      .insert(cleanInvoice({ ...payload, created_by: userId }))
       .select()
       .single()
     if (error) throw error
@@ -259,7 +279,7 @@ export const invoiceDb = {
   update: async (id, payload) => {
     const { data, error } = await supabase
       .from('invoice_records')
-      .update(clean(payload))
+      .update(cleanInvoice(payload))
       .eq('id', id)
       .select()
       .single()
@@ -273,7 +293,7 @@ export const invoiceDb = {
   },
 
   bulkInsert: async (rows, userId) => {
-    const cleaned = rows.map(r => clean({ ...r, created_by: userId }))
+    const cleaned = rows.map(r => cleanInvoice({ ...r, created_by: userId }))
     const { error } = await supabase.from('invoice_records').insert(cleaned)
     if (error) throw error
     return cleaned.length

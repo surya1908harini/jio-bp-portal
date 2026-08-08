@@ -234,6 +234,14 @@ export function applyInvoiceDateAndStatusRules(record) {
   if (!record) return record
   const synced = { ...record }
 
+  const descStr = String(synced.work_description || '')
+  const statusStr = String(synced.payment_status || '').toLowerCase()
+
+  if (descStr.includes('[Cancelled:') || statusStr.includes('cancel')) {
+    synced.payment_status = 'Invoice Cancelled by some issues'
+    return synced
+  }
+
   const invDateStr = synced.inv_date ? String(synced.inv_date).trim() : ''
   let fullDate = (synced.full_amount_received_date || synced.amount_received_date)
     ? String(synced.full_amount_received_date || synced.amount_received_date).trim()
