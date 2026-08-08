@@ -261,6 +261,9 @@ export default function InvoicePage() {
   const totalRec       = records.reduce((s, r) => s + (r.received_bill_amount || 0), 0)
   const totalSD        = records.reduce((s, r) => s + (r.sd_retention || 0), 0)
   const fullPaidCnt    = records.filter(r => r.payment_status === 'Full Payment Received').length
+  const pendingCnt     = records.filter(r => r.payment_status === 'Pending').length
+  const gstOnlyCnt     = records.filter(r => r.payment_status === 'GST Payment Only Received').length
+  const netAmtCnt      = records.filter(r => r.payment_status === 'Net Amount Received').length
   
   const pendingRecords = records.filter(r => r.payment_status === 'Pending' || r.payment_status === 'Net Amount Received' || r.payment_status === 'GST Payment Only Received')
   const pendingAmount  = pendingRecords.reduce((s, r) => s + (r.grand_total || 0), 0)
