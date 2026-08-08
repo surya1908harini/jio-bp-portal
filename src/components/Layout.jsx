@@ -146,8 +146,11 @@ export default function Layout() {
       }
     })
 
-    // 2. Budget Contracts Expiring Soon (≤ 90 days or Expired) — EXCLUDED automatically when contract validity > 90 days
+    // 2. Budget Contracts Expiring Soon (≤ 90 days or Expired) — AUTOMATICALLY EXCLUDED/DEACTIVATED when Work Order is Marked as 'Closed'
     budgetList.forEach(b => {
+      const isClosed = b.status === 'Closed'
+      if (isClosed) return // Automatically deactivate/remove notification when work order is Closed
+
       const { daysRemaining, status } = parseValidity(b.validity_of_contract)
       if (daysRemaining !== null && daysRemaining <= 90) {
         const isExpired = daysRemaining <= 0

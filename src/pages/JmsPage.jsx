@@ -203,6 +203,18 @@ export default function JmsPage() {
     return map
   }, [invoiceList])
 
+  const invPaymentDateMap = useMemo(() => {
+    const map = {}
+    invoiceList.forEach(inv => {
+      const pDate = inv.payment_date || inv.full_amount_received_date || inv.amount_received_date
+      if (pDate) {
+        if (inv.jms_no) map[String(inv.jms_no).trim().toLowerCase()] = pDate
+        if (inv.inv_number) map[String(inv.inv_number).trim().toLowerCase()] = pDate
+      }
+    })
+    return map
+  }, [invoiceList])
+
   // Apply slot filter based on status
   const records = useMemo(() => {
     const rawFiltered = fyRecords.filter(r => {
@@ -222,14 +234,17 @@ export default function JmsPage() {
 
       const timeframeDays = budgetTimeframeMap[woKey] || 30
       const baseDate = r.inv_posting_date || invPostingDateMap[jmsKey] || invPostingDateMap[invKey] || r.jms_create_date || r.inv_date
+      const payDate = r.payment_date || r.full_amount_received_date || invPaymentDateMap[jmsKey] || invPaymentDateMap[invKey] || ''
+
       return {
         ...r,
         inv_posting_date: baseDate,
+        payment_date: payDate,
         payment_timeframe_days: timeframeDays,
         expected_payment_date: calculateExpectedPaymentDate(baseDate, timeframeDays),
       }
     })
-  }, [fyRecords, activeSlot, budgetTimeframeMap, invPostingDateMap])
+  }, [fyRecords, activeSlot, budgetTimeframeMap, invPostingDateMap, invPaymentDateMap])
 
   // Sort records: Current FY on top, then newest on top by JMS Date (or fallback date), then JMS No
   const sortedRecords = useMemo(() => {
@@ -324,16 +339,17 @@ export default function JmsPage() {
   const handleExport = () => { exportToExcel(sortedRecords, `JMS_${activeFy}.xlsx`, 'JMS Records'); toast.success('Excel downloaded') }
 
   const columns = [
-    { key: 'jms_no',           header: 'JMS No',        render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
-    { key: 'jms_create_date',  header: 'JMS Date',       render: r => formatDate(r.jms_create_date || r.inv_date || r.a1_release_date) },
-    { key: 'inv_number',       header: 'Inv No',        render: r => <span className="font-semibold text-purple-300">{r.inv_number || '—'}</span> },
-    { key: 'inv_posting_date', header: 'Inv Posting Date', render: r => <span className="font-mono text-cyan-300">{formatDate(r.inv_posting_date) || '—'}</span> },
+    { key: 'jms_no',           header: 'JMS No',               render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
+    { key: 'jms_create_date',  header: 'JMS Date',              render: r => formatDate(r.jms_create_date || r.inv_date || r.a1_release_date) },
+    { key: 'inv_number',       header: 'Invoice Number',        render: r => <span className="font-semibold text-purple-300">{r.inv_number || '—'}</span> },
+    { key: 'inv_posting_date', header: 'Invoice Posting Date', render: r => <span className="font-mono text-cyan-300">{formatDate(r.inv_posting_date) || '—'}</span> },
+    { key: 'payment_date',     header: 'Payment Date',          render: r => <span className="font-mono text-emerald-300 font-semibold">{formatDate(r.payment_date) || '—'}</span> },
     { key: 'period_of_work',   header: 'Period' },
-    { key: 'work_order_number',header: 'Work Order',    render: r => <span className="font-semibold text-slate-200">{r.work_order_number}</span> },
-    { key: 'net_amount',       header: 'Net Amount',     render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.net_amount)}</span> },
+    { key: 'work_order_number',header: 'Work Order',           render: r => <span className="font-semibold text-slate-200">{r.work_order_number}</span> },
+    { key: 'net_amount',       header: 'Net Amount',            render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.net_amount)}</span> },
     { key: 'site',             header: 'Site' },
     { key: 'work_description', header: 'Description' },
-    { key: 'status',           header: 'Status',         render: r => <StatusBadge status={r.status} /> },
+    { key: 'status',           header: 'Status',                render: r => <StatusBadge status={r.status} /> },
     {
       key: 'expected_payment_date', header: 'Expected Payment Date',
       render: r => (
