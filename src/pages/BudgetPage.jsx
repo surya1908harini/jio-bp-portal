@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
-import { budgetDb } from '../lib/db'
+import { budgetDb, jmsDb } from '../lib/db'
 import { formatINR, exportToExcel, CURRENT_FY, parseValidity, formatValidityRange, getBudgetRecordFy } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
@@ -73,10 +73,40 @@ export default function BudgetPage() {
     { key: 'expired',       label: 'Expired' },
   ]
 
-  const { data: allRecords = [], isLoading } = useQuery({
+  const { data: allBudgetRaw = [], isLoading } = useQuery({
     queryKey: ['budget', 'all'],
     queryFn: () => budgetDb.listAll(),
   })
+
+  // Fetch JMS to compute corrected consumed (exclude cancelled JMS from budget totals)
+  const { data: allJmsList = [] } = useQuery({
+    queryKey: ['jms', 'all'],
+    queryFn: () => jmsDb.listAll(),
+  })
+
+  // Build a map: work_order_number → cancelled JMS net_amount sum
+  const cancelledJmsDeductionMap = useMemo(() => {
+    const map = {}
+    allJmsList.forEach(j => {
+      const desc = String(j.work_description || '')
+      const isCancelled = desc.includes('[Cancelled:') || String(j.status || '').toLowerCase().includes('cancel')
+      if (isCancelled && j.work_order_number) {
+        const woKey = String(j.work_order_number).trim().toLowerCase()
+        map[woKey] = (map[woKey] || 0) + (j.net_amount || 0)
+      }
+    })
+    return map
+  }, [allJmsList])
+
+  // Patch total_consumed: subtract cancelled JMS amounts from budget_summary view totals
+  const allRecords = useMemo(() => {
+    return allBudgetRaw.map(b => {
+      const woKey = String(b.work_order_number || '').trim().toLowerCase()
+      const deduction = cancelledJmsDeductionMap[woKey] || 0
+      const correctedConsumed = Math.max(0, (b.total_consumed || 0) - deduction)
+      return { ...b, total_consumed: correctedConsumed }
+    })
+  }, [allBudgetRaw, cancelledJmsDeductionMap])
 
   const fyRecords = useMemo(() => {
     if (activeFy === 'overall') return allRecords
@@ -429,6 +459,7 @@ export default function BudgetPage() {
                 const remaining = total - consumed
                 const isPositive = remaining >= 0
                 const { daysRemaining, status } = parseValidity(b.validity_of_contract)
+                const isClosed = b.status === 'Closed'
 
                 const badgeColor =
                   status === 'active'
@@ -439,6 +470,10 @@ export default function BudgetPage() {
                     ? 'bg-rose-950/90 text-rose-400 border-rose-700/60'
                     : 'bg-slate-800 text-slate-400 border-slate-700'
 
+                const bannerGradient = isClosed
+                  ? 'bg-gradient-to-r from-slate-700 via-slate-600 to-slate-500'
+                  : 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500'
+
                 return (
                   <div
                     key={b.id}
@@ -446,10 +481,12 @@ export default function BudgetPage() {
                     onClick={() => setSelectedRow(b)}
                   >
                     {/* Top Cover Banner */}
-                    <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 p-4 text-white relative">
+                    <div className={`${bannerGradient} p-4 text-white relative`}>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white backdrop-blur-md">
-                          ACTIVE WORK ORDER
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md ${
+                          isClosed ? 'bg-black/30 text-slate-200' : 'bg-white/20 text-white'
+                        }`}>
+                          {isClosed ? 'CLOSED WORK ORDER' : 'ACTIVE WORK ORDER'}
                         </span>
                         <span className="text-[10px] font-mono font-bold bg-black/20 px-2 py-0.5 rounded-md">
                           {b.financial_year || activeFy}

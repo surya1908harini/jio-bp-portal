@@ -293,8 +293,15 @@ export default function InvoicePage() {
     }
   })
 
-  // Current records stats (excluding cancelled records from math sums)
-  const activeInvoiceRecords = records.filter(r => !String(r.payment_status || r.status || '').toLowerCase().includes('cancel'))
+  // Current records stats (excluding cancelled and IOCL records from income/profit sums)
+  // IOCL invoices belong to another party — their payments must NOT count in our income
+  const activeInvoiceRecords = records.filter(r => {
+    const desc = String(r.work_description || '')
+    const st = String(r.payment_status || r.status || '').toLowerCase()
+    const isCancelled = desc.includes('[Cancelled:') || st.includes('cancel')
+    const isIocl = String(r.type_of_ro || '').trim().toUpperCase() === 'IOCL'
+    return !isCancelled && !isIocl
+  })
   const totalGT        = activeInvoiceRecords.reduce((s, r) => s + (r.grand_total || 0), 0)
   const totalTDS       = activeInvoiceRecords.reduce((s, r) => s + (r.tds || 0), 0)
   const totalRec       = activeInvoiceRecords.reduce((s, r) => s + (r.received_bill_amount || 0), 0)

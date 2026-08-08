@@ -39,8 +39,20 @@ export default function DashboardPage() {
   }
 
   // Active (non-cancelled) records
-  const activeJmsList = useMemo(() => jmsList.filter(j => !String(j.status || '').toLowerCase().includes('cancel')), [jmsList])
-  const activeInvList = useMemo(() => invoiceList.filter(i => !String(i.payment_status || i.status || '').toLowerCase().includes('cancel')), [invoiceList])
+  const activeJmsList = useMemo(() => jmsList.filter(j => {
+    const desc = String(j.work_description || '')
+    const st = String(j.status || '').toLowerCase()
+    return !desc.includes('[Cancelled:') && !st.includes('cancel')
+  }), [jmsList])
+
+  // Active non-cancelled, non-IOCL invoices (IOCL belongs to another party — don't count in our income)
+  const activeInvList = useMemo(() => invoiceList.filter(i => {
+    const desc = String(i.work_description || '')
+    const st = String(i.payment_status || i.status || '').toLowerCase()
+    const isCancelled = desc.includes('[Cancelled:') || st.includes('cancel')
+    const isIocl = String(i.type_of_ro || '').trim().toUpperCase() === 'IOCL'
+    return !isCancelled && !isIocl
+  }), [invoiceList])
 
   // Filter for CURRENT_FY
   const currentJmsList    = activeJmsList.filter(j => getJmsFy(j) === CURRENT_FY)
