@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
 import { supabase } from '../lib/supabase'
-import { formatINR, formatDate, parseValidity } from '../lib/utils'
+import { formatINR, formatDate, parseValidity, applyInvoiceDateAndStatusRules } from '../lib/utils'
 import NotificationDetailModal from './NotificationDetailModal'
 import {
   LayoutDashboard, FileText, Receipt, PieChart, Settings,
