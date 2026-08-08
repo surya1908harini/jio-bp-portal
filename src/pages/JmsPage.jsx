@@ -351,6 +351,8 @@ export default function JmsPage() {
       deleteMutation.mutate(id)
     }
   }
+  const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
+  const handleExport = () => { exportToExcel(sortedRecords, `JMS_${activeFy}.xlsx`, 'JMS Records'); toast.success('Excel downloaded') }
 
   const columns = [
     { key: 'jms_no',           header: 'JMS No',               render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
