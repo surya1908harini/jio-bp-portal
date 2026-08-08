@@ -244,11 +244,17 @@ export function applyInvoiceDateAndStatusRules(record) {
       const startDate2024 = new Date('2024-04-01')
       const endDate2026   = new Date('2026-03-31')
 
-      // Rule for Invoices between 01.04.2024 and 31.03.2026
+      // Rule for Invoices between 01.04.2024 and 31.03.2026 (FY 24-25 & FY 25-26):
+      // All records reflect complete payment. Missing payment dates automatically populate with inv_date,
+      // displaying all invoices as Full Payment Received so Total and Full Paid counts match.
       if (invDate >= startDate2024 && invDate <= endDate2026) {
-        if (fullDate && !gstDate) {
-          gstDate = fullDate
-          synced.gst_amount_received_date = fullDate
+        if (!fullDate) {
+          fullDate = invDateStr
+          synced.full_amount_received_date = invDateStr
+        }
+        if (!gstDate) {
+          gstDate = invDateStr
+          synced.gst_amount_received_date = invDateStr
         }
       }
     }
