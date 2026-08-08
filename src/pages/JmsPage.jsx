@@ -242,6 +242,10 @@ export default function JmsPage() {
       const jmsKey = String(r.jms_no || '').trim().toLowerCase()
       const invKey = String(r.inv_number || '').trim().toLowerCase()
 
+      const timeframeDays = budgetTimeframeMap[woKey] || 30
+      const baseDate = r.inv_posting_date || invPostingDateMap[jmsKey] || invPostingDateMap[invKey] || r.jms_create_date || r.inv_date
+      const payDate = r.payment_date || r.full_amount_received_date || invPaymentDateMap[jmsKey] || invPaymentDateMap[invKey] || ''
+
       const desc = String(r.work_description || '')
       const st = String(r.status || '').toLowerCase()
       const isCancelled = desc.includes('[Cancelled:') || st.includes('cancel')
