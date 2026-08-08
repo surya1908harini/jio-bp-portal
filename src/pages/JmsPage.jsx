@@ -134,9 +134,9 @@ function StatCard({ label, value, color = 'slate' }) {
 }
 
 export default function JmsPage() {
-  const { fy } = useParams()
-  const activeFy = fy || CURRENT_FY
+  const { fy: paramFy } = useParams()
   const [searchParams] = useSearchParams()
+  const activeFy = searchParams.get('fy') || paramFy || CURRENT_FY
   const initialSlot = searchParams.get('slot') || 'all'
 
   const { user, isAdmin } = useAuth()
@@ -225,19 +225,7 @@ export default function JmsPage() {
 
   // Apply slot filter based on status
   const records = useMemo(() => {
-    const rawFiltered = fyRecords.filter(r => {
-      const st = String(r.status || '').toLowerCase()
-      if (activeSlot === 'all') return true
-      if (activeSlot === 'cancelled') return st.includes('cancel')
-      if (activeSlot === 'pending_a1') return r.status === 'Pending A1' || r.status === 'Pending' || r.status === 'A1'
-      if (activeSlot === 'pending_a2') return r.status === 'Pending A2' || r.status === 'A2'
-      if (activeSlot === 'pending_qsd') return r.status === 'Pending QSD' || r.status === 'QSD'
-      if (activeSlot === 'pending_a3') return r.status === 'Pending A3' || r.status === 'A3'
-      if (activeSlot === 'released_a3') return r.status === 'Released by A3' || r.status === 'Invoiced'
-      return true
-    })
-
-    return rawFiltered.map(r => {
+    return fyRecords.map(r => {
       const woKey = String(r.work_order_number || '').trim().toLowerCase()
       const jmsKey = String(r.jms_no || '').trim().toLowerCase()
       const invKey = String(r.inv_number || '').trim().toLowerCase()
@@ -258,6 +246,18 @@ export default function JmsPage() {
         payment_timeframe_days: timeframeDays,
         expected_payment_date: calculateExpectedPaymentDate(baseDate, timeframeDays),
       }
+    }).filter(r => {
+      const st = String(r.status || '').toLowerCase()
+      const isCancelled = st.includes('cancel')
+
+      if (activeSlot === 'cancelled') return isCancelled
+      if (activeSlot !== 'cancelled' && activeSlot !== 'all' && isCancelled) return false
+      if (activeSlot === 'pending_a1') return ['Pending A1', 'Pending', 'A1'].includes(r.status)
+      if (activeSlot === 'pending_a2') return ['Pending A2', 'A2'].includes(r.status)
+      if (activeSlot === 'pending_qsd') return ['Pending QSD', 'QSD'].includes(r.status)
+      if (activeSlot === 'pending_a3') return ['Pending A3', 'A3'].includes(r.status)
+      if (activeSlot === 'released_a3') return ['Released by A3', 'Invoiced'].includes(r.status)
+      return true
     })
   }, [fyRecords, activeSlot, budgetTimeframeMap, invPostingDateMap, invPaymentDateMap])
 

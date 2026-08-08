@@ -97,9 +97,9 @@ function getRecordFy(r) {
 
 export default function InvoicePage() {
   const { user, isAdmin } = useAuth()
-  const { fy } = useParams()
+  const { fy: paramFy } = useParams()
   const [searchParams] = useSearchParams()
-  const activeFy = fy || CURRENT_FY
+  const activeFy = searchParams.get('fy') || paramFy || CURRENT_FY
   const qc = useQueryClient()
 
   const [formOpen, setFormOpen]     = useState(false)

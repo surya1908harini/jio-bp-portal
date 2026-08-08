@@ -43,10 +43,9 @@ const ITEMS_PER_PAGE = 9
 export default function BudgetPage() {
   const { user, isAdmin } = useAuth()
   const qc = useQueryClient()
-  const { fy } = useParams()
-  const activeFy = fy || CURRENT_FY
-
+  const { fy: paramFy } = useParams()
   const [searchParams] = useSearchParams()
+  const activeFy = searchParams.get('fy') || paramFy || CURRENT_FY
   const initialSearch = searchParams.get('search') || ''
 
   const [formOpen, setFormOpen]       = useState(false)
