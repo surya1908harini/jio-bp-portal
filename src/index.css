@@ -124,6 +124,7 @@ body {
   .badge-gst-only  { @apply bg-amber-500/20 text-amber-400 border border-amber-500/30; }
   .badge-net       { @apply bg-blue-500/20 text-blue-400 border border-blue-500/30; }
   .badge-full      { @apply bg-emerald-500/20 text-emerald-400 border border-emerald-500/30; }
+  .badge-cancelled { @apply bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold; }
 
   /* KPI Card */
   .kpi-card {

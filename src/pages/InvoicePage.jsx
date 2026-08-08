@@ -121,6 +121,7 @@ export default function InvoicePage() {
     { key: 'gst_only',      label: 'GST Only Received' },
     { key: 'net_received',  label: 'Net Amount Received' },
     { key: 'full_paid',     label: 'Full Payment Received' },
+    { key: 'cancelled',     label: 'Cancelled / Deleted' },
   ]
 
   const { data: allRecords = [], isLoading } = useQuery({
@@ -178,6 +179,10 @@ export default function InvoicePage() {
 
   const sortedRecords = useMemo(() => {
     let result = records.filter(r => {
+      const st = String(r.payment_status || r.status || '').toLowerCase()
+      if (activeSlot === 'cancelled') return st.includes('cancel')
+      if (activeSlot !== 'cancelled' && activeSlot !== 'all' && st.includes('cancel')) return false
+      
       if (activeSlot === 'pending' && r.payment_status !== 'Pending') return false
       if (activeSlot === 'gst_only' && r.payment_status !== 'GST Payment Only Received') return false
       if (activeSlot === 'net_received' && r.payment_status !== 'Net Amount Received') return false
@@ -242,30 +247,32 @@ export default function InvoicePage() {
     setForm(prev => updateCalculations({ ...prev }, mode))
   }
 
-  // Per-FY stats
+  // Per-FY stats (excluding cancelled invoices)
   const fyStats = FINANCIAL_YEARS.map(f => {
     const rows = allRecords.filter(r => getRecordFy(r) === f)
+    const activeRows = rows.filter(r => !String(r.payment_status || r.status || '').toLowerCase().includes('cancel'))
     return {
       fy: f,
       count:       rows.length,
-      grandTotal:  rows.reduce((s, r) => s + (r.grand_total || 0), 0),
-      received:    rows.reduce((s, r) => s + (r.received_bill_amount || 0), 0),
-      fullPaid:    rows.filter(r => r.payment_status === 'Full Payment Received').length,
-      pending:     rows.filter(r => r.payment_status === 'Pending').length,
+      grandTotal:  activeRows.reduce((s, r) => s + (r.grand_total || 0), 0),
+      received:    activeRows.reduce((s, r) => s + (r.received_bill_amount || 0), 0),
+      fullPaid:    activeRows.filter(r => r.payment_status === 'Full Payment Received').length,
+      pending:     activeRows.filter(r => r.payment_status === 'Pending').length,
     }
   })
 
-  // Current records stats
-  const totalGT        = records.reduce((s, r) => s + (r.grand_total || 0), 0)
-  const totalTDS       = records.reduce((s, r) => s + (r.tds || 0), 0)
-  const totalRec       = records.reduce((s, r) => s + (r.received_bill_amount || 0), 0)
-  const totalSD        = records.reduce((s, r) => s + (r.sd_retention || 0), 0)
-  const fullPaidCnt    = records.filter(r => r.payment_status === 'Full Payment Received').length
-  const pendingCnt     = records.filter(r => r.payment_status === 'Pending').length
-  const gstOnlyCnt     = records.filter(r => r.payment_status === 'GST Payment Only Received').length
-  const netAmtCnt      = records.filter(r => r.payment_status === 'Net Amount Received').length
+  // Current records stats (excluding cancelled records from math sums)
+  const activeInvoiceRecords = records.filter(r => !String(r.payment_status || r.status || '').toLowerCase().includes('cancel'))
+  const totalGT        = activeInvoiceRecords.reduce((s, r) => s + (r.grand_total || 0), 0)
+  const totalTDS       = activeInvoiceRecords.reduce((s, r) => s + (r.tds || 0), 0)
+  const totalRec       = activeInvoiceRecords.reduce((s, r) => s + (r.received_bill_amount || 0), 0)
+  const totalSD        = activeInvoiceRecords.reduce((s, r) => s + (r.sd_retention || 0), 0)
+  const fullPaidCnt    = activeInvoiceRecords.filter(r => r.payment_status === 'Full Payment Received').length
+  const pendingCnt     = activeInvoiceRecords.filter(r => r.payment_status === 'Pending').length
+  const gstOnlyCnt     = activeInvoiceRecords.filter(r => r.payment_status === 'GST Payment Only Received').length
+  const netAmtCnt      = activeInvoiceRecords.filter(r => r.payment_status === 'Net Amount Received').length
   
-  const pendingRecords = records.filter(r => r.payment_status === 'Pending' || r.payment_status === 'Net Amount Received' || r.payment_status === 'GST Payment Only Received')
+  const pendingRecords = activeInvoiceRecords.filter(r => r.payment_status === 'Pending' || r.payment_status === 'Net Amount Received' || r.payment_status === 'GST Payment Only Received')
   const pendingAmount  = pendingRecords.reduce((s, r) => s + (r.grand_total || 0), 0)
   const pendingCount   = pendingRecords.length
 
@@ -323,23 +330,45 @@ export default function InvoicePage() {
   }
 
   const handleClose = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
+  
   const handleDelete = (id, row) => {
     const label = row?.inv_number ? `Invoice #${row.inv_number}` : `Record #${id}`
-    if (window.confirm(`Delete ${label}?`)) {
+    const markCancel = window.confirm(
+      `Do you want to mark ${label} as "Invoice Cancelled by some issues"?\n\n` +
+      `• Click OK to mark as Cancelled (Keeps details in table with 0 impact on financials & budget).\n` +
+      `• Click Cancel to permanently delete the row.`
+    )
+    if (markCancel) {
       try {
         const logs = JSON.parse(localStorage.getItem('deleted_records_log') || '[]')
         logs.unshift({
           id: `del-inv-${Date.now()}-${id}`,
           type: 'invoice',
-          title: `Invoice Record Deleted: ${label}`,
-          sub: `${label} was deleted by Admin on ${new Date().toLocaleDateString()}`,
+          title: `Invoice Cancelled: ${label}`,
+          sub: `${label} was marked as Cancelled by Admin on ${new Date().toLocaleDateString()}`,
           timestamp: new Date().toISOString()
         })
         localStorage.setItem('deleted_records_log', JSON.stringify(logs.slice(0, 50)))
       } catch (e) {}
-      deleteMutation.mutate(id)
+      saveMutation.mutate({ ...row, id, payment_status: 'Invoice Cancelled by some issues' })
+    } else {
+      if (window.confirm(`Permanently delete ${label}? This cannot be undone.`)) {
+        try {
+          const logs = JSON.parse(localStorage.getItem('deleted_records_log') || '[]')
+          logs.unshift({
+            id: `del-inv-${Date.now()}-${id}`,
+            type: 'invoice',
+            title: `Invoice Record Deleted: ${label}`,
+            sub: `${label} was deleted by Admin on ${new Date().toLocaleDateString()}`,
+            timestamp: new Date().toISOString()
+          })
+          localStorage.setItem('deleted_records_log', JSON.stringify(logs.slice(0, 50)))
+        } catch (e) {}
+        deleteMutation.mutate(id)
+      }
     }
   }
+
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
   const handleExport = () => { exportToExcel(sortedRecords, `Invoices_${activeFy}.xlsx`, 'Invoices'); toast.success('Excel downloaded') }
 

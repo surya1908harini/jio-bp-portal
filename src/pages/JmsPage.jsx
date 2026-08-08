@@ -62,6 +62,8 @@ const STATUS_TO_DB = {
   'Pending QSD': 'QSD',
   'Pending A3': 'A3',
   'Released by A3': 'Invoiced',
+  'Cancelled / Deleted': 'Cancelled',
+  'Cancelled': 'Cancelled',
   'Pending': 'Pending',
   'A1': 'A1',
   'A2': 'A2',
@@ -73,6 +75,7 @@ const STATUS_TO_DB = {
 function getDbStatus(status) {
   if (!status) return 'A1'
   const str = String(status).trim().toLowerCase()
+  if (str.includes('cancel')) return 'Cancelled'
   if (str.includes('invoiced') || str.includes('released')) return 'Invoiced'
   if (str.includes('a2')) return 'A2'
   if (str.includes('qsd')) return 'QSD'
@@ -93,6 +96,8 @@ const STATUS_DISPLAY = {
   'Pending A3': 'Pending A3',
   'Invoiced': 'Released by A3',
   'Released by A3': 'Released by A3',
+  'Cancelled': 'Cancelled / Deleted',
+  'Cancelled / Deleted': 'Cancelled / Deleted',
 }
 
 const STATUS_CSS = {
@@ -101,6 +106,7 @@ const STATUS_CSS = {
   'Pending QSD': 'badge-qsd', 'QSD': 'badge-qsd',
   'Pending A3': 'badge-a3', 'A3': 'badge-a3',
   'Released by A3': 'badge-invoiced', 'Invoiced': 'badge-invoiced',
+  'Cancelled': 'badge-cancelled', 'Cancelled / Deleted': 'badge-cancelled',
 }
 
 function StatusBadge({ status }) {
@@ -143,6 +149,7 @@ export default function JmsPage() {
     { key: 'pending_qsd', label: 'Pending QSD' },
     { key: 'pending_a3', label: 'Pending A3' },
     { key: 'released_a3', label: 'Released by A3' },
+    { key: 'cancelled', label: 'Cancelled / Deleted' },
   ]
   const [activeSlot, setActiveSlot] = useState(initialSlot)
 
@@ -218,7 +225,9 @@ export default function JmsPage() {
   // Apply slot filter based on status
   const records = useMemo(() => {
     const rawFiltered = fyRecords.filter(r => {
+      const st = String(r.status || '').toLowerCase()
       if (activeSlot === 'all') return true
+      if (activeSlot === 'cancelled') return st.includes('cancel')
       if (activeSlot === 'pending_a1') return r.status === 'Pending A1' || r.status === 'Pending' || r.status === 'A1'
       if (activeSlot === 'pending_a2') return r.status === 'Pending A2' || r.status === 'A2'
       if (activeSlot === 'pending_qsd') return r.status === 'Pending QSD' || r.status === 'QSD'
@@ -265,21 +274,23 @@ export default function JmsPage() {
     })
   }, [records])
 
-  // Per-FY stats for Overall View
+  // Per-FY stats for Overall View (excluding cancelled items from sum)
   const fyStats = FINANCIAL_YEARS.map(f => {
     const rows = allRecords.filter(r => getRecordFy(r) === f)
+    const activeRows = rows.filter(r => !String(r.status || '').toLowerCase().includes('cancel'))
     return {
       fy: f,
       total:    rows.length,
-      amount:   rows.reduce((s, r) => s + (r.net_amount || 0), 0),
-      pending:  rows.filter(r => !['Released by A3','Invoiced'].includes(r.status)).length,
-      a3:       rows.filter(r => r.status === 'Pending A3' || r.status === 'A3').length,
-      invoiced: rows.filter(r => r.status === 'Released by A3' || r.status === 'Invoiced').length,
+      amount:   activeRows.reduce((s, r) => s + (r.net_amount || 0), 0),
+      pending:  activeRows.filter(r => !['Released by A3','Invoiced'].includes(r.status)).length,
+      a3:       activeRows.filter(r => r.status === 'Pending A3' || r.status === 'A3').length,
+      invoiced: activeRows.filter(r => r.status === 'Released by A3' || r.status === 'Invoiced').length,
     }
   })
 
-  // Current records stats (for specific FY view)
-  const totalNetAmount = records.reduce((s, r) => s + (r.net_amount || 0), 0)
+  // Current records stats (excluding cancelled records from total amount sum)
+  const activeRecords = records.filter(r => !String(r.status || '').toLowerCase().includes('cancel'))
+  const totalNetAmount = activeRecords.reduce((s, r) => s + (r.net_amount || 0), 0)
   const byStatus = JMS_STATUSES.reduce((acc, s) => ({ ...acc, [s]: records.filter(r => (STATUS_DISPLAY[r.status] || r.status) === s).length }), {})
 
   const saveMutation = useMutation({
@@ -334,21 +345,42 @@ export default function JmsPage() {
   const openAdd  = ()    => { setEditRow(null); setForm(EMPTY_FORM); setFormOpen(true) }
   const handleClose  = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+  
   const handleDelete = (id, row) => {
     const label = row?.jms_no ? `JMS #${row.jms_no}` : `Record #${id}`
-    if (window.confirm(`Delete ${label}?`)) {
+    const markCancel = window.confirm(
+      `Do you want to mark ${label} as "Cancelled / Deleted"?\n\n` +
+      `• Click OK to mark as "Cancelled / Deleted" (Keeps details in table with 0 impact on financials & budget).\n` +
+      `• Click Cancel to permanently delete the row.`
+    )
+    if (markCancel) {
       try {
         const logs = JSON.parse(localStorage.getItem('deleted_records_log') || '[]')
         logs.unshift({
           id: `del-jms-${Date.now()}-${id}`,
           type: 'jms',
-          title: `JMS Record Deleted: ${label}`,
-          sub: `${label} was deleted by Admin on ${new Date().toLocaleDateString()}`,
+          title: `JMS Cancelled: ${label}`,
+          sub: `${label} was marked as Cancelled by Admin on ${new Date().toLocaleDateString()}`,
           timestamp: new Date().toISOString()
         })
         localStorage.setItem('deleted_records_log', JSON.stringify(logs.slice(0, 50)))
       } catch (e) {}
-      deleteMutation.mutate(id)
+      saveMutation.mutate({ ...row, id, status: 'Cancelled' })
+    } else {
+      if (window.confirm(`Permanently delete ${label}? This cannot be undone.`)) {
+        try {
+          const logs = JSON.parse(localStorage.getItem('deleted_records_log') || '[]')
+          logs.unshift({
+            id: `del-jms-${Date.now()}-${id}`,
+            type: 'jms',
+            title: `JMS Record Deleted: ${label}`,
+            sub: `${label} was deleted by Admin on ${new Date().toLocaleDateString()}`,
+            timestamp: new Date().toISOString()
+          })
+          localStorage.setItem('deleted_records_log', JSON.stringify(logs.slice(0, 50)))
+        } catch (e) {}
+        deleteMutation.mutate(id)
+      }
     }
   }
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }

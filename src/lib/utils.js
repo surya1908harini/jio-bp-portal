@@ -111,12 +111,14 @@ export const CURRENT_FY = getFinancialYear()
 
 export const FINANCIAL_YEARS = ['2023-24', '2024-25', '2025-26', '2026-27']
 
-export const JMS_STATUSES = ['Pending A1', 'Pending A2', 'Pending QSD', 'Pending A3', 'Released by A3']
+export const JMS_STATUSES = ['Pending A1', 'Pending A2', 'Pending QSD', 'Pending A3', 'Released by A3', 'Cancelled / Deleted']
 export const PAYMENT_STATUSES = [
   'Pending',
   'GST Payment Only Received',
   'Net Amount Received',
   'Full Payment Received',
+  'Invoice Cancelled by some issues',
+  'Cancelled / Deleted',
 ]
 
 // ──────────────────────────────────────────────

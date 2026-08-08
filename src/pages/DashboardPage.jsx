@@ -38,9 +38,13 @@ export default function DashboardPage() {
     return r.financial_year || '2024-25'
   }
 
+  // Active (non-cancelled) records
+  const activeJmsList = useMemo(() => jmsList.filter(j => !String(j.status || '').toLowerCase().includes('cancel')), [jmsList])
+  const activeInvList = useMemo(() => invoiceList.filter(i => !String(i.payment_status || i.status || '').toLowerCase().includes('cancel')), [invoiceList])
+
   // Filter for CURRENT_FY
-  const currentJmsList    = jmsList.filter(j => getJmsFy(j) === CURRENT_FY)
-  const currentInvList    = invoiceList.filter(i => getInvFy(i) === CURRENT_FY)
+  const currentJmsList    = activeJmsList.filter(j => getJmsFy(j) === CURRENT_FY)
+  const currentInvList    = activeInvList.filter(i => getInvFy(i) === CURRENT_FY)
   const currentBudgetList = budgetList.filter(b => getBudgetRecordFy(b) === CURRENT_FY)
 
   // JMS Status calculations aligned strictly with JMS Details Page
@@ -90,8 +94,8 @@ export default function DashboardPage() {
 
   const [trendFy, setTrendFy] = useState(CURRENT_FY)
 
-  const trendJmsList = useMemo(() => jmsList.filter(j => getJmsFy(j) === trendFy), [jmsList, trendFy])
-  const trendInvList = useMemo(() => invoiceList.filter(i => getInvFy(i) === trendFy), [invoiceList, trendFy])
+  const trendJmsList = useMemo(() => activeJmsList.filter(j => getJmsFy(j) === trendFy), [activeJmsList, trendFy])
+  const trendInvList = useMemo(() => activeInvList.filter(i => getInvFy(i) === trendFy), [activeInvList, trendFy])
 
   // Realtime Monthly Activity Trend Data calculated dynamically from DB
   const trendData = useMemo(() => {
