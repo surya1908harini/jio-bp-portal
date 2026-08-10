@@ -470,8 +470,8 @@ export const purchaseBillDb = {
         .from('purchase_bills')
         .select('*')
         .order('created_at', { ascending: false })
-      if (!error && data && data.length > 0) {
-        saveLocalPurchaseBills(data)
+      if (!error && Array.isArray(data)) {
+        if (data.length > 0) saveLocalPurchaseBills(data)
         return data
       }
     } catch (e) {
