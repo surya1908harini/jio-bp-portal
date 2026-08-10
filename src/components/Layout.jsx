@@ -327,11 +327,13 @@ export default function Layout() {
         {isAdmin && (
           <Link
             to="/admin"
-            className={`sidebar-link ${location.pathname === '/admin' ? 'active' : ''}`}
+            className={`sidebar-link flex items-center justify-between ${location.pathname === '/admin' ? 'active' : ''}`}
             title="Admin Panel"
           >
-            <Settings size={18} />
-            {!collapsed && <span>Admin Panel</span>}
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Settings size={18} className="flex-shrink-0" />
+              {!collapsed && <span className="truncate">Admin Panel</span>}
+            </div>
           </Link>
         )}
       </nav>

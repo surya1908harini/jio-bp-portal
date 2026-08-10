@@ -41,6 +41,17 @@ export default function AdminPage() {
     onSuccess: () => { qc.invalidateQueries(['admin-roles']); toast.success('Role updated') },
   })
 
+  const updateNameMutation = useMutation({
+    mutationFn: async ({ id, newUserId }) => {
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ user_id: newUserId })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => { qc.invalidateQueries(['admin-roles']); toast.success('User name updated') },
+  })
+
   const deleteRoleMutation = useMutation({
     mutationFn: async (id) => {
       const { error } = await supabase.from('user_roles').delete().eq('id', id)
@@ -71,7 +82,25 @@ export default function AdminPage() {
   }
 
   const columns = [
-    { key: 'user_id',   header: 'User ID / Email', render: r => <span className="font-mono text-xs text-slate-300 font-semibold">{r.user_id}</span> },
+    { key: 'user_id',   header: 'User ID / Email', render: r => (
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-xs text-slate-300 font-semibold">{r.user_id}</span>
+        {r.user_id !== user?.id && (
+          <button 
+            onClick={() => {
+              const newName = window.prompt("Edit User Name/Email:", r.user_id)
+              if (newName && newName.trim() !== r.user_id) {
+                updateNameMutation.mutate({ id: r.id, newUserId: newName.trim() })
+              }
+            }}
+            className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white"
+            title="Edit Name"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+          </button>
+        )}
+      </div>
+    ) },
     { key: 'role',      header: 'Assigned Role',
       render: r => r.user_id === user?.id
         ? <span className="badge badge-a3">You · {r.role}</span>
