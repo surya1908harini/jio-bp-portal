@@ -513,11 +513,11 @@ export default function JmsPage() {
         subtitle={`Joint Measurement Sheet · ${activeFy === 'overall' ? 'All Financial Years' : `FY ${activeFy}`} · ${sortedRecords.length} records`}
         actions={
           <div className="flex gap-2 flex-wrap">
-            <button onClick={handleExport} className="btn-ghost"><Download size={14} /> Export</button>
+            <button onClick={handleExport} title="Export" className="btn-ghost !px-2 !py-1 !text-xs"><Download size={13} /></button>
             {isAdmin && (
               <>
-                <button onClick={() => setImportOpen(true)} className="btn-ghost"><Upload size={14} /> Import</button>
-                <button onClick={openAdd} className="btn-primary"><Plus size={14} /> Add JMS</button>
+                <button onClick={() => setImportOpen(true)} title="Import" className="btn-ghost !px-2 !py-1 !text-xs"><Upload size={13} /></button>
+                <button onClick={openAdd} title="Add JMS" className="btn-primary !px-2 !py-1 !text-xs"><Plus size={13} /></button>
               </>
             )}
           </div>

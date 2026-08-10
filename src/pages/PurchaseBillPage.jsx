@@ -319,12 +319,12 @@ export default function PurchaseBillPage() {
         title="Purchase Bills"
         subtitle="Manage supplier purchase invoices, taxable values, CGST/SGST tax breakdown, HB/RB, and bill receipt status."
         actions={
-          <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={handleExport} className="btn-ghost"><Download size={14} /> Export</button>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button onClick={handleExport} title="Export" className="btn-ghost !px-2 !py-1 !text-xs"><Download size={13} /></button>
             {isAdmin && (
               <>
-                <button onClick={() => setImportOpen(true)} className="btn-ghost"><Upload size={14} /> Import</button>
-                <button onClick={openAdd} className="btn-primary"><Plus size={14} /> Add Purchase Bill</button>
+                <button onClick={() => setImportOpen(true)} title="Import" className="btn-ghost !px-2 !py-1 !text-xs"><Upload size={13} /></button>
+                <button onClick={openAdd} title="Add Purchase Bill" className="btn-primary !px-2 !py-1 !text-xs"><Plus size={13} /></button>
               </>
             )}
           </div>

@@ -2,11 +2,11 @@ import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { jmsDb, invoiceDb, budgetDb } from '../lib/db'
+import { jmsDb, invoiceDb, budgetDb, purchaseBillDb } from '../lib/db'
 import { formatINR, formatDate, CURRENT_FY, getFinancialYear, getBudgetRecordFy } from '../lib/utils'
 import {
   FileText, Receipt, PieChart as PieChartIcon, Clock, CheckCircle, TrendingUp, Calendar,
-  ArrowRight, Shield, Activity, Sparkles, Award, Zap, DollarSign, Layers, Plus, ExternalLink
+  ArrowRight, Shield, Activity, Sparkles, Award, Zap, DollarSign, Layers, Plus, ExternalLink, ShoppingBag
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area } from 'recharts'
 
@@ -15,9 +15,10 @@ export default function DashboardPage() {
   const navigate = useNavigate()
 
   // Fetch data
-  const { data: jmsList = [] }     = useQuery({ queryKey: ['jms', 'all'],     queryFn: () => jmsDb.listAll() })
-  const { data: invoiceList = [] } = useQuery({ queryKey: ['invoices', 'all'], queryFn: () => invoiceDb.listAll() })
-  const { data: budgetList = [] }  = useQuery({ queryKey: ['budget', 'all'],   queryFn: () => budgetDb.listAll() })
+  const { data: jmsList = [] }          = useQuery({ queryKey: ['jms', 'all'],            queryFn: () => jmsDb.listAll() })
+  const { data: invoiceList = [] }      = useQuery({ queryKey: ['invoices', 'all'],        queryFn: () => invoiceDb.listAll() })
+  const { data: budgetList = [] }       = useQuery({ queryKey: ['budget', 'all'],          queryFn: () => budgetDb.listAll() })
+  const { data: purchaseBillList = [] } = useQuery({ queryKey: ['purchase_bills', 'all'],  queryFn: () => purchaseBillDb.listAll() })
 
   // Helpers to determine FY
   const getJmsFy = (r) => {
@@ -38,6 +39,15 @@ export default function DashboardPage() {
     return r.financial_year || '2024-25'
   }
 
+  const getPbFy = (r) => {
+    const date = r.inv_date
+    if (date) {
+      const fy = getFinancialYear(date)
+      if (fy) return fy
+    }
+    return r.financial_year || CURRENT_FY
+  }
+
   // Active (non-cancelled) records
   const activeJmsList = useMemo(() => jmsList.filter(j => {
     const desc = String(j.work_description || '')
@@ -45,7 +55,7 @@ export default function DashboardPage() {
     return !desc.includes('[Cancelled:') && !st.includes('cancel')
   }), [jmsList])
 
-  // Active non-cancelled, non-IOCL invoices (IOCL belongs to another party — don't count in our income)
+  // Active non-cancelled, non-IOCL invoices
   const activeInvList = useMemo(() => invoiceList.filter(i => {
     const desc = String(i.work_description || '')
     const st = String(i.payment_status || i.status || '').toLowerCase()
@@ -58,8 +68,9 @@ export default function DashboardPage() {
   const currentJmsList    = activeJmsList.filter(j => getJmsFy(j) === CURRENT_FY)
   const currentInvList    = activeInvList.filter(i => getInvFy(i) === CURRENT_FY)
   const currentBudgetList = budgetList.filter(b => getBudgetRecordFy(b) === CURRENT_FY)
+  const currentPbList     = purchaseBillList.filter(b => getPbFy(b) === CURRENT_FY)
 
-  // JMS Status calculations aligned strictly with JMS Details Page
+  // JMS Status calculations
   const isJmsReleased = (j) => {
     if (j.a3_release_date) return true
     const st = String(j.status || '').trim().toLowerCase()
@@ -70,32 +81,14 @@ export default function DashboardPage() {
   const a3Released      = currentJmsList.filter(isJmsReleased).length
   const pendingJmsCount = currentJmsList.filter(j => !isJmsReleased(j)).length
 
-  const pendingA1       = currentJmsList.filter(j => {
-    const st = String(j.status || '').trim().toLowerCase()
-    return st === 'pending a1' || st === 'a1' || st === 'pending'
-  }).length
+  const pendingA1 = currentJmsList.filter(j => { const st = String(j.status || '').trim().toLowerCase(); return st === 'pending a1' || st === 'a1' || st === 'pending' }).length
+  const pendingA2 = currentJmsList.filter(j => { const st = String(j.status || '').trim().toLowerCase(); return st === 'pending a2' || st === 'a2' }).length
+  const pendingQsd= currentJmsList.filter(j => { const st = String(j.status || '').trim().toLowerCase(); return st === 'pending qsd' || st === 'qsd' }).length
+  const pendingA3 = currentJmsList.filter(j => { const st = String(j.status || '').trim().toLowerCase(); return st === 'pending a3' || st === 'a3' }).length
 
-  const pendingA2       = currentJmsList.filter(j => {
-    const st = String(j.status || '').trim().toLowerCase()
-    return st === 'pending a2' || st === 'a2'
-  }).length
+  const totalInvAmt = currentInvList.reduce((s, i) => s + (i.grand_total || 0), 0)
 
-  const pendingQsd      = currentJmsList.filter(j => {
-    const st = String(j.status || '').trim().toLowerCase()
-    return st === 'pending qsd' || st === 'qsd'
-  }).length
-
-  const pendingA3       = currentJmsList.filter(j => {
-    const st = String(j.status || '').trim().toLowerCase()
-    return st === 'pending a3' || st === 'a3'
-  }).length
-
-  const totalInvAmt   = currentInvList.reduce((s, i) => s + (i.grand_total || 0), 0)
-  const totalBudget   = currentBudgetList.reduce((s, b) => s + (b.fo_total_budget || 0), 0)
-  const totalConsumed = currentBudgetList.reduce((s, b) => s + (b.total_consumed || 0), 0)
-  const remainingBudget = totalBudget - totalConsumed
-
-  // Donut chart: "JMS Details" breakdown
+  // Donut chart: JMS breakdown
   const pieData = [
     { name: 'Pending A1',  value: pendingA1,  color: '#3b82f6' },
     { name: 'Pending A2',  value: pendingA2,  color: '#8b5cf6' },
@@ -109,7 +102,7 @@ export default function DashboardPage() {
   const trendJmsList = useMemo(() => activeJmsList.filter(j => getJmsFy(j) === trendFy), [activeJmsList, trendFy])
   const trendInvList = useMemo(() => activeInvList.filter(i => getInvFy(i) === trendFy), [activeInvList, trendFy])
 
-  // Realtime Monthly Activity Trend Data calculated dynamically from DB
+  // Monthly Activity Trend Data
   const trendData = useMemo(() => {
     const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar']
     const monthCounts = months.map(m => ({ name: m, jms: 0, invoices: 0 }))
@@ -138,9 +131,33 @@ export default function DashboardPage() {
     return monthCounts
   }, [trendJmsList, trendInvList])
 
+  // Month-wise Purchase Bill amount data (FY-wise)
+  const [pbFy, setPbFy] = useState(CURRENT_FY)
+  const pbFyList = useMemo(() => purchaseBillList.filter(b => getPbFy(b) === pbFy), [purchaseBillList, pbFy])
+
+  const pbMonthData = useMemo(() => {
+    const months = [
+      { name: 'Apr', num: 4 }, { name: 'May', num: 5 }, { name: 'Jun', num: 6 },
+      { name: 'Jul', num: 7 }, { name: 'Aug', num: 8 }, { name: 'Sep', num: 9 },
+      { name: 'Oct', num: 10 }, { name: 'Nov', num: 11 }, { name: 'Dec', num: 12 },
+      { name: 'Jan', num: 1 }, { name: 'Feb', num: 2 }, { name: 'Mar', num: 3 },
+    ]
+    return months.map(m => {
+      const rows = pbFyList.filter(b => {
+        if (!b.inv_date) return false
+        const d = new Date(b.inv_date)
+        return !isNaN(d.getTime()) && (d.getMonth() + 1) === m.num
+      })
+      const amount = rows.reduce((s, b) => s + (Number(b.invoice_value) || 0), 0)
+      return { name: m.name, amount, count: rows.length }
+    })
+  }, [pbFyList])
+
+  const totalPbAmount = currentPbList.reduce((s, b) => s + (Number(b.invoice_value) || 0), 0)
+
   return (
     <div className="space-y-6">
-      {/* ── Full Width Hero Banner (Purple/Magenta Gradient) ───── */}
+      {/* ── Full Width Hero Banner ── */}
       <div className="w-full rounded-3xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 p-7 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between reveal-on-scroll hover-elevate">
         <div className="absolute -right-10 -bottom-10 w-96 h-96 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
@@ -168,7 +185,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Mini Stat Boxes Inside Hero Banner: Total JMS | Released A3 | Invoices Value | Pending JMS */}
+        {/* Mini Stat Boxes */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-5 border-t border-white/20">
           <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm">
             <p className="text-[10px] text-purple-200 uppercase font-semibold">Total JMS</p>
@@ -189,28 +206,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Focus Cards Grid (Quick Actions for Admin, Summary Cards for User) ── */}
-      <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-5 reveal-on-scroll`}>
-        {/* Quick Actions Card (ADMIN ONLY) */}
-        {isAdmin && (
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl hover-elevate">
-            <div className="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-md mb-3">
-              <Zap size={20} />
-            </div>
-            <h3 className="text-base font-bold text-white">Quick Actions</h3>
-            <p className="text-xs text-slate-400 mb-3">Jump straight to work</p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <Link to="/jms" className="p-2.5 rounded-xl bg-purple-950/80 border border-purple-800/60 text-purple-300 font-semibold text-center hover:bg-purple-900 hover:scale-105 active:scale-95 transition-all duration-200">
-                + New JMS
-              </Link>
-              <Link to="/invoices" className="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/60 text-pink-300 font-semibold text-center hover:bg-pink-900 hover:scale-105 active:scale-95 transition-all duration-200">
-                + Add Invoice
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* Invoicing Summary Card */}
+      {/* ── Invoicing Summary (single card replacing Quick Actions + Contract Budget) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 reveal-on-scroll">
         <div className="rounded-3xl bg-emerald-600 p-5 text-white shadow-xl flex flex-col justify-between hover-elevate">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -226,26 +223,72 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Contract Budget Summary Card */}
-        <div className="rounded-3xl bg-purple-600 p-5 text-white shadow-xl flex flex-col justify-between hover-elevate">
+        <div className="rounded-3xl bg-indigo-700 p-5 text-white shadow-xl flex flex-col justify-between hover-elevate">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-purple-100">CONTRACT BUDGET</span>
-              <PieChartIcon size={20} />
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-200">PURCHASE BILLS TOTAL</span>
+              <ShoppingBag size={20} />
             </div>
-            <h3 className="text-2xl font-extrabold text-white">{formatINR(totalBudget)}</h3>
-            <p className="text-xs text-purple-100 mt-1">Consumed: {formatINR(totalConsumed)}</p>
+            <h3 className="text-2xl font-extrabold text-white">{formatINR(totalPbAmount)}</h3>
+            <p className="text-xs text-indigo-200 mt-1">{currentPbList.length} Purchase Bills — FY {CURRENT_FY}</p>
           </div>
-          <div className="mt-4 pt-3 border-t border-purple-500/50 flex items-center justify-between text-xs text-purple-100">
-            <span>{currentBudgetList.length} Work Orders Active</span>
-            <Link to="/budget" className="font-bold underline hover:text-white transition-all">View Budget →</Link>
+          <div className="mt-4 pt-3 border-t border-indigo-500/50 flex items-center justify-between text-xs text-indigo-200">
+            <span>Supplier Invoice Total</span>
+            <Link to="/purchase-bills" className="font-bold underline hover:text-white transition-all">View Bills →</Link>
           </div>
         </div>
       </div>
 
-      {/* ── Dynamic Area Trend Chart & Donut Chart ────────────── */}
+      {/* ── Month-wise Purchase Bill Bar Chart ── */}
+      <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl hover-elevate reveal-on-scroll">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-white">Month-wise Purchase Bill Amount</h3>
+              <select
+                value={pbFy}
+                onChange={e => setPbFy(e.target.value)}
+                className="bg-slate-800 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+              >
+                <option value="2023-24">FY 2023-24</option>
+                <option value="2024-25">FY 2024-25</option>
+                <option value="2025-26">FY 2025-26</option>
+                <option value="2026-27">FY 2026-27 (Current)</option>
+              </select>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">Total invoice value purchased per month — FY {pbFy}</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold">
+            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+            <span className="text-indigo-400">Invoice Value (₹)</span>
+          </div>
+        </div>
+
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={pbMonthData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <defs>
+                <linearGradient id="pbGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.9}/>
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.5}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
+              <YAxis stroke="#64748b" fontSize={10} tickLine={false} tickFormatter={v => v >= 1000 ? `₹${(v/1000).toFixed(0)}K` : `₹${v}`} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                formatter={(value, name) => [formatINR(value), 'Invoice Value']}
+                labelFormatter={label => `Month: ${label}`}
+              />
+              <Bar dataKey="amount" fill="url(#pbGrad)" radius={[6, 6, 0, 0]} isAnimationActive animationDuration={1400} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ── Dynamic Area Trend Chart & Donut Chart ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 reveal-on-scroll">
-        {/* Left 2 Cols: Monthly Activity Area Chart */}
+        {/* Monthly Activity Area Chart */}
         <div className="lg:col-span-2 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl hover-elevate">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
             <div>
@@ -292,36 +335,14 @@ export default function DashboardPage() {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
                 />
-                <Area
-                  type="monotone"
-                  dataKey="jms"
-                  name="JMS Records"
-                  stroke="#8b5cf6"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorJms)"
-                  isAnimationActive={true}
-                  animationDuration={1600}
-                  animationEasing="ease-out"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="invoices"
-                  name="Invoices"
-                  stroke="#ec4899"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorInv)"
-                  isAnimationActive={true}
-                  animationDuration={1600}
-                  animationEasing="ease-out"
-                />
+                <Area type="monotone" dataKey="jms" name="JMS Records" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorJms)" isAnimationActive animationDuration={1600} animationEasing="ease-out" />
+                <Area type="monotone" dataKey="invoices" name="Invoices" stroke="#ec4899" strokeWidth={3} fillOpacity={1} fill="url(#colorInv)" isAnimationActive animationDuration={1600} animationEasing="ease-out" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Right 1 Col: Donut Stage Breakdown Chart */}
+        {/* Donut Stage Breakdown */}
         <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl flex flex-col justify-between hover-elevate">
           <div>
             <div className="flex items-center justify-between mb-1">
@@ -335,23 +356,12 @@ export default function DashboardPage() {
             <div className="h-44 w-full flex items-center justify-center relative">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={pieData}
-                    innerRadius={50}
-                    outerRadius={75}
-                    paddingAngle={3}
-                    dataKey="value"
-                    isAnimationActive={true}
-                    animationDuration={1500}
-                    animationEasing="ease-out"
-                  >
+                  <Pie data={pieData} innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value" isAnimationActive animationDuration={1500} animationEasing="ease-out">
                     {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
-                  />
+                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">

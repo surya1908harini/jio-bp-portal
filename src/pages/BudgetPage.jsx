@@ -388,21 +388,15 @@ export default function BudgetPage() {
         title="Contract Budget Status"
         subtitle={`Browse, manage and track every work order in your budget library.`}
         actions={
-          <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending} className="btn-ghost text-indigo-400 hover:text-white border border-indigo-800/40">
-              <RefreshCw size={14} className={syncMutation.isPending ? 'animate-spin' : ''} />
-              {syncMutation.isPending ? 'Syncing…' : 'Sync JMS Work Orders'}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending} title="Sync JMS Work Orders" className="btn-ghost !px-2 !py-1 !text-xs">
+              <RefreshCw size={13} className={syncMutation.isPending ? 'animate-spin' : ''} />
             </button>
-            <button onClick={handleExport} className="btn-ghost"><Download size={14} /> Export</button>
+            <button onClick={handleExport} title="Export" className="btn-ghost !px-2 !py-1 !text-xs"><Download size={13} /></button>
             {isAdmin && (
               <>
-                <button onClick={() => setImportOpen(true)} className="btn-ghost"><Upload size={14} /> Import</button>
-                <button
-                  onClick={openAdd}
-                  className="px-5 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 hover:opacity-95 active:scale-95 transition-all flex items-center gap-2"
-                >
-                  <Plus size={15} /> Add New Budget Work Order
-                </button>
+                <button onClick={() => setImportOpen(true)} title="Import" className="btn-ghost !px-2 !py-1 !text-xs"><Upload size={13} /></button>
+                <button onClick={openAdd} title="Add Budget Work Order" className="btn-primary !px-2 !py-1 !text-xs"><Plus size={13} /></button>
               </>
             )}
           </div>
