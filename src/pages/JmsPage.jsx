@@ -11,7 +11,10 @@ import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
 import FyTabs from '../components/FyTabs'
+import SlotTabs from '../components/SlotTabs'
 import MonthTabs from '../components/MonthTabs'
+import RecordDetailModal from '../components/RecordDetailModal'
+import PdfCell from '../components/PdfCell'
 import { loadMasters } from '../lib/masters'
 
 const EMPTY_FORM = {
