@@ -14,7 +14,7 @@ import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
 import FyTabs from '../components/FyTabs'
 import SlotTabs from '../components/SlotTabs'
-import MonthTabs from '../components/MonthTabs'
+import MonthTabs, { MONTHS } from '../components/MonthTabs'
 import ModuleHeader from '../components/ModuleHeader'
 
 const EMPTY_FORM = {
@@ -330,7 +330,7 @@ export default function PurchaseBillPage() {
           </div>
         }
         stats={[
-          { icon: ShoppingBag, label: 'Total Purchase Bills', value: monthRecords.length, sub: activeMonth === 'all' ? `FY ${activeFy}` : `Filtered Month`, color: 'purple' },
+          { icon: ShoppingBag, label: 'Total Purchase Bills', value: monthRecords.length, sub: (() => { if (activeMonth === 'all') return `FY ${activeFy}`; const mn = MONTHS.find(m => m.value === String(activeMonth))?.label || ''; const fyStart = parseInt((activeFy || '').split('-')[0]) || new Date().getFullYear(); const yr = Number(activeMonth) >= 4 ? fyStart : fyStart + 1; return `${mn} ${yr}`; })(), color: 'purple' },
           { icon: DollarSign, label: 'Taxable Value', value: formatINR(totalTaxable), sub: 'Before Tax', color: 'blue' },
           { icon: FileText, label: 'CGST + SGST Tax', value: formatINR(totalCgst + totalSgst), sub: 'Total Taxes', color: 'amber' },
           { icon: CheckCircle2, label: 'Total Invoice Value', value: formatINR(totalInvoiceValue), sub: `Received: ${receivedCount} | Pending: ${notReceivedCount}`, color: 'emerald' },

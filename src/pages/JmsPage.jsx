@@ -12,7 +12,7 @@ import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
 import FyTabs from '../components/FyTabs'
 import SlotTabs from '../components/SlotTabs'
-import MonthTabs from '../components/MonthTabs'
+import MonthTabs, { MONTHS } from '../components/MonthTabs'
 import RecordDetailModal from '../components/RecordDetailModal'
 import PdfCell from '../components/PdfCell'
 import { loadMasters } from '../lib/masters'
@@ -596,7 +596,7 @@ export default function JmsPage() {
         /* ═══ CURRENT FY OVERALL ══════════════════════════════ */
         <div className="glass-card p-5 reveal-on-scroll">
           <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-            <TrendingUp size={15} className="text-jio-blue-400" /> FY {activeFy} Summary
+            <TrendingUp size={15} className="text-jio-blue-400" /> {(() => { if (activeMonth === 'all') return `FY ${activeFy} Summary`; const mn = MONTHS.find(m => m.value === String(activeMonth))?.label || ''; const fyStart = parseInt((activeFy || '').split('-')[0]) || new Date().getFullYear(); const yr = Number(activeMonth) >= 4 ? fyStart : fyStart + 1; return `${mn} ${yr} Summary`; })()}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
             <StatCard label="Total JMS"     value={sortedRecords.length}      color="blue"   />
