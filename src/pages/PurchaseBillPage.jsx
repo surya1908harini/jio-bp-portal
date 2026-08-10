@@ -14,7 +14,7 @@ import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
 import FyTabs from '../components/FyTabs'
 import SlotTabs from '../components/SlotTabs'
-import ModuleHeader from '../components/ModuleHeader'
+import MonthTabs from '../components/MonthTabs'
 
 const EMPTY_FORM = {
   trade_name: '',
@@ -102,6 +102,7 @@ export default function PurchaseBillPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [activeSlot, setActiveSlot] = useState('all')
+  const [activeMonth, setActiveMonth] = useState('all')
 
   useEffect(() => {
     const s = searchParams.get('search')
@@ -130,6 +131,11 @@ export default function PurchaseBillPage() {
       if (activeSlot === 'received' && !isReceived) return false
       if (activeSlot === 'not_received' && isReceived) return false
 
+      if (activeMonth !== 'all') {
+        const d = r.inv_date ? new Date(r.inv_date) : null
+        if (!d || isNaN(d.getTime()) || (d.getMonth() + 1) !== Number(activeMonth)) return false
+      }
+
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
         const trade = String(r.trade_name || '').toLowerCase()
@@ -141,7 +147,7 @@ export default function PurchaseBillPage() {
       }
       return true
     })
-  }, [fyRecords, activeSlot, searchQuery])
+  }, [fyRecords, activeSlot, activeMonth, searchQuery])
 
   // Attach S.NO sequentially to rows
   const sortedRecords = useMemo(() => {
@@ -322,19 +328,24 @@ export default function PurchaseBillPage() {
         ]}
       />
 
-      {/* FY Selection Tabs */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <FyTabs basePath="/purchase-bills" />
-        <div className="relative w-full sm:w-72">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search Trade Name, GSTIN, Inv No, HB/RB..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="input-field pl-9 py-2 text-xs"
-          />
+      {/* FY Selection Tabs & Month Filter */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <FyTabs basePath="/purchase-bills" />
+          <div className="relative w-full sm:w-72">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search Trade Name, GSTIN, Inv No, HB/RB..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="input-field pl-9 py-2 text-xs"
+            />
+          </div>
         </div>
+
+        {/* Month Selector Pills */}
+        <MonthTabs activeMonth={activeMonth} onChange={setActiveMonth} />
       </div>
 
       {/* Filter Pills */}

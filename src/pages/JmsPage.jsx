@@ -11,9 +11,7 @@ import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
 import FyTabs from '../components/FyTabs'
-import SlotTabs from '../components/SlotTabs'
-import RecordDetailModal from '../components/RecordDetailModal'
-import PdfCell from '../components/PdfCell'
+import MonthTabs from '../components/MonthTabs'
 import { loadMasters } from '../lib/masters'
 
 const EMPTY_FORM = {
@@ -223,7 +221,9 @@ export default function JmsPage() {
     return map
   }, [invoiceList])
 
-  // Apply slot filter based on status
+  const [activeMonth, setActiveMonth] = useState('all')
+
+  // Apply slot & month filter based on status and date
   const records = useMemo(() => {
     return fyRecords.map(r => {
       const woKey = String(r.work_order_number || '').trim().toLowerCase()
@@ -257,9 +257,16 @@ export default function JmsPage() {
       if (activeSlot === 'pending_qsd') return ['Pending QSD', 'QSD'].includes(r.status)
       if (activeSlot === 'pending_a3') return ['Pending A3', 'A3'].includes(r.status)
       if (activeSlot === 'released_a3') return ['Released by A3', 'Invoiced'].includes(r.status)
+
+      if (activeMonth !== 'all') {
+        const dateStr = r.jms_create_date || r.inv_date
+        const d = dateStr ? new Date(dateStr) : null
+        if (!d || isNaN(d.getTime()) || (d.getMonth() + 1) !== Number(activeMonth)) return false
+      }
+
       return true
     })
-  }, [fyRecords, activeSlot, budgetTimeframeMap, invPostingDateMap, invPaymentDateMap])
+  }, [fyRecords, activeSlot, activeMonth, budgetTimeframeMap, invPostingDateMap, invPaymentDateMap])
 
   // Sort records: Current FY on top, then newest on top by JMS Date (or fallback date), then JMS No
   const sortedRecords = useMemo(() => {
@@ -504,17 +511,22 @@ export default function JmsPage() {
       />
 
       {/* FY Tabs Control Box */}
-      <div className="flex items-center justify-between gap-3 flex-wrap bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
-        <FyTabs basePath="/jms" />
-        <SlotTabs slots={JMS_SLOTS} active={activeSlot} setActive={setActiveSlot} />
-        <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
-          <span className="text-slate-400 font-medium px-2.5 flex items-center gap-1">
-            <Filter size={12} className="text-jio-blue-400" /> Split FY By:
-          </span>
-          <div className="px-3 py-1.5 rounded-lg font-semibold text-slate-300 flex items-center gap-1">
-            <Calendar size={12} /> JMS Date
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
+          <FyTabs basePath="/jms" />
+          <SlotTabs slots={JMS_SLOTS} active={activeSlot} setActive={setActiveSlot} />
+          <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+            <span className="text-slate-400 font-medium px-2.5 flex items-center gap-1">
+              <Filter size={12} className="text-jio-blue-400" /> Split FY By:
+            </span>
+            <div className="px-3 py-1.5 rounded-lg font-semibold text-slate-300 flex items-center gap-1">
+              <Calendar size={12} /> JMS Date
+            </div>
           </div>
         </div>
+
+        {/* Month Filter */}
+        <MonthTabs activeMonth={activeMonth} onChange={setActiveMonth} />
       </div>
 
       {activeFy === 'overall' ? (

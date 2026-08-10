@@ -11,7 +11,7 @@ import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
 import ImportModal from '../components/ImportModal'
 import FyTabs from '../components/FyTabs'
-import SlotTabs from '../components/SlotTabs'
+import MonthTabs from '../components/MonthTabs'
 import RecordDetailModal from '../components/RecordDetailModal'
 import PdfCell from '../components/PdfCell'
 import { loadMasters } from '../lib/masters'
@@ -178,6 +178,8 @@ export default function InvoicePage() {
     })
   }, [allRecords, activeFy, budgetTimeframeMap, jmsPostingDateMap])
 
+  const [activeMonth, setActiveMonth] = useState('all')
+
   const sortedRecords = useMemo(() => {
     let result = records.filter(r => {
       const st = String(r.payment_status || r.status || '').toLowerCase()
@@ -188,6 +190,11 @@ export default function InvoicePage() {
       if (activeSlot === 'gst_only' && r.payment_status !== 'GST Payment Only Received') return false
       if (activeSlot === 'net_received' && r.payment_status !== 'Net Amount Received') return false
       if (activeSlot === 'full_paid' && r.payment_status !== 'Full Payment Received') return false
+
+      if (activeMonth !== 'all') {
+        const d = r.inv_date ? new Date(r.inv_date) : null
+        if (!d || isNaN(d.getTime()) || (d.getMonth() + 1) !== Number(activeMonth)) return false
+      }
 
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
@@ -206,7 +213,7 @@ export default function InvoicePage() {
       const db = new Date(b.inv_date || 0)
       return db - da
     })
-  }, [records, activeSlot, searchQuery])
+  }, [records, activeSlot, activeMonth, searchQuery])
 
   // Auto-calculate GST and Grand Total from Total
   const updateCalculations = (newForm, currentTaxMode) => {
@@ -570,19 +577,24 @@ export default function InvoicePage() {
         ]}
       />
 
-      {/* FY Selection Tabs */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <FyTabs basePath="/invoices" activeFy={activeFy} stats={fyStats} />
-        <div className="relative w-full sm:w-64">
-          <input
-            type="text"
-            placeholder="Search invoices..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="input-field pl-9 py-2 text-xs"
-          />
-          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      {/* FY Selection Tabs & Month Filter */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <FyTabs basePath="/invoices" activeFy={activeFy} stats={fyStats} />
+          <div className="relative w-full sm:w-64">
+            <input
+              type="text"
+              placeholder="Search invoices..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="input-field pl-9 py-2 text-xs"
+            />
+            <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
         </div>
+
+        {/* Month Selector Pills */}
+        <MonthTabs activeMonth={activeMonth} onChange={setActiveMonth} />
       </div>
 
       {/* Payment Status Filter Pills */}
