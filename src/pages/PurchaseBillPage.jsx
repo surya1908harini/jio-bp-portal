@@ -15,6 +15,7 @@ import ImportModal from '../components/ImportModal'
 import FyTabs from '../components/FyTabs'
 import SlotTabs from '../components/SlotTabs'
 import MonthTabs from '../components/MonthTabs'
+import ModuleHeader from '../components/ModuleHeader'
 
 const EMPTY_FORM = {
   trade_name: '',
@@ -149,19 +150,27 @@ export default function PurchaseBillPage() {
     })
   }, [fyRecords, activeSlot, activeMonth, searchQuery])
 
+  const monthRecords = useMemo(() => {
+    if (activeMonth === 'all') return fyRecords
+    return fyRecords.filter(r => {
+      const d = r.inv_date ? new Date(r.inv_date) : null
+      return d && !isNaN(d.getTime()) && (d.getMonth() + 1) === Number(activeMonth)
+    })
+  }, [fyRecords, activeMonth])
+
   // Attach S.NO sequentially to rows
   const sortedRecords = useMemo(() => {
     const sorted = [...filteredRecords].sort((a, b) => new Date(b.inv_date || 0) - new Date(a.inv_date || 0))
     return sorted.map((r, idx) => ({ ...r, s_no: idx + 1 }))
   }, [filteredRecords])
 
-  // Summary Metrics
-  const totalTaxable = useMemo(() => fyRecords.reduce((s, r) => s + (Number(r.taxable_value) || 0), 0), [fyRecords])
-  const totalCgst = useMemo(() => fyRecords.reduce((s, r) => s + (Number(r.cgst) || 0), 0), [fyRecords])
-  const totalSgst = useMemo(() => fyRecords.reduce((s, r) => s + (Number(r.sgst) || 0), 0), [fyRecords])
-  const totalInvoiceValue = useMemo(() => fyRecords.reduce((s, r) => s + (Number(r.invoice_value) || 0), 0), [fyRecords])
-  const receivedCount = useMemo(() => fyRecords.filter(r => String(r.remarks || '').toUpperCase().includes('RECEIVED') && !String(r.remarks || '').toUpperCase().includes('NOT')).length, [fyRecords])
-  const notReceivedCount = useMemo(() => fyRecords.length - receivedCount, [fyRecords, receivedCount])
+  // Summary Metrics (Dynamically updated by selected Month)
+  const totalTaxable = useMemo(() => monthRecords.reduce((s, r) => s + (Number(r.taxable_value) || 0), 0), [monthRecords])
+  const totalCgst = useMemo(() => monthRecords.reduce((s, r) => s + (Number(r.cgst) || 0), 0), [monthRecords])
+  const totalSgst = useMemo(() => monthRecords.reduce((s, r) => s + (Number(r.sgst) || 0), 0), [monthRecords])
+  const totalInvoiceValue = useMemo(() => monthRecords.reduce((s, r) => s + (Number(r.invoice_value) || 0), 0), [monthRecords])
+  const receivedCount = useMemo(() => monthRecords.filter(r => String(r.remarks || '').toUpperCase().includes('RECEIVED') && !String(r.remarks || '').toUpperCase().includes('NOT')).length, [monthRecords])
+  const notReceivedCount = useMemo(() => monthRecords.length - receivedCount, [monthRecords, receivedCount])
 
   const saveMutation = useMutation({
     mutationFn: (payload) => {
@@ -321,7 +330,7 @@ export default function PurchaseBillPage() {
           </div>
         }
         stats={[
-          { icon: ShoppingBag, label: 'Total Purchase Bills', value: fyRecords.length, sub: `FY ${activeFy}`, color: 'purple' },
+          { icon: ShoppingBag, label: 'Total Purchase Bills', value: monthRecords.length, sub: activeMonth === 'all' ? `FY ${activeFy}` : `Filtered Month`, color: 'purple' },
           { icon: DollarSign, label: 'Taxable Value', value: formatINR(totalTaxable), sub: 'Before Tax', color: 'blue' },
           { icon: FileText, label: 'CGST + SGST Tax', value: formatINR(totalCgst + totalSgst), sub: 'Total Taxes', color: 'amber' },
           { icon: CheckCircle2, label: 'Total Invoice Value', value: formatINR(totalInvoiceValue), sub: `Received: ${receivedCount} | Pending: ${notReceivedCount}`, color: 'emerald' },

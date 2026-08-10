@@ -179,10 +179,16 @@ export default function InvoicePage() {
     })
   }, [allRecords, activeFy, budgetTimeframeMap, jmsPostingDateMap])
 
-  const [activeMonth, setActiveMonth] = useState('all')
+  const monthRecords = useMemo(() => {
+    if (activeMonth === 'all') return records
+    return records.filter(r => {
+      const d = r.inv_date ? new Date(r.inv_date) : null
+      return d && !isNaN(d.getTime()) && (d.getMonth() + 1) === Number(activeMonth)
+    })
+  }, [records, activeMonth])
 
   const sortedRecords = useMemo(() => {
-    let result = records.filter(r => {
+    let result = monthRecords.filter(r => {
       const st = String(r.payment_status || r.status || '').toLowerCase()
       if (activeSlot === 'cancelled') return st.includes('cancel')
       if (activeSlot !== 'cancelled' && activeSlot !== 'all' && st.includes('cancel')) return false
@@ -191,11 +197,6 @@ export default function InvoicePage() {
       if (activeSlot === 'gst_only' && r.payment_status !== 'GST Payment Only Received') return false
       if (activeSlot === 'net_received' && r.payment_status !== 'Net Amount Received') return false
       if (activeSlot === 'full_paid' && r.payment_status !== 'Full Payment Received') return false
-
-      if (activeMonth !== 'all') {
-        const d = r.inv_date ? new Date(r.inv_date) : null
-        if (!d || isNaN(d.getTime()) || (d.getMonth() + 1) !== Number(activeMonth)) return false
-      }
 
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
@@ -214,7 +215,7 @@ export default function InvoicePage() {
       const db = new Date(b.inv_date || 0)
       return db - da
     })
-  }, [records, activeSlot, activeMonth, searchQuery])
+  }, [monthRecords, activeSlot, searchQuery])
 
   // Auto-calculate GST and Grand Total from Total
   const updateCalculations = (newForm, currentTaxMode) => {
@@ -302,8 +303,8 @@ export default function InvoicePage() {
   })
 
   // Current records stats (excluding cancelled and IOCL records from income/profit sums)
-  // IOCL invoices belong to another party — their payments must NOT count in our income
-  const activeInvoiceRecords = records.filter(r => {
+  // Dynamically updated by selected Month!
+  const activeInvoiceRecords = monthRecords.filter(r => {
     const desc = String(r.work_description || '')
     const st = String(r.payment_status || r.status || '').toLowerCase()
     const isCancelled = desc.includes('[Cancelled:') || st.includes('cancel')
@@ -581,7 +582,7 @@ export default function InvoicePage() {
           </div>
         }
         stats={[
-          { icon: Receipt, label: 'Total Invoices', value: records.length, sub: `Grand Total: ${formatINR(totalGT)}`, color: 'purple' },
+          { icon: Receipt, label: 'Total Invoices', value: monthRecords.length, sub: `Grand Total: ${formatINR(totalGT)}`, color: 'purple' },
           { icon: CheckCircle2, label: 'Full Payment Received', value: fullPaidCnt, sub: `Received: ${formatINR(totalRec)}`, color: 'green' },
           { icon: DollarSign, label: 'Pending Invoice Amount', value: formatINR(pendingAmount), sub: 'Total Pending ₹ Amount', color: 'rose' },
           { icon: Calculator, label: 'Pending Invoices Count', value: pendingCount, sub: 'Invoices Pending Payment', color: 'amber' },
