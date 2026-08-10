@@ -160,6 +160,15 @@ export default function JmsPage() {
   const [editRow,    setEditRow]    = useState(null)
   const [form,       setForm]       = useState(EMPTY_FORM)
   const [selectedRowModal, setSelectedRowModal] = useState(null)
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
+
+  useEffect(() => {
+    const slot = searchParams.get('slot')
+    if (slot) setActiveSlot(slot)
+    
+    const search = searchParams.get('search')
+    if (search) setSearchQuery(search)
+  }, [searchParams])
 
   // Fetch all records to support flexible splitting
   const { data: allRecords = [], isLoading } = useQuery({

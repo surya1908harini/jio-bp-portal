@@ -109,12 +109,16 @@ export default function InvoicePage() {
   const [taxMode, setTaxMode]       = useState('CGST_SGST') // 'CGST_SGST' or 'IGST'
   const [form, setForm]             = useState(EMPTY_FORM)
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
-  const [activeSlot, setActiveSlot] = useState('all')
+  const [activeSlot, setActiveSlot] = useState(searchParams.get('slot') || 'all')
   const [selectedRowModal, setSelectedRowModal] = useState(null)
 
   useEffect(() => {
     const s = searchParams.get('search')
     if (s) setSearchQuery(s)
+    const slot = searchParams.get('slot')
+    if (slot) setActiveSlot(slot)
+    const month = searchParams.get('month')
+    if (month) setActiveMonth(month)
   }, [searchParams])
 
   const PAYMENT_SLOTS = [
@@ -179,7 +183,7 @@ export default function InvoicePage() {
     })
   }, [allRecords, activeFy, budgetTimeframeMap, jmsPostingDateMap])
 
-  const [activeMonth, setActiveMonth] = useState('all')
+  const [activeMonth, setActiveMonth] = useState(searchParams.get('month') || 'all')
 
   const monthRecords = useMemo(() => {
     if (activeMonth === 'all') return records
