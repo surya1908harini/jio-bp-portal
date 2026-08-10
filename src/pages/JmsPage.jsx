@@ -231,7 +231,7 @@ export default function JmsPage() {
       const invKey = String(r.inv_number || '').trim().toLowerCase()
 
       const timeframeDays = budgetTimeframeMap[woKey] || 30
-      const baseDate = r.inv_posting_date || invPostingDateMap[jmsKey] || invPostingDateMap[invKey] || r.jms_create_date || r.inv_date
+      const postingDate = r.inv_posting_date || invPostingDateMap[jmsKey] || invPostingDateMap[invKey] || ''
       const payDate = r.payment_date || r.full_amount_received_date || invPaymentDateMap[jmsKey] || invPaymentDateMap[invKey] || ''
 
       const desc = String(r.work_description || '')
@@ -241,10 +241,10 @@ export default function JmsPage() {
       return {
         ...r,
         status: isCancelled ? 'Cancelled / Deleted' : r.status,
-        inv_posting_date: baseDate,
+        inv_posting_date: postingDate,
         payment_date: payDate,
         payment_timeframe_days: timeframeDays,
-        expected_payment_date: calculateExpectedPaymentDate(baseDate, timeframeDays),
+        expected_payment_date: postingDate ? calculateExpectedPaymentDate(postingDate, timeframeDays) : '',
       }
     }).filter(r => {
       const st = String(r.status || '').toLowerCase()

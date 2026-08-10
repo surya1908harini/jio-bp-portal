@@ -166,14 +166,14 @@ export default function InvoicePage() {
       const synced = applyInvoiceDateAndStatusRules(r)
       const woKey = String(r.work_order_number || '').trim().toLowerCase()
       const jmsKey = String(r.jms_no || '').trim().toLowerCase()
-      
+      const invKey = String(r.inv_number || '').trim().toLowerCase()
       const timeframeDays = budgetTimeframeMap[woKey] || 30
       synced.payment_timeframe_days = timeframeDays
 
-      // Link Invoice Posting Date from invoice or linked JMS record (#2559541)
-      const effectivePostingDate = synced.inv_posting_date || jmsPostingDateMap[jmsKey] || synced.inv_date
-      synced.inv_posting_date = effectivePostingDate
-      synced.expected_payment_date = calculateExpectedPaymentDate(effectivePostingDate, timeframeDays)
+      // Link Invoice Posting Date from invoice or linked JMS record
+      const postingDate = synced.inv_posting_date || jmsPostingDateMap[jmsKey] || jmsPostingDateMap[invKey] || ''
+      synced.inv_posting_date = postingDate
+      synced.expected_payment_date = postingDate ? calculateExpectedPaymentDate(postingDate, timeframeDays) : ''
       return synced
     })
   }, [allRecords, activeFy, budgetTimeframeMap, jmsPostingDateMap])
