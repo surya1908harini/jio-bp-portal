@@ -7,37 +7,20 @@ export default function FyTabs({ basePath }) {
   const navigate = useNavigate()
   const activeFy = fy || searchParams.get('fy') || CURRENT_FY
 
-  const handleSelect = (targetFy) => {
-    navigate(`${basePath}?fy=${targetFy}`, { replace: true })
+  const handleSelect = (e) => {
+    navigate(`${basePath}?fy=${e.target.value}`, { replace: true })
   }
 
   return (
-    <div className="flex items-center gap-1.5 p-1.5 bg-slate-900/90 border border-slate-800 rounded-2xl w-fit backdrop-blur-xl shadow-lg flex-wrap">
-      <button
-        type="button"
-        onClick={() => handleSelect('overall')}
-        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 clickable-btn ${
-          activeFy === 'overall'
-            ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md shadow-purple-600/30 scale-[1.02]'
-            : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-        }`}
-      >
-        Overall FY
-      </button>
+    <select
+      value={activeFy}
+      onChange={handleSelect}
+      className="input-field py-1.5 px-3 text-xs font-semibold bg-slate-900 border border-slate-700 w-auto rounded-xl"
+    >
+      <option value="overall">Overall FY</option>
       {FINANCIAL_YEARS.map(f => (
-        <button
-          type="button"
-          key={f}
-          onClick={() => handleSelect(f)}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 clickable-btn ${
-            activeFy === f
-              ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-md shadow-purple-600/30 scale-[1.02]'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-          }`}
-        >
-          FY {f}
-        </button>
+        <option key={f} value={f}>FY {f}</option>
       ))}
-    </div>
+    </select>
   )
 }

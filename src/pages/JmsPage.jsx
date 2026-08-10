@@ -524,34 +524,33 @@ export default function JmsPage() {
         }
       />
 
-      {/* FY Tabs Control Box */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-3 flex-wrap bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
+      {/* Filters Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
+        <div className="flex items-center gap-2 flex-wrap">
           <FyTabs basePath="/jms" />
+          <MonthTabs activeMonth={activeMonth} onChange={setActiveMonth} />
           <SlotTabs slots={JMS_SLOTS} active={activeSlot} setActive={setActiveSlot} />
-          <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
-            <span className="text-slate-400 font-medium px-2.5 flex items-center gap-1">
-              <Filter size={12} className="text-jio-blue-400" /> Split FY By:
-            </span>
-            <div className="px-3 py-1.5 rounded-lg font-semibold text-slate-300 flex items-center gap-1">
-              <Calendar size={12} /> JMS Date
-            </div>
+        </div>
+        <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+          <span className="text-slate-400 font-medium px-2.5 flex items-center gap-1">
+            <Filter size={12} className="text-jio-blue-400" /> Split FY By:
+          </span>
+          <div className="px-3 py-1 text-xs rounded-lg font-semibold text-slate-300 flex items-center gap-1">
+            <Calendar size={12} /> JMS Date
           </div>
         </div>
-
-        {/* Month Filter */}
-        <MonthTabs activeMonth={activeMonth} onChange={setActiveMonth} />
       </div>
 
       {activeFy === 'overall' ? (
         /* ═══ OVERALL — ALL FINANCIAL YEARS ═══════════════════ */
-        <div className="glass-card p-5 reveal-on-scroll">
-          <h2 className="text-sm font-semibold text-white mb-4 flex items-center justify-between">
+        <details className="glass-card group mb-2">
+          <summary className="p-3 text-xs font-bold text-white cursor-pointer select-none flex items-center justify-between hover:bg-white/5 transition-colors">
             <span className="flex items-center gap-2">
-              <Globe size={15} className="text-jio-blue-400" /> All Financial Years — Overall View
+              <Globe size={14} className="text-jio-blue-400" /> All Financial Years — Overall View
             </span>
-          </h2>
-          <div className="overflow-x-auto">
+            <span className="text-slate-400 text-[10px] group-open:rotate-180 transition-transform">▼ Click to Expand</span>
+          </summary>
+          <div className="p-4 border-t border-slate-700/50 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-700">
@@ -591,23 +590,28 @@ export default function JmsPage() {
               </tfoot>
             </table>
           </div>
-        </div>
+        </details>
       ) : (
         /* ═══ CURRENT FY OVERALL ══════════════════════════════ */
-        <div className="glass-card p-5 reveal-on-scroll">
-          <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-            <TrendingUp size={15} className="text-jio-blue-400" /> {(() => { if (activeMonth === 'all') return `FY ${activeFy} Summary`; const mn = MONTHS.find(m => m.value === String(activeMonth))?.label || ''; const fyStart = parseInt((activeFy || '').split('-')[0]) || new Date().getFullYear(); const yr = Number(activeMonth) >= 4 ? fyStart : fyStart + 1; return `${mn} ${yr} Summary`; })()}
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-            <StatCard label="Total JMS"     value={sortedRecords.length}      color="blue"   />
-            <StatCard label="Pending A1"     value={(byStatus['Pending A1'] || 0) + (byStatus['Pending'] || 0) + (byStatus['A1'] || 0)} color="amber" />
-            <StatCard label="Pending A2"     value={(byStatus['Pending A2'] || 0) + (byStatus['A2'] || 0)} color="purple" />
-            <StatCard label="Pending QSD"    value={(byStatus['Pending QSD'] || 0) + (byStatus['QSD'] || 0)} color="cyan" />
-            <StatCard label="Pending A3"     value={(byStatus['Pending A3'] || 0) + (byStatus['A3'] || 0)} color="blue" />
-            <StatCard label="Released by A3" value={(byStatus['Released by A3'] || 0) + (byStatus['Invoiced'] || 0)} color="green" />
-            <StatCard label="Total Net Amt"  value={formatINR(totalNetAmount)} color="green"  />
+        <details className="glass-card group mb-2">
+          <summary className="p-3 text-xs font-bold text-white cursor-pointer select-none flex items-center justify-between hover:bg-white/5 transition-colors">
+            <span className="flex items-center gap-2">
+              <TrendingUp size={14} className="text-jio-blue-400" /> {(() => { if (activeMonth === 'all') return `FY ${activeFy} Summary`; const mn = MONTHS.find(m => m.value === String(activeMonth))?.label || ''; const fyStart = parseInt((activeFy || '').split('-')[0]) || new Date().getFullYear(); const yr = Number(activeMonth) >= 4 ? fyStart : fyStart + 1; return `${mn} ${yr} Summary`; })()}
+            </span>
+            <span className="text-slate-400 text-[10px] group-open:rotate-180 transition-transform">▼ Click to Expand</span>
+          </summary>
+          <div className="p-4 border-t border-slate-700/50">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+              <StatCard label="Total JMS"     value={sortedRecords.length}      color="blue"   />
+              <StatCard label="Pending A1"     value={(byStatus['Pending A1'] || 0) + (byStatus['Pending'] || 0) + (byStatus['A1'] || 0)} color="amber" />
+              <StatCard label="Pending A2"     value={(byStatus['Pending A2'] || 0) + (byStatus['A2'] || 0)} color="purple" />
+              <StatCard label="Pending QSD"    value={(byStatus['Pending QSD'] || 0) + (byStatus['QSD'] || 0)} color="cyan" />
+              <StatCard label="Pending A3"     value={(byStatus['Pending A3'] || 0) + (byStatus['A3'] || 0)} color="blue" />
+              <StatCard label="Released by A3" value={(byStatus['Released by A3'] || 0) + (byStatus['Invoiced'] || 0)} color="green" />
+              <StatCard label="Total Net Amt"  value={formatINR(totalNetAmount)} color="green"  />
+            </div>
           </div>
-        </div>
+        </details>
       )}
 
       {/* Table */}

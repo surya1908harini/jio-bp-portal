@@ -337,28 +337,24 @@ export default function PurchaseBillPage() {
         ]}
       />
 
-      {/* FY Selection Tabs & Month Filter */}
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* Filters Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
+        <div className="flex items-center gap-2 flex-wrap">
           <FyTabs basePath="/purchase-bills" />
-          <div className="relative w-full sm:w-72">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search Trade Name, GSTIN, Inv No, HB/RB..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="input-field pl-9 py-2 text-xs"
-            />
-          </div>
+          <MonthTabs activeMonth={activeMonth} onChange={setActiveMonth} />
+          <SlotTabs slots={REMARK_SLOTS} activeSlot={activeSlot} onChange={setActiveSlot} />
         </div>
-
-        {/* Month Selector Pills */}
-        <MonthTabs activeMonth={activeMonth} onChange={setActiveMonth} />
+        <div className="relative w-full sm:w-72 shrink-0">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search Trade Name, GSTIN, Inv No, HB/RB..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="input-field pl-9 py-2 text-xs"
+          />
+        </div>
       </div>
-
-      {/* Filter Pills */}
-      <SlotTabs slots={REMARK_SLOTS} activeSlot={activeSlot} onChange={setActiveSlot} />
 
       {/* Main Table */}
       <div className="glass-card p-5 reveal-on-scroll">

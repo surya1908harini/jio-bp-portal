@@ -409,38 +409,25 @@ export default function BudgetPage() {
         ]}
       />
 
-      <FyTabs basePath="/budget" />
-
       {/* Filter & View Controls Bar */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 backdrop-blur-xl shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 reveal-on-scroll">
-        {/* Search Bar */}
-        <div className="relative w-full md:w-80">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search work orders, operations, ARC..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
+        <div className="flex items-center gap-2 flex-wrap">
+          <FyTabs basePath="/budget" />
+          <SlotTabs slots={VALIDITY_SLOTS} activeSlot={activeSlot} onChange={setActiveSlot} />
         </div>
 
-        {/* Slot Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto">
-          {VALIDITY_SLOTS.map(slot => (
-            <button
-              key={slot.key}
-              onClick={() => setActiveSlot(slot.key)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                activeSlot === slot.key
-                  ? 'bg-purple-600 text-white font-semibold shadow-md shadow-purple-600/30'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              {slot.label}
-            </button>
-          ))}
-        </div>
+        {/* Search & Mode Toggle */}
+        <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
+          <div className="relative w-full sm:w-64">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search work orders, operations, ARC..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="input-field pl-9 py-2 text-xs"
+            />
+          </div>
 
         {/* Grid / List View Mode Toggle Buttons */}
         <div className="flex items-center gap-1 p-1 bg-slate-950 rounded-xl border border-slate-800 shrink-0">
@@ -466,6 +453,7 @@ export default function BudgetPage() {
           </button>
         </div>
       </div>
+    </div>
 
       {/* ── Content View Rendering (Grid Cards vs List Table) ── */}
       {viewMode === 'grid' ? (

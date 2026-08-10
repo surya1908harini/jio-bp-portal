@@ -591,46 +591,47 @@ export default function InvoicePage() {
         ]}
       />
 
-      {/* FY Selection Tabs & Month Filter */}
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* Filters Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
+        <div className="flex items-center gap-2 flex-wrap">
           <FyTabs basePath="/invoices" activeFy={activeFy} stats={fyStats} />
-          <div className="relative w-full sm:w-64">
-            <input
-              type="text"
-              placeholder="Search invoices..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="input-field pl-9 py-2 text-xs"
-            />
-            <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          </div>
+          <MonthTabs activeMonth={activeMonth} onChange={setActiveMonth} />
+          <SlotTabs slots={PAYMENT_SLOTS} activeSlot={activeSlot} onChange={setActiveSlot} />
         </div>
-
-        {/* Month Selector Pills */}
-        <MonthTabs activeMonth={activeMonth} onChange={setActiveMonth} />
+        <div className="relative w-full sm:w-64 shrink-0">
+          <input
+            type="text"
+            placeholder="Search invoices..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="input-field pl-9 py-2 text-xs"
+          />
+          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        </div>
       </div>
-
-      {/* Payment Status Filter Pills */}
-      <SlotTabs slots={PAYMENT_SLOTS} activeSlot={activeSlot} onChange={setActiveSlot} />
 
       {/* Table & Overview Summary */}
       {activeFy !== 'overall' && (
-        <div className="glass-card p-5">
-          <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-            <TrendingUp size={15} className="text-jio-blue-400" /> {(() => { if (activeMonth === 'all') return `FY ${activeFy} Summary`; const mn = MONTHS.find(m => m.value === String(activeMonth))?.label || ''; const fyStart = parseInt((activeFy || '').split('-')[0]) || new Date().getFullYear(); const yr = Number(activeMonth) >= 4 ? fyStart : fyStart + 1; return `${mn} ${yr} Summary`; })()}
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3.5">
-            <StatCard label="Total Invoices"  value={monthRecords.length}      color="blue"   />
-            <StatCard label="Grand Total"     value={formatINR(totalGT)}      color="green"  />
-            <StatCard label="TDS"             value={formatINR(totalTDS)}     color="amber"  />
-            <StatCard label="SD/Retention"    value={formatINR(totalSD)}      color="purple" />
-            <StatCard label="Amt Received"    value={formatINR(totalRec)}     color="cyan"   />
-            <StatCard label="Full Paid"        value={fullPaidCnt}             color="green"  />
-            <StatCard label="Net Received"     value={netAmtCnt}               color="blue"   />
-            <StatCard label="GST Only"         value={gstOnlyCnt}              color="amber"  />
+        <details className="glass-card group mb-2">
+          <summary className="p-3 text-xs font-bold text-white cursor-pointer select-none flex items-center justify-between hover:bg-white/5 transition-colors">
+            <span className="flex items-center gap-2">
+              <TrendingUp size={14} className="text-jio-blue-400" /> {(() => { if (activeMonth === 'all') return `FY ${activeFy} Summary`; const mn = MONTHS.find(m => m.value === String(activeMonth))?.label || ''; const fyStart = parseInt((activeFy || '').split('-')[0]) || new Date().getFullYear(); const yr = Number(activeMonth) >= 4 ? fyStart : fyStart + 1; return `${mn} ${yr} Summary`; })()}
+            </span>
+            <span className="text-slate-400 text-[10px] group-open:rotate-180 transition-transform">▼ Click to Expand</span>
+          </summary>
+          <div className="p-4 border-t border-slate-700/50">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3.5">
+              <StatCard label="Total Invoices"  value={monthRecords.length}      color="blue"   />
+              <StatCard label="Grand Total"     value={formatINR(totalGT)}      color="green"  />
+              <StatCard label="TDS"             value={formatINR(totalTDS)}     color="amber"  />
+              <StatCard label="SD/Retention"    value={formatINR(totalSD)}      color="purple" />
+              <StatCard label="Amt Received"    value={formatINR(totalRec)}     color="cyan"   />
+              <StatCard label="Full Paid"        value={fullPaidCnt}             color="green"  />
+              <StatCard label="Net Received"     value={netAmtCnt}               color="blue"   />
+              <StatCard label="GST Only"         value={gstOnlyCnt}              color="amber"  />
+            </div>
           </div>
-        </div>
+        </details>
       )}
 
       <div className="glass-card p-4">
