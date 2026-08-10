@@ -459,6 +459,16 @@ export default function InvoicePage() {
     }
   }
 
+  const handleBulkDelete = async (selectedRows) => {
+    if (window.confirm(`Are you sure you want to delete ${selectedRows.length} selected Invoices?`)) {
+      for (const r of selectedRows) {
+        await invoiceDb.delete(r.id)
+      }
+      qc.invalidateQueries(['invoices'])
+      toast.success(`Deleted ${selectedRows.length} Invoices successfully ✓`)
+    }
+  }
+
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
   const handleExport = () => {
     const exportRows = sortedRecords.map(r => ({

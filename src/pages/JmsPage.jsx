@@ -417,6 +417,17 @@ export default function JmsPage() {
       }
     }
   }
+
+  const handleBulkDelete = async (selectedRows) => {
+    if (window.confirm(`Are you sure you want to delete ${selectedRows.length} selected JMS records?`)) {
+      for (const r of selectedRows) {
+        await jmsDb.delete(r.id)
+      }
+      qc.invalidateQueries(['jms'])
+      toast.success(`Deleted ${selectedRows.length} JMS records successfully ✓`)
+    }
+  }
+
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
   const handleExport = () => {
     const exportRows = sortedRecords.map(r => ({
