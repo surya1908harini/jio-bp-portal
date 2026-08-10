@@ -104,27 +104,32 @@ export default function DashboardPage() {
 
   // Monthly Activity Trend Data
   const trendData = useMemo(() => {
-    const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar']
-    const monthCounts = months.map(m => ({ name: m, jms: 0, invoices: 0 }))
+    const months = [
+      { name: 'Apr', num: 4 }, { name: 'May', num: 5 }, { name: 'Jun', num: 6 },
+      { name: 'Jul', num: 7 }, { name: 'Aug', num: 8 }, { name: 'Sep', num: 9 },
+      { name: 'Oct', num: 10 }, { name: 'Nov', num: 11 }, { name: 'Dec', num: 12 },
+      { name: 'Jan', num: 1 }, { name: 'Feb', num: 2 }, { name: 'Mar', num: 3 },
+    ]
+    const monthCounts = months.map(m => ({ name: m.name, num: m.num, jms: 0, invoices: 0 }))
 
-    const getMonthAbbrev = (dateStr) => {
+    const getMonthNum = (dateStr) => {
       if (!dateStr) return null
       const d = new Date(dateStr)
       if (isNaN(d.getTime())) return null
-      return d.toLocaleString('default', { month: 'short' })
+      return d.getMonth() + 1
     }
 
     trendJmsList.forEach(j => {
       const date = j.jms_create_date || j.inv_date || j.a1_release_date || j.created_at
-      const m = getMonthAbbrev(date)
-      const item = monthCounts.find(x => x.name === m)
+      const mNum = getMonthNum(date)
+      const item = monthCounts.find(x => x.num === mNum)
       if (item) item.jms += 1
     })
 
     trendInvList.forEach(inv => {
       const date = inv.inv_date || inv.amount_received_date || inv.created_at
-      const m = getMonthAbbrev(date)
-      const item = monthCounts.find(x => x.name === m)
+      const mNum = getMonthNum(date)
+      const item = monthCounts.find(x => x.num === mNum)
       if (item) item.invoices += 1
     })
 
@@ -360,8 +365,11 @@ export default function DashboardPage() {
                   isAnimationActive
                   animationDuration={1600}
                   animationEasing="ease-out"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => navigate(`/jms?fy=${trendFy}`)}
+                  activeDot={{ cursor: 'pointer', onClick: (e, payload) => {
+                    if (payload && payload.payload && payload.payload.num) {
+                      navigate(`/jms?fy=${trendFy}&month=${payload.payload.num}`);
+                    }
+                  }}}
                 />
                 <Area
                   type="monotone"
@@ -374,8 +382,11 @@ export default function DashboardPage() {
                   isAnimationActive
                   animationDuration={1600}
                   animationEasing="ease-out"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => navigate(`/invoices?fy=${trendFy}`)}
+                  activeDot={{ cursor: 'pointer', onClick: (e, payload) => {
+                    if (payload && payload.payload && payload.payload.num) {
+                      navigate(`/invoices?fy=${trendFy}&month=${payload.payload.num}`);
+                    }
+                  }}}
                 />
               </AreaChart>
             </ResponsiveContainer>

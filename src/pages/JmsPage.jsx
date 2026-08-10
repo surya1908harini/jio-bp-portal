@@ -162,12 +162,17 @@ export default function JmsPage() {
   const [selectedRowModal, setSelectedRowModal] = useState(null)
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
 
+  const [activeMonth, setActiveMonth] = useState(searchParams.get('month') || 'all')
+
   useEffect(() => {
     const slot = searchParams.get('slot')
     if (slot) setActiveSlot(slot)
     
     const search = searchParams.get('search')
     if (search) setSearchQuery(search)
+
+    const month = searchParams.get('month')
+    if (month) setActiveMonth(month)
   }, [searchParams])
 
   // Fetch all records to support flexible splitting
@@ -233,7 +238,7 @@ export default function JmsPage() {
     return map
   }, [invoiceList])
 
-  const [activeMonth, setActiveMonth] = useState('all')
+
 
   // Apply slot & month filter based on status and date
   const records = useMemo(() => {
