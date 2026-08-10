@@ -321,7 +321,7 @@ export default function Layout() {
             </div>
             <div>
               <p className="text-sm font-extrabold text-white leading-tight tracking-tight">MMC</p>
-              <p className="text-[10px] font-semibold text-purple-400 uppercase tracking-wider leading-tight">Contractor Suite</p>
+              <p className="text-[10px] font-semibold text-purple-400 uppercase tracking-wider leading-tight">Contractor</p>
             </div>
           </div>
         )}
