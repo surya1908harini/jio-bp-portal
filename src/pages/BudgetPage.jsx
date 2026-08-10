@@ -236,6 +236,15 @@ export default function BudgetPage() {
   const handleClose  = () => { setFormOpen(false); setEditRow(null); setForm(EMPTY_FORM) }
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
   const handleDelete = (id) => { if (window.confirm('Delete this budget entry?')) deleteMutation.mutate(id) }
+  const handleBulkDelete = async (selectedRows) => {
+    if (window.confirm(`Are you sure you want to delete ${selectedRows.length} selected Budget Work Orders?`)) {
+      for (const r of selectedRows) {
+        await budgetDb.delete(r.id)
+      }
+      qc.invalidateQueries(['budget'])
+      toast.success(`Deleted ${selectedRows.length} Budget Work Orders successfully ✓`)
+    }
+  }
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
   const handleExport = () => {
     const exportRows = sortedRecords.map(r => {
@@ -638,8 +647,16 @@ export default function BudgetPage() {
       ) : (
         /* List Table View Mode */
         <div className="glass-card p-4">
-          <DataTable columns={columns} data={sortedRecords} loading={isLoading}
-            emptyMessage="No budget entries found for selected criteria" onRowClick={(row) => setSelectedRow(row)} />
+          <DataTable
+            columns={columns}
+            data={sortedRecords}
+            loading={isLoading}
+            isAdmin={isAdmin}
+            enableSelection={true}
+            onBulkDelete={handleBulkDelete}
+            emptyMessage="No budget entries found for selected criteria"
+            onRowClick={(row) => setSelectedRow(row)}
+          />
         </div>
       )}
 

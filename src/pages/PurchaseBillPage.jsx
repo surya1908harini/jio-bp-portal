@@ -48,15 +48,19 @@ const PB_IMPORT_COLUMNS = [
   'taxable_value', 'cgst', 'sgst', 'invoice_value', 'hb_rb', 'remarks'
 ]
 
-function RemarkBadge({ remarks }) {
+function RemarkBadge({ remarks, onClick }) {
   const isReceived = String(remarks || '').toUpperCase().includes('RECEIVED') && !String(remarks || '').toUpperCase().includes('NOT')
   return (
-    <span className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold tracking-wide ${
-      isReceived
-        ? 'bg-emerald-950/90 text-emerald-400 border border-emerald-700/60 shadow-sm shadow-emerald-500/10'
-        : 'bg-amber-950/90 text-amber-400 border border-amber-700/60 shadow-sm shadow-amber-500/10'
-    }`}>
-      {isReceived ? 'BILL RECEIVED' : 'BILL NOT RECEIVED'}
+    <span
+      onClick={onClick}
+      className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold tracking-wide cursor-pointer transition-all hover:scale-105 select-none ${
+        isReceived
+          ? 'bg-emerald-950/90 text-emerald-400 border border-emerald-700/60 shadow-sm shadow-emerald-500/10 hover:bg-emerald-900'
+          : 'bg-amber-950/90 text-amber-400 border border-amber-700/60 shadow-sm shadow-amber-500/10 hover:bg-amber-900'
+      }`}
+      title="Click to toggle Bill Received status"
+    >
+      {isReceived ? 'BILL RECEIVED ✎' : 'BILL NOT RECEIVED ✎'}
     </span>
   )
 }
@@ -203,6 +207,26 @@ export default function PurchaseBillPage() {
     }
   }
 
+  const handleBulkDelete = async (selectedRows) => {
+    if (window.confirm(`Are you sure you want to delete ${selectedRows.length} selected Purchase Bills?`)) {
+      for (const r of selectedRows) {
+        await purchaseBillDb.delete(r.id)
+      }
+      qc.invalidateQueries(['purchase_bills'])
+      toast.success(`Deleted ${selectedRows.length} Purchase Bills successfully ✓`)
+    }
+  }
+
+  const handleToggleRemarks = (row, e) => {
+    e.stopPropagation()
+    const isCurrentlyReceived = String(row.remarks || '').toUpperCase().includes('RECEIVED') && !String(row.remarks || '').toUpperCase().includes('NOT')
+    const newRemarks = isCurrentlyReceived ? 'BILL NOT RECEIVED' : 'BILL RECEIVED'
+    purchaseBillDb.update(row.id, { ...row, remarks: newRemarks }).then(() => {
+      qc.invalidateQueries(['purchase_bills'])
+      toast.success(`Bill status updated to '${newRemarks}' ✓`)
+    })
+  }
+
   // Auto-calculate CGST (9%), SGST (9%), and Invoice Value when Taxable Value changes
   const handleFieldChange = (e) => {
     const { name, value } = e.target
@@ -270,7 +294,7 @@ export default function PurchaseBillPage() {
     { key: 'sgst', header: 'State/UT Tax (₹)', render: r => <span className="text-slate-300 font-mono">{formatINR(r.sgst)}</span> },
     { key: 'invoice_value', header: 'Invoice Value', render: r => <span className="text-emerald-400 font-bold">{formatINR(r.invoice_value)}</span> },
     { key: 'hb_rb', header: 'HB/RB', render: r => <span className="font-mono text-purple-300 font-semibold">{r.hb_rb || '—'}</span> },
-    { key: 'remarks', header: 'REMARKS', render: r => <RemarkBadge remarks={r.remarks} /> },
+    { key: 'remarks', header: 'REMARKS', render: r => <RemarkBadge remarks={r.remarks} onClick={e => handleToggleRemarks(r, e)} /> },
   ]
 
   return (
@@ -323,6 +347,8 @@ export default function PurchaseBillPage() {
           columns={columns}
           isLoading={isLoading}
           isAdmin={isAdmin}
+          enableSelection={true}
+          onBulkDelete={handleBulkDelete}
           onEdit={openEdit}
           onDelete={handleDelete}
         />

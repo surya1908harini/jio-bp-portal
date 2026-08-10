@@ -1,12 +1,22 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Trash2, CheckSquare, Square } from 'lucide-react'
 
-export default function DataTable({ columns, data, loading, emptyMessage = 'No records found', onRowClick = null }) {
+export default function DataTable({
+  columns,
+  data,
+  loading,
+  emptyMessage = 'No records found',
+  onRowClick = null,
+  enableSelection = true,
+  onBulkDelete = null,
+  isAdmin = true
+}) {
   const [search, setSearch]           = useState('')
   const [sortKey, setSortKey]         = useState(null)
   const [sortDir, setSortDir]         = useState('asc')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize]       = useState(15)
+  const [selectedIds, setSelectedIds] = useState([])
 
   const filtered = useMemo(() => {
     if (!search.trim()) return data
@@ -32,6 +42,7 @@ export default function DataTable({ columns, data, loading, emptyMessage = 'No r
   // Reset to page 1 whenever filter/sort changes
   useEffect(() => {
     setCurrentPage(1)
+    setSelectedIds([])
   }, [search, sortKey, sortDir, pageSize])
 
   const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(sorted.length / pageSize)) : 1
@@ -47,11 +58,68 @@ export default function DataTable({ columns, data, loading, emptyMessage = 'No r
     else { setSortKey(key); setSortDir('asc') }
   }
 
+  // Selection Logic
+  const allPaginatedSelected = useMemo(() => {
+    if (paginatedData.length === 0) return false
+    return paginatedData.every(r => selectedIds.includes(String(r.id || r.s_no)))
+  }, [paginatedData, selectedIds])
+
+  const toggleSelectAll = () => {
+    if (allPaginatedSelected) {
+      const currentPageIds = new Set(paginatedData.map(r => String(r.id || r.s_no)))
+      setSelectedIds(prev => prev.filter(id => !currentPageIds.has(id)))
+    } else {
+      const currentPageIds = paginatedData.map(r => String(r.id || r.s_no))
+      setSelectedIds(prev => Array.from(new Set([...prev, ...currentPageIds])))
+    }
+  }
+
+  const toggleSelectRow = (row, e) => {
+    e.stopPropagation()
+    const id = String(row.id || row.s_no)
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
+
+  const handleBulkDelete = () => {
+    if (!onBulkDelete || selectedIds.length === 0) return
+    const selectedRows = data.filter(r => selectedIds.includes(String(r.id || r.s_no)))
+    onBulkDelete(selectedRows)
+    setSelectedIds([])
+  }
+
   const startRecord = pageSize > 0 ? (currentPage - 1) * pageSize + 1 : 1
   const endRecord   = pageSize > 0 ? Math.min(currentPage * pageSize, sorted.length) : sorted.length
 
   return (
     <div className="space-y-3">
+      {/* Bulk Selection Action Bar */}
+      {isAdmin && enableSelection && selectedIds.length > 0 && (
+        <div className="p-3 rounded-2xl bg-rose-950/80 border border-rose-800/80 flex items-center justify-between gap-3 animate-slide-in shadow-xl">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+            <span className="text-xs font-bold text-rose-200">
+              {selectedIds.length} {selectedIds.length === 1 ? 'record' : 'records'} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedIds([])}
+              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition-colors"
+            >
+              Deselect All
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              className="btn-danger py-1.5 px-4 text-xs font-bold"
+            >
+              <Trash2 size={14} /> Delete Selected ({selectedIds.length})
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Top Controls: Search Bar & Page Size Selector */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="relative max-w-xs w-full sm:w-auto">
@@ -72,7 +140,7 @@ export default function DataTable({ columns, data, loading, emptyMessage = 'No r
           <select
             value={pageSize}
             onChange={e => setPageSize(Number(e.target.value))}
-            className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 font-semibold focus:outline-none focus:ring-1 focus:ring-jio-blue-500"
+            className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500"
           >
             <option value={15}>15 rows</option>
             <option value={25}>25 rows</option>
@@ -88,6 +156,18 @@ export default function DataTable({ columns, data, loading, emptyMessage = 'No r
         <table className="data-table">
           <thead>
             <tr>
+              {/* Checkbox Column */}
+              {isAdmin && enableSelection && (
+                <th className="w-10 text-center px-2">
+                  <input
+                    type="checkbox"
+                    checked={allPaginatedSelected}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                    title="Select All Rows"
+                  />
+                </th>
+              )}
               {columns.map(col => {
                 const isActions = col.key === '_actions' || col.key === 'actions'
                 return (
@@ -95,7 +175,7 @@ export default function DataTable({ columns, data, loading, emptyMessage = 'No r
                     key={col.key || col.header}
                     onClick={() => col.sortable !== false && col.key && handleSort(col.key)}
                     className={`${col.sortable !== false && col.key ? 'cursor-pointer select-none hover:text-white' : ''} ${
-                      isActions ? 'sticky right-0 bg-jio-blue-950/95 backdrop-blur-md shadow-[-6px_0_16px_rgba(0,0,0,0.6)] z-20 border-l border-jio-blue-800/80 text-right px-4' : ''
+                      isActions ? 'sticky right-0 bg-slate-900/95 backdrop-blur-md shadow-[-6px_0_16px_rgba(0,0,0,0.6)] z-20 border-l border-slate-800 text-right px-4' : ''
                     }`}
                   >
                     <span className="inline-flex items-center gap-1">
@@ -112,39 +192,55 @@ export default function DataTable({ columns, data, loading, emptyMessage = 'No r
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={columns.length} className="text-center py-12 text-slate-500">
-                  <div className="w-6 h-6 border-2 border-jio-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <td colSpan={columns.length + (isAdmin && enableSelection ? 1 : 0)} className="text-center py-12 text-slate-500">
+                  <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                   Loading records…
                 </td>
               </tr>
             ) : sorted.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="text-center py-12 text-slate-500">{emptyMessage}</td>
+                <td colSpan={columns.length + (isAdmin && enableSelection ? 1 : 0)} className="text-center py-12 text-slate-500">{emptyMessage}</td>
               </tr>
             ) : (
-              paginatedData.map((row, i) => (
-                <tr
-                  key={row.id || i}
-                  className={`group animate-fade-in ${onRowClick ? 'cursor-pointer hover:bg-slate-800/60' : ''}`}
-                  onClick={() => onRowClick?.(row)}
-                >
-                  {columns.map(col => {
-                    const isActions = col.key === '_actions' || col.key === 'actions'
-                    return (
-                      <td
-                        key={col.key || col.header}
-                        className={
-                          isActions
-                            ? 'sticky right-0 bg-slate-900 group-hover:bg-slate-800/90 transition-colors shadow-[-6px_0_16px_rgba(0,0,0,0.6)] z-10 border-l border-slate-700/60 px-4'
-                            : ''
-                        }
-                      >
-                        {col.render ? col.render(row) : (col.accessor ? col.accessor(row) : row[col.key]) ?? '—'}
+              paginatedData.map((row, i) => {
+                const rowId = String(row.id || row.s_no)
+                const isSelected = selectedIds.includes(rowId)
+                return (
+                  <tr
+                    key={row.id || i}
+                    className={`group animate-fade-in ${onRowClick ? 'cursor-pointer hover:bg-slate-800/60' : ''} ${
+                      isSelected ? 'bg-purple-950/40 border-purple-500/40' : ''
+                    }`}
+                    onClick={() => onRowClick?.(row)}
+                  >
+                    {isAdmin && enableSelection && (
+                      <td className="w-10 text-center px-2" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={e => toggleSelectRow(row, e)}
+                          className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                        />
                       </td>
-                    )
-                  })}
-                </tr>
-              ))
+                    )}
+                    {columns.map(col => {
+                      const isActions = col.key === '_actions' || col.key === 'actions'
+                      return (
+                        <td
+                          key={col.key || col.header}
+                          className={
+                            isActions
+                              ? 'sticky right-0 bg-slate-900 group-hover:bg-slate-800/90 transition-colors shadow-[-6px_0_16px_rgba(0,0,0,0.6)] z-10 border-l border-slate-700/60 px-4'
+                              : ''
+                          }
+                        >
+                          {col.render ? col.render(row) : (col.accessor ? col.accessor(row) : row[col.key]) ?? '—'}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>
@@ -207,4 +303,3 @@ export default function DataTable({ columns, data, loading, emptyMessage = 'No r
     </div>
   )
 }
-

@@ -587,6 +587,8 @@ export default function JmsPage() {
       {/* Table */}
       <div className="glass-card p-4">
         <DataTable columns={columns} data={sortedRecords} loading={isLoading}
+          enableSelection={true}
+          onBulkDelete={handleBulkDelete}
           emptyMessage={activeFy === 'overall' ? 'No JMS records found' : `No JMS records for FY ${activeFy}`}
           onRowClick={(row) => setSelectedRowModal(row)} />
       </div>

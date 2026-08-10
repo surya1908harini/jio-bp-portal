@@ -609,6 +609,7 @@ export default function InvoicePage() {
 
       <div className="glass-card p-4">
         <DataTable columns={columns} data={sortedRecords} loading={isLoading}
+          enableSelection={isAdmin} onBulkDelete={handleBulkDelete}
           emptyMessage={activeFy === 'overall' ? 'No invoices found' : `No invoices for FY ${activeFy}`}
           onRowClick={(row) => setSelectedRowModal(row)} />
       </div>
