@@ -408,7 +408,23 @@ export default function JmsPage() {
     }
   }
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
-  const handleExport = () => { exportToExcel(sortedRecords, `JMS_${activeFy}.xlsx`, 'JMS'); toast.success('Excel downloaded') }
+  const handleExport = () => {
+    const exportRows = sortedRecords.map(r => ({
+      'JMS Number': r.jms_no || '—',
+      'JMS Date': formatDate(r.jms_create_date || r.inv_date) || '—',
+      'Invoice Number': r.inv_number || '—',
+      'Invoice Posting Date': formatDate(r.inv_posting_date) || '—',
+      'Payment Date': formatDate(r.payment_date) || '—',
+      'Work Order Number': r.work_order_number || '—',
+      'Net Amount (₹)': r.net_amount || 0,
+      'Site Location': r.site || '—',
+      'Work Description': r.work_description || '—',
+      'JMS Status': r.status || '—',
+      'Expected Payment Date': formatDate(r.expected_payment_date) || '—',
+    }))
+    exportToExcel(exportRows, `JMS_${activeFy}.xlsx`, 'JMS Records')
+    toast.success('Excel downloaded ✓')
+  }
 
   // Autocomplete suggestions combining DB records & Master Data
   const uniqueSites = useMemo(() => Array.from(new Set(allRecords.map(j => j.site?.trim()).concat((masters.sites || []).map(s => s.name?.trim())).filter(Boolean))).sort(), [allRecords, masters.sites])

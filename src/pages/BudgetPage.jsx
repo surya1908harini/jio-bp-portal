@@ -237,7 +237,27 @@ export default function BudgetPage() {
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
   const handleDelete = (id) => { if (window.confirm('Delete this budget entry?')) deleteMutation.mutate(id) }
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
-  const handleExport = () => { exportToExcel(fyRecords, `Budget_${activeFy}.xlsx`, 'Budget'); toast.success('Excel downloaded') }
+  const handleExport = () => {
+    const exportRows = sortedRecords.map(r => {
+      const total = r.fo_total_budget || 0
+      const consumed = r.total_consumed || 0
+      const remaining = total - consumed
+      return {
+        'Work Order Number': r.work_order_number || '—',
+        'ARC Number': r.arc_number || '—',
+        'Operation': r.operation || '—',
+        'Description': r.description || '—',
+        'Validity Range': formatValidityRange(r.validity_of_contract) || r.validity_of_contract || '—',
+        'FO Total Budget (₹)': total,
+        'Total Consumed (₹)': consumed,
+        'Remaining Balance (₹)': remaining,
+        'Payment Timeframe (Days)': r.payment_timeframe_days || 30,
+        'WO Status': r.status === 'Closed' ? 'Closed' : 'Active',
+      }
+    })
+    exportToExcel(exportRows, `Budget_${activeFy}.xlsx`, 'Budget Work Orders')
+    toast.success('Excel downloaded ✓')
+  }
 
   const columns = [
     { key: 'operation',           header: 'Operation' },

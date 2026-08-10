@@ -452,7 +452,36 @@ export default function InvoicePage() {
   }
 
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
-  const handleExport = () => { exportToExcel(sortedRecords, `Invoices_${activeFy}.xlsx`, 'Invoices'); toast.success('Excel downloaded') }
+  const handleExport = () => {
+    const exportRows = sortedRecords.map(r => ({
+      'Invoice Number': r.inv_number || '—',
+      'Invoice Date': formatDate(r.inv_date) || '—',
+      'JMS Number': r.jms_no || '—',
+      'Work Order Number': r.work_order_number || '—',
+      'GST Number': r.gst_no || '—',
+      'SAC Code': r.sac_code || '—',
+      'Site Location': r.site || '—',
+      'Type of RO': r.type_of_ro || '—',
+      'RO Code': r.ro_code || '—',
+      'Work Description': r.work_description || '—',
+      'Total (Before Tax ₹)': r.total || 0,
+      'IGST (₹)': r.igst || 0,
+      'CGST (₹)': r.cgst || 0,
+      'SGST (₹)': r.sgst || 0,
+      'Grand Total (₹)': r.grand_total || 0,
+      'TDS (₹)': r.tds || 0,
+      'GST TDS 2% IOCL (₹)': r.gst_tds_2pct_iocl || 0,
+      'SD / Retention (₹)': r.sd_retention || 0,
+      'Received Bill Amount (₹)': r.received_bill_amount || 0,
+      'Full Received Date': formatDate(r.full_amount_received_date || r.amount_received_date) || '—',
+      'GST Received Date': formatDate(r.gst_amount_received_date) || '—',
+      'Invoice Posting Date': formatDate(r.inv_posting_date) || '—',
+      'Expected Payment Date': formatDate(r.expected_payment_date) || '—',
+      'Payment Status': r.payment_status || 'Pending',
+    }))
+    exportToExcel(exportRows, `Invoices_${activeFy}.xlsx`, 'Invoice Records')
+    toast.success('Excel downloaded ✓')
+  }
 
   const FORM_FIELDS = [
     { name: 'inv_date', label: 'Invoice Date', type: 'date' },

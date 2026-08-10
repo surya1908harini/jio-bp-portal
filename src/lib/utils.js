@@ -2,10 +2,24 @@ import { supabase } from './supabase'
 import * as XLSX from 'xlsx'
 
 // ──────────────────────────────────────────────
-// Export any dataset to Excel
+// Export any dataset to Excel (Strips database metadata keys & auto-formats)
 // ──────────────────────────────────────────────
 export function exportToExcel(data, filename = 'export.xlsx', sheetName = 'Sheet1') {
-  const ws = XLSX.utils.json_to_sheet(data)
+  if (!Array.isArray(data) || data.length === 0) return
+
+  // Database metadata keys to exclude from exported Excel files
+  const METADATA_KEYS = new Set(['id', 'financial_year', 'created_by', 'created_at', 'updated_at', 'pdf_url'])
+
+  const cleanedData = data.map(row => {
+    const cleaned = {}
+    for (const [key, val] of Object.entries(row)) {
+      if (METADATA_KEYS.has(key)) continue
+      cleaned[key] = val
+    }
+    return cleaned
+  })
+
+  const ws = XLSX.utils.json_to_sheet(cleanedData)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, sheetName)
   XLSX.writeFile(wb, filename)
