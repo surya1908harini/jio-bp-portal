@@ -63,10 +63,20 @@ export function AuthProvider({ children }) {
     setRole(null)
   }
 
+  const updateProfileName = async (newName) => {
+    const { data, error } = await supabase.auth.updateUser({
+      data: { full_name: newName }
+    })
+    if (error) throw error
+    if (data?.user) {
+      setUser(data.user)
+    }
+  }
+
   const isAdmin = role === 'admin'
 
   return (
-    <AuthContext.Provider value={{ user, role, isAdmin, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, role, isAdmin, loading, signIn, signUp, signOut, updateProfileName }}>
       {children}
     </AuthContext.Provider>
   )

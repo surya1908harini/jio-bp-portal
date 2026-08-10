@@ -9,8 +9,9 @@ import NotificationDetailModal from './NotificationDetailModal'
 import useScrollReveal from '../hooks/useScrollReveal'
 import {
   LayoutDashboard, FileText, Receipt, PieChart, Settings, Database, ShoppingBag,
-  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2, CheckCircle2
+  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2, CheckCircle2, Edit2
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 const NAV = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -47,7 +48,7 @@ function NavItem({ item, collapsed, unreadCount }) {
 }
 
 export default function Layout() {
-  const { user, role, isAdmin, signOut } = useAuth()
+  const { user, role, isAdmin, signOut, updateProfileName } = useAuth()
   const qc = useQueryClient()
 
   const [collapsed, setCollapsed] = useState(false)
@@ -296,6 +297,19 @@ export default function Layout() {
     setSelectedNotif(item)
   }
 
+  const handleNameEdit = async () => {
+    const currentName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
+    const newName = window.prompt("Edit your display name:", currentName)
+    if (newName && newName.trim() !== currentName) {
+      try {
+        await updateProfileName(newName.trim())
+        toast.success("Profile name updated!")
+      } catch (err) {
+        toast.error("Failed to update name: " + err.message)
+      }
+    }
+  }
+
   const sidebar = (
     <aside className={`flex flex-col bg-slate-900 border-r border-slate-800 transition-all duration-300 ${collapsed ? 'w-16' : 'w-60'} min-h-screen shadow-xl z-20`}>
       {/* Brand Top Header */}
@@ -344,8 +358,13 @@ export default function Layout() {
           <div className="flex items-center gap-2.5 mb-2 px-2">
             <img src="/mmc_logo.jpg" alt="MMC Logo" className={`w-8 h-8 rounded-xl object-cover ring-2 ${isAdmin ? 'ring-purple-500' : 'ring-pink-500'}`} />
             <div className="min-w-0">
-              <p className="text-xs font-bold text-white truncate">{user?.email?.split('@')[0] || 'User'}</p>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800">
+              <div className="flex items-center gap-1.5 group cursor-pointer" onClick={handleNameEdit} title="Click to edit name">
+                <p className="text-xs font-bold text-white truncate group-hover:text-purple-300 transition-colors">
+                  {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
+                </p>
+                <Edit2 size={10} className="text-slate-500 group-hover:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800 inline-block mt-0.5">
                 {isAdmin ? 'MMC Admin' : (role ?? 'user')}
               </span>
             </div>
@@ -404,9 +423,12 @@ export default function Layout() {
             <div className="flex items-center gap-2.5 pl-3">
               <img src="/mmc_logo.jpg" alt="Avatar" className="w-9 h-9 rounded-full object-cover ring-2 ring-purple-500 shadow-sm" />
               <div className="text-left hidden lg:block">
-                <p className="text-xs font-bold text-white leading-tight">
-                  {user?.email?.split('@')[0] || 'MMC User'}
-                </p>
+                <div className="flex items-center gap-1.5 group cursor-pointer" onClick={handleNameEdit} title="Click to edit name">
+                  <p className="text-xs font-bold text-white leading-tight group-hover:text-purple-300 transition-colors">
+                    {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'MMC User'}
+                  </p>
+                  <Edit2 size={10} className="text-slate-500 group-hover:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
                 <p className="text-[10px] font-semibold text-purple-400 leading-tight">
                   {isAdmin ? 'MMC Director' : 'Contractor User'}
                 </p>
