@@ -149,7 +149,7 @@ export default function DashboardPage() {
         return !isNaN(d.getTime()) && (d.getMonth() + 1) === m.num
       })
       const amount = rows.reduce((s, b) => s + (Number(b.invoice_value) || 0), 0)
-      return { name: m.name, amount, count: rows.length }
+      return { name: m.name, num: m.num, amount, count: rows.length }
     })
   }, [pbFyList])
 
@@ -288,8 +288,10 @@ export default function DashboardPage() {
                 animationDuration={1400}
                 style={{ cursor: 'pointer' }}
                 onClick={(data) => {
-                  if (data && data.name) {
-                    navigate(`/purchase-bills?month=${data.name}&fy=${pbFy}`);
+                  if (data && data.payload && data.payload.num) {
+                    navigate(`/purchase-bills?month=${data.payload.num}&fy=${pbFy}`);
+                  } else if (data && data.num) {
+                    navigate(`/purchase-bills?month=${data.num}&fy=${pbFy}`);
                   }
                 }}
               />
