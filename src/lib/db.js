@@ -187,7 +187,10 @@ function cleanInvoice(obj) {
   if (!VALID_PAYMENT_STATUSES.has(synced.payment_status)) {
     synced.payment_status = 'Pending'
   }
-  return clean(synced)
+  const cleaned = clean(synced)
+  delete cleaned.arc_number // Explicitly strip arc_number so schema cache error for invoice_records is IMPOSSIBLE!
+  delete cleaned.status
+  return cleaned
 }
 
 // ── helper: fetch all pages because Supabase (PostgREST) caps results at 1000 rows per request ──
@@ -295,22 +298,47 @@ export const invoiceDb = {
   },
 
   create: async (payload, userId) => {
-    const { data, error } = await supabase
+    const cleaned = cleanInvoice({ ...payload, created_by: userId })
+    let { data, error } = await supabase
       .from('invoice_records')
-      .insert(cleanInvoice({ ...payload, created_by: userId }))
+      .insert(cleaned)
       .select()
       .single()
+    if (error && error.message?.includes('schema cache')) {
+      delete cleaned.arc_number
+      delete cleaned.status
+      const retry = await supabase
+        .from('invoice_records')
+        .insert(cleaned)
+        .select()
+        .single()
+      data = retry.data
+      error = retry.error
+    }
     if (error) throw error
     return data
   },
 
   update: async (id, payload) => {
-    const { data, error } = await supabase
+    const cleaned = cleanInvoice(payload)
+    let { data, error } = await supabase
       .from('invoice_records')
-      .update(cleanInvoice(payload))
+      .update(cleaned)
       .eq('id', id)
       .select()
       .single()
+    if (error && error.message?.includes('schema cache')) {
+      delete cleaned.arc_number
+      delete cleaned.status
+      const retry = await supabase
+        .from('invoice_records')
+        .update(cleaned)
+        .eq('id', id)
+        .select()
+        .single()
+      data = retry.data
+      error = retry.error
+    }
     if (error) throw error
     return data
   },
