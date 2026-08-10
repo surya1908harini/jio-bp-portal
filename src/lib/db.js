@@ -466,11 +466,13 @@ function saveLocalPurchaseBills(list) {
 export const purchaseBillDb = {
   listAll: async () => {
     try {
-      const { data, error } = await supabase
-        .from('purchase_bills')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (!error && Array.isArray(data)) {
+      const data = await fetchPagedData(() =>
+        supabase
+          .from('purchase_bills')
+          .select('*')
+          .order('created_at', { ascending: false })
+      )
+      if (Array.isArray(data)) {
         if (data.length > 0) saveLocalPurchaseBills(data)
         return data
       }
