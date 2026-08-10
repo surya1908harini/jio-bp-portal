@@ -25,6 +25,7 @@ const EMPTY_FORM = {
   cgst: '',
   sgst: '',
   invoice_value: '',
+  hb_rb: '',
   remarks: 'BILL RECEIVED',
 }
 
@@ -38,12 +39,13 @@ const IMPORT_MAP = {
   'Central Tax(₹)': 'cgst', 'Central Tax': 'cgst', 'CGST': 'cgst', 'cgst': 'cgst',
   'State/UT Tax(₹)': 'sgst', 'State/UT Tax': 'sgst', 'SGST': 'sgst', 'sgst': 'sgst',
   'Invoice Value': 'invoice_value', 'invoice_value': 'invoice_value', 'Grand Total': 'invoice_value',
+  'HB/RB': 'hb_rb', 'HB / RB': 'hb_rb', 'hb_rb': 'hb_rb', 'hb/rb': 'hb_rb', 'HB': 'hb_rb', 'RB': 'hb_rb',
   'REMARKS (BILL RECEIVIED OR BILL NOT RECEIVIED)': 'remarks', 'REMARKS': 'remarks', 'Remarks': 'remarks', 'remarks': 'remarks',
 }
 
 const PB_IMPORT_COLUMNS = [
   'trade_name', 'supplier_gstin', 'inv_number', 'inv_date',
-  'taxable_value', 'cgst', 'sgst', 'invoice_value', 'remarks'
+  'taxable_value', 'cgst', 'sgst', 'invoice_value', 'hb_rb', 'remarks'
 ]
 
 function RemarkBadge({ remarks }) {
@@ -129,8 +131,9 @@ export default function PurchaseBillPage() {
         const trade = String(r.trade_name || '').toLowerCase()
         const gstin = String(r.supplier_gstin || '').toLowerCase()
         const invNo = String(r.inv_number || '').toLowerCase()
+        const hbrb = String(r.hb_rb || '').toLowerCase()
         const rem = String(r.remarks || '').toLowerCase()
-        if (!trade.includes(q) && !gstin.includes(q) && !invNo.includes(q) && !rem.includes(q)) return false
+        if (!trade.includes(q) && !gstin.includes(q) && !invNo.includes(q) && !hbrb.includes(q) && !rem.includes(q)) return false
       }
       return true
     })
@@ -226,15 +229,16 @@ export default function PurchaseBillPage() {
   const handleExport = () => {
     const exportData = sortedRecords.map(r => ({
       'S.NO': r.s_no,
-      'Trade/Legal name': r.trade_name,
-      'GSTIN of supplier': r.supplier_gstin,
-      'Invoice number': r.inv_number,
-      'Invoice Date': formatDate(r.inv_date),
-      'Taxable Value': r.taxable_value,
-      'Central Tax(₹)': r.cgst,
-      'State/UT Tax(₹)': r.sgst,
-      'Invoice Value': r.invoice_value,
-      'REMARKS': r.remarks,
+      'Trade/Legal name': r.trade_name || '—',
+      'GSTIN of supplier': r.supplier_gstin || '—',
+      'Invoice number': r.inv_number || '—',
+      'Invoice Date': formatDate(r.inv_date) || '—',
+      'Taxable Value': r.taxable_value || 0,
+      'Central Tax(₹)': r.cgst || 0,
+      'State/UT Tax(₹)': r.sgst || 0,
+      'Invoice Value': r.invoice_value || 0,
+      'HB/RB': r.hb_rb || '—',
+      'REMARKS': r.remarks || 'BILL RECEIVED',
     }))
     exportToExcel(exportData, `Purchase_Bills_${activeFy}.xlsx`, 'Purchase Bills')
     toast.success('Excel downloaded ✓')
@@ -265,6 +269,7 @@ export default function PurchaseBillPage() {
     { key: 'cgst', header: 'Central Tax (₹)', render: r => <span className="text-slate-300 font-mono">{formatINR(r.cgst)}</span> },
     { key: 'sgst', header: 'State/UT Tax (₹)', render: r => <span className="text-slate-300 font-mono">{formatINR(r.sgst)}</span> },
     { key: 'invoice_value', header: 'Invoice Value', render: r => <span className="text-emerald-400 font-bold">{formatINR(r.invoice_value)}</span> },
+    { key: 'hb_rb', header: 'HB/RB', render: r => <span className="font-mono text-purple-300 font-semibold">{r.hb_rb || '—'}</span> },
     { key: 'remarks', header: 'REMARKS', render: r => <RemarkBadge remarks={r.remarks} /> },
   ]
 
@@ -273,7 +278,7 @@ export default function PurchaseBillPage() {
       {/* Module Header */}
       <ModuleHeader
         title="Purchase Bills"
-        subtitle="Manage supplier purchase invoices, taxable values, CGST/SGST tax breakdown, and bill receipt status."
+        subtitle="Manage supplier purchase invoices, taxable values, CGST/SGST tax breakdown, HB/RB, and bill receipt status."
         actions={
           <div className="flex items-center gap-2 flex-wrap">
             <button onClick={handleExport} className="btn-ghost"><Download size={14} /> Export</button>
@@ -300,7 +305,7 @@ export default function PurchaseBillPage() {
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search Trade Name, GSTIN, Inv No..."
+            placeholder="Search Trade Name, GSTIN, Inv No, HB/RB..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="input-field pl-9 py-2 text-xs"
@@ -424,7 +429,18 @@ export default function PurchaseBillPage() {
                 className="input-field font-mono text-emerald-400 font-bold"
               />
             </div>
-            <div className="md:col-span-2">
+            <div>
+              <label className="text-xs font-semibold text-slate-300 mb-1 block">HB / RB</label>
+              <input
+                type="text"
+                name="hb_rb"
+                value={form.hb_rb}
+                onChange={handleFieldChange}
+                placeholder="e.g. HB or RB details"
+                className="input-field font-mono"
+              />
+            </div>
+            <div>
               <label className="text-xs font-semibold text-slate-300 mb-1 block">REMARKS (Bill Status) *</label>
               <select
                 name="remarks"

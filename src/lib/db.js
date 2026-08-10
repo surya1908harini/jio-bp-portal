@@ -490,6 +490,7 @@ export const purchaseBillDb = {
       cgst: Number(payload.cgst || 0),
       sgst: Number(payload.sgst || 0),
       invoice_value: Number(payload.invoice_value || 0),
+      hb_rb: payload.hb_rb || '',
       remarks: payload.remarks || 'BILL RECEIVED',
       financial_year: payload.financial_year || getFinancialYear(payload.inv_date || new Date()),
       created_by: userId
@@ -527,6 +528,7 @@ export const purchaseBillDb = {
       cgst: Number(payload.cgst || 0),
       sgst: Number(payload.sgst || 0),
       invoice_value: Number(payload.invoice_value || 0),
+      hb_rb: payload.hb_rb || '',
       remarks: payload.remarks || 'BILL RECEIVED',
       financial_year: payload.financial_year || getFinancialYear(payload.inv_date || new Date())
     }
