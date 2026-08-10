@@ -30,7 +30,7 @@ function NavItem({ item, collapsed, unreadCount }) {
   return (
     <Link
       to={item.path}
-      className={`sidebar-link flex items-center justify-between ${isActive ? 'active' : ''}`}
+      className={`sidebar-link flex items-center ${collapsed ? 'justify-center px-0' : 'justify-between px-3.5'} ${isActive ? 'active' : ''}`}
       title={item.label}
     >
       <div className="flex items-center gap-2.5 min-w-0">
@@ -327,7 +327,7 @@ export default function Layout() {
         {isAdmin && (
           <Link
             to="/admin"
-            className={`sidebar-link flex items-center justify-between ${location.pathname === '/admin' ? 'active' : ''}`}
+            className={`sidebar-link flex items-center ${collapsed ? 'justify-center px-0' : 'justify-between px-3.5'} ${location.pathname === '/admin' ? 'active' : ''}`}
             title="Admin Panel"
           >
             <div className="flex items-center gap-2.5 min-w-0">
@@ -353,9 +353,9 @@ export default function Layout() {
         )}
         <button
           onClick={signOut}
-          className="sidebar-link w-full text-rose-400 hover:text-rose-300 hover:bg-rose-950/40"
+          className={`sidebar-link w-full text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 ${collapsed ? 'justify-center px-0' : 'px-3.5'}`}
         >
-          <LogOut size={18} />
+          <LogOut size={18} className="flex-shrink-0" />
           {!collapsed && <span>Sign Out</span>}
         </button>
       </div>
