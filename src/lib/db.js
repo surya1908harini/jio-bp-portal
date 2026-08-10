@@ -443,3 +443,130 @@ export const budgetDb = {
     return cleaned.length
   },
 }
+
+// ═══════════════════════════════════════════════════════════
+// PURCHASE BILL RECORDS
+// ═══════════════════════════════════════════════════════════
+const LOCAL_PURCHASE_BILLS_KEY = 'portal_purchase_bills_v1'
+
+function getLocalPurchaseBills() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_PURCHASE_BILLS_KEY) || '[]')
+  } catch {
+    return []
+  }
+}
+
+function saveLocalPurchaseBills(list) {
+  try {
+    localStorage.setItem(LOCAL_PURCHASE_BILLS_KEY, JSON.stringify(list))
+  } catch {}
+}
+
+export const purchaseBillDb = {
+  listAll: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('purchase_bills')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (!error && data && data.length > 0) {
+        saveLocalPurchaseBills(data)
+        return data
+      }
+    } catch (e) {
+      console.warn('Supabase purchase_bills select fallback to local storage:', e)
+    }
+    return getLocalPurchaseBills()
+  },
+
+  create: async (payload, userId) => {
+    const cleaned = {
+      trade_name: payload.trade_name || '',
+      supplier_gstin: payload.supplier_gstin || '',
+      inv_number: payload.inv_number || '',
+      inv_date: payload.inv_date || '',
+      taxable_value: Number(payload.taxable_value || 0),
+      cgst: Number(payload.cgst || 0),
+      sgst: Number(payload.sgst || 0),
+      invoice_value: Number(payload.invoice_value || 0),
+      remarks: payload.remarks || 'BILL RECEIVED',
+      financial_year: payload.financial_year || getFinancialYear(payload.inv_date || new Date()),
+      created_by: userId
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('purchase_bills')
+        .insert(cleaned)
+        .select()
+        .single()
+      if (!error && data) {
+        const local = getLocalPurchaseBills()
+        saveLocalPurchaseBills([data, ...local])
+        return data
+      }
+    } catch (e) {
+      console.warn('Supabase purchase_bills insert fallback:', e)
+    }
+
+    const localRecord = { id: `pb-${Date.now()}`, ...cleaned, created_at: new Date().toISOString() }
+    const local = getLocalPurchaseBills()
+    const updated = [localRecord, ...local]
+    saveLocalPurchaseBills(updated)
+    return localRecord
+  },
+
+  update: async (id, payload) => {
+    const cleaned = {
+      trade_name: payload.trade_name || '',
+      supplier_gstin: payload.supplier_gstin || '',
+      inv_number: payload.inv_number || '',
+      inv_date: payload.inv_date || '',
+      taxable_value: Number(payload.taxable_value || 0),
+      cgst: Number(payload.cgst || 0),
+      sgst: Number(payload.sgst || 0),
+      invoice_value: Number(payload.invoice_value || 0),
+      remarks: payload.remarks || 'BILL RECEIVED',
+      financial_year: payload.financial_year || getFinancialYear(payload.inv_date || new Date())
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('purchase_bills')
+        .update(cleaned)
+        .eq('id', id)
+        .select()
+        .single()
+      if (!error && data) {
+        const local = getLocalPurchaseBills().map(r => r.id === id ? data : r)
+        saveLocalPurchaseBills(local)
+        return data
+      }
+    } catch (e) {
+      console.warn('Supabase purchase_bills update fallback:', e)
+    }
+
+    const local = getLocalPurchaseBills().map(r => r.id === id ? { ...r, ...cleaned } : r)
+    saveLocalPurchaseBills(local)
+    return { id, ...cleaned }
+  },
+
+  delete: async (id) => {
+    try {
+      await supabase.from('purchase_bills').delete().eq('id', id)
+    } catch (e) {}
+    const local = getLocalPurchaseBills().filter(r => String(r.id) !== String(id))
+    saveLocalPurchaseBills(local)
+  },
+
+  bulkInsert: async (rows, userId) => {
+    let count = 0
+    for (const r of rows) {
+      await purchaseBillDb.create(r, userId)
+      count++
+    }
+    return count
+  }
+}
+

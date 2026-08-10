@@ -8,6 +8,7 @@ import InvoicePage from './pages/InvoicePage'
 import BudgetPage from './pages/BudgetPage'
 import NotificationPage from './pages/NotificationPage'
 import SearchEnginePage from './pages/SearchEnginePage'
+import PurchaseBillPage from './pages/PurchaseBillPage'
 import AdminPage from './pages/AdminPage'
 import MasterPage from './pages/MasterPage'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -43,6 +44,10 @@ export default function App() {
           {/* Invoices */}
           <Route path="invoices"     element={<InvoicePage />} />
           <Route path="invoices/:fy" element={<InvoicePage />} />
+
+          {/* Purchase Bills */}
+          <Route path="purchase-bills"     element={<PurchaseBillPage />} />
+          <Route path="purchase-bills/:fy" element={<PurchaseBillPage />} />
 
           {/* Budget */}
           <Route path="budget"       element={<BudgetPage />} />
