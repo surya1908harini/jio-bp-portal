@@ -179,6 +179,8 @@ export default function InvoicePage() {
     })
   }, [allRecords, activeFy, budgetTimeframeMap, jmsPostingDateMap])
 
+  const [activeMonth, setActiveMonth] = useState('all')
+
   const monthRecords = useMemo(() => {
     if (activeMonth === 'all') return records
     return records.filter(r => {
