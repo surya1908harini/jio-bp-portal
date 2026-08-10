@@ -103,11 +103,13 @@ export default function PurchaseBillPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [activeSlot, setActiveSlot] = useState('all')
-  const [activeMonth, setActiveMonth] = useState('all')
+  const [activeMonth, setActiveMonth] = useState(searchParams.get('month') || 'all')
 
   useEffect(() => {
     const s = searchParams.get('search')
     if (s) setSearchQuery(s)
+    const m = searchParams.get('month')
+    if (m) setActiveMonth(m)
   }, [searchParams])
 
   const REMARK_SLOTS = [

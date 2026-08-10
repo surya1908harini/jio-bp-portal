@@ -187,19 +187,19 @@ export default function DashboardPage() {
 
         {/* Mini Stat Boxes */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-5 border-t border-white/20">
-          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm">
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm cursor-pointer" onClick={() => navigate('/jms')}>
             <p className="text-[10px] text-purple-200 uppercase font-semibold">Total JMS</p>
             <p className="text-xl font-extrabold text-white mt-0.5">{totalJmsCount}</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm">
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm cursor-pointer" onClick={() => navigate(`/jms?slot=released_a3&fy=${CURRENT_FY}`)}>
             <p className="text-[10px] text-purple-200 uppercase font-semibold">Released A3</p>
             <p className="text-xl font-extrabold text-emerald-300 mt-0.5">{a3Released}</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm">
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm cursor-pointer" onClick={() => navigate('/invoices')}>
             <p className="text-[10px] text-purple-200 uppercase font-semibold">Total Invoices</p>
             <p className="text-xl font-extrabold text-white mt-0.5">{currentInvList.length}</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm">
+          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm cursor-pointer" onClick={() => navigate(`/jms?slot=pending_a1&fy=${CURRENT_FY}`)}>
             <p className="text-[10px] text-purple-200 uppercase font-semibold">Pending JMS</p>
             <p className="text-xl font-extrabold text-amber-300 mt-0.5">{pendingJmsCount}</p>
           </div>
@@ -280,7 +280,19 @@ export default function DashboardPage() {
                 formatter={(value, name) => [formatINR(value), 'Invoice Value']}
                 labelFormatter={label => `Month: ${label}`}
               />
-              <Bar dataKey="amount" fill="url(#pbGrad)" radius={[6, 6, 0, 0]} isAnimationActive animationDuration={1400} />
+              <Bar
+                dataKey="amount"
+                fill="url(#pbGrad)"
+                radius={[6, 6, 0, 0]}
+                isAnimationActive
+                animationDuration={1400}
+                style={{ cursor: 'pointer' }}
+                onClick={(data) => {
+                  if (data && data.name) {
+                    navigate(`/purchase-bills?month=${data.name}&fy=${pbFy}`);
+                  }
+                }}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -335,8 +347,34 @@ export default function DashboardPage() {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
                 />
-                <Area type="monotone" dataKey="jms" name="JMS Records" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorJms)" isAnimationActive animationDuration={1600} animationEasing="ease-out" />
-                <Area type="monotone" dataKey="invoices" name="Invoices" stroke="#ec4899" strokeWidth={3} fillOpacity={1} fill="url(#colorInv)" isAnimationActive animationDuration={1600} animationEasing="ease-out" />
+                <Area
+                  type="monotone"
+                  dataKey="jms"
+                  name="JMS Records"
+                  stroke="#8b5cf6"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorJms)"
+                  isAnimationActive
+                  animationDuration={1600}
+                  animationEasing="ease-out"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/jms?fy=${trendFy}`)}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="invoices"
+                  name="Invoices"
+                  stroke="#ec4899"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorInv)"
+                  isAnimationActive
+                  animationDuration={1600}
+                  animationEasing="ease-out"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/invoices?fy=${trendFy}`)}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -356,7 +394,30 @@ export default function DashboardPage() {
             <div className="h-44 w-full flex items-center justify-center relative">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={pieData} innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value" isAnimationActive animationDuration={1500} animationEasing="ease-out">
+                  <Pie
+                    data={pieData}
+                    innerRadius={50}
+                    outerRadius={75}
+                    paddingAngle={3}
+                    dataKey="value"
+                    isAnimationActive
+                    animationDuration={1500}
+                    animationEasing="ease-out"
+                    style={{ cursor: 'pointer' }}
+                    onClick={(data) => {
+                      if (data && data.name) {
+                        const map = {
+                          'Pending A1': 'pending_a1',
+                          'Pending A2': 'pending_a2',
+                          'Pending QSD': 'pending_qsd',
+                          'Pending A3': 'pending_a3',
+                          'Released A3': 'released_a3'
+                        }
+                        const slot = map[data.name] || 'all';
+                        navigate(`/jms?fy=${CURRENT_FY}&slot=${slot}`);
+                      }
+                    }}
+                  >
                     {pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
