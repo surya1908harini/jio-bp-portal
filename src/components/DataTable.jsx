@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Trash2, CheckSquare, Square } from 'lucide-react'
 
 export default function DataTable({
@@ -52,6 +52,34 @@ export default function DataTable({
     const start = (currentPage - 1) * pageSize
     return sorted.slice(start, start + pageSize)
   }, [sorted, currentPage, pageSize])
+
+  // Top Scrollbar Sync Logic
+  const topScrollRef = useRef(null)
+  const bottomScrollRef = useRef(null)
+  const tableRef = useRef(null)
+  const [tableWidth, setTableWidth] = useState(0)
+
+  useEffect(() => {
+    if (tableRef.current) {
+      const observer = new ResizeObserver(entries => {
+        setTableWidth(entries[0].target.offsetWidth)
+      })
+      observer.observe(tableRef.current)
+      return () => observer.disconnect()
+    }
+  }, [paginatedData, columns])
+
+  const handleTopScroll = () => {
+    if (bottomScrollRef.current && topScrollRef.current) {
+      bottomScrollRef.current.scrollLeft = topScrollRef.current.scrollLeft
+    }
+  }
+
+  const handleBottomScroll = () => {
+    if (bottomScrollRef.current && topScrollRef.current) {
+      topScrollRef.current.scrollLeft = bottomScrollRef.current.scrollLeft
+    }
+  }
 
   const handleSort = (key) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -151,9 +179,18 @@ export default function DataTable({
         </div>
       </div>
 
+      {/* Dummy Top Scrollbar */}
+      <div 
+        ref={topScrollRef} 
+        onScroll={handleTopScroll}
+        className="w-full overflow-x-auto pb-1 custom-scrollbar-top"
+      >
+        <div style={{ width: tableWidth || '100%', height: '1px' }} />
+      </div>
+
       {/* Table */}
-      <div className="table-container overflow-x-auto relative">
-        <table className="data-table">
+      <div ref={bottomScrollRef} onScroll={handleBottomScroll} className="table-container overflow-x-auto relative">
+        <table ref={tableRef} className="data-table">
           <thead>
             <tr>
               {/* Checkbox Column */}

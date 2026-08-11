@@ -472,15 +472,15 @@ export default function JmsPage() {
   const columns = [
     { key: 'jms_no',           header: 'JMS No',               render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
     { key: 'jms_create_date',  header: 'JMS Date',              render: r => formatDate(r.jms_create_date || r.inv_date || r.a1_release_date) },
-    { key: 'inv_number',       header: 'Invoice Number',        render: r => <span className="font-semibold text-purple-300">{r.inv_number || '—'}</span> },
-    { key: 'inv_posting_date', header: 'Invoice Posting Date', render: r => <span className="font-mono text-cyan-300">{formatDate(r.inv_posting_date) || '—'}</span> },
-    { key: 'payment_date',     header: 'Payment Date',          render: r => <span className="font-mono text-emerald-300 font-semibold">{formatDate(r.payment_date) || '—'}</span> },
     { key: 'period_of_work',   header: 'Period' },
     { key: 'work_order_number',header: 'Work Order',           render: r => <span className="font-semibold text-slate-200">{r.work_order_number}</span> },
     { key: 'net_amount',       header: 'Net Amount',            render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.net_amount)}</span> },
     { key: 'site',             header: 'Site' },
-    { key: 'work_description', header: 'Description' },
     { key: 'status',           header: 'Status',                render: r => <StatusBadge status={r.status} /> },
+    { key: 'work_description', header: 'Description' },
+    { key: 'inv_number',       header: 'Invoice Number',        render: r => <span className="font-semibold text-purple-300">{r.inv_number || '—'}</span> },
+    { key: 'inv_posting_date', header: 'Invoice Date',          render: r => <span className="font-mono text-cyan-300">{formatDate(r.inv_posting_date) || '—'}</span> },
+    { key: 'payment_date',     header: 'Payment Date',          render: r => <span className="font-mono text-emerald-300 font-semibold">{formatDate(r.payment_date) || '—'}</span> },
     {
       key: 'expected_payment_date', header: 'Expected Payment Date',
       render: r => (
