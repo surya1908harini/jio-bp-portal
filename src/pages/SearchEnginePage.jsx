@@ -225,13 +225,13 @@ export default function SearchEnginePage() {
     { key: 'net_amount',       header: 'Net Amount',     render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.net_amount)}</span> },
     { key: 'site',             header: 'Site' },
     { key: 'work_description', header: 'Description' },
-    { key: 'status',           header: 'Status',         render: r => <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-950 text-purple-300 border border-purple-800">{r.status || 'Pending'}</span> },
+    { key: 'status',           header: 'Status',         render: r => <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-950 text-orange-300 border border-orange-800">{r.status || 'Pending'}</span> },
   ]
 
   const invColumns = [
     { key: 'inv_number',               header: 'Invoice Number',     render: r => <span className="font-semibold text-white">{r.inv_number}</span> },
     { key: 'inv_date',                 header: 'Inv Date',           render: r => formatDate(r.inv_date) },
-    { key: 'jms_no',                   header: 'JMS No',             render: r => <span className="font-semibold text-purple-300">{r.jms_no}</span> },
+    { key: 'jms_no',                   header: 'JMS No',             render: r => <span className="font-semibold text-orange-300">{r.jms_no}</span> },
     { key: 'site',                     header: 'Site' },
     { key: 'work_description',         header: 'Description' },
     { key: 'total',                    header: 'Net Amount',         render: r => <span className="text-blue-400 font-medium">{formatINR(r.total)}</span> },
@@ -255,7 +255,7 @@ export default function SearchEnginePage() {
             onClick={() => setActiveTab('jms')}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'jms'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
@@ -267,7 +267,7 @@ export default function SearchEnginePage() {
             onClick={() => setActiveTab('invoice')}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'invoice'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
@@ -293,10 +293,10 @@ export default function SearchEnginePage() {
         <div className="space-y-6">
           {/* Query Filter Controls Panel */}
           {showFilters && (
-            <div className="glass-card p-5 space-y-4 border-l-4 border-l-purple-500 relative z-30 animate-slide-in">
+            <div className="glass-card p-5 space-y-4 border-l-4 border-l-orange-500 relative z-30 animate-slide-in">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Search size={16} className="text-purple-400" /> JMS Multi-Select Query Controls
+                <Search size={16} className="text-orange-400" /> JMS Multi-Select Query Controls
               </h2>
               <button onClick={resetJmsFilters} className="btn-ghost text-xs">
                 <RefreshCw size={13} /> Reset Filters
@@ -361,8 +361,8 @@ export default function SearchEnginePage() {
 
           {/* Aggregation Summary Cards Panel */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="rounded-2xl border border-purple-800/50 bg-purple-950/30 p-4 backdrop-blur-md">
-              <p className="text-[10px] font-semibold text-purple-300 uppercase tracking-wider mb-1">Matching JMS Records</p>
+            <div className="rounded-2xl border border-orange-800/50 bg-orange-950/30 p-4 backdrop-blur-md">
+              <p className="text-[10px] font-semibold text-orange-300 uppercase tracking-wider mb-1">Matching JMS Records</p>
               <p className="text-xl font-extrabold text-white">{filteredJms.length}</p>
               <p className="text-[11px] text-slate-400 mt-0.5">Selected Multi-Query Results</p>
             </div>
@@ -390,7 +390,7 @@ export default function SearchEnginePage() {
           <div className="glass-card p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <FileText size={14} className="text-purple-400" /> JMS Multi-Select Query Results ({filteredJms.length} rows)
+                <FileText size={14} className="text-orange-400" /> JMS Multi-Select Query Results ({filteredJms.length} rows)
               </h3>
               <button onClick={handleExportJms} className="btn-ghost text-xs">
                 <Download size={13} /> Export Results to Excel
@@ -499,8 +499,8 @@ export default function SearchEnginePage() {
               <p className="text-[11px] text-slate-400 mt-0.5">Total Collections</p>
             </div>
 
-            <div className="rounded-2xl border border-purple-800/50 bg-purple-950/30 p-4 backdrop-blur-md">
-              <p className="text-[10px] font-semibold text-purple-300 uppercase tracking-wider mb-1">Fully Paid Invoices</p>
+            <div className="rounded-2xl border border-orange-800/50 bg-orange-950/30 p-4 backdrop-blur-md">
+              <p className="text-[10px] font-semibold text-orange-300 uppercase tracking-wider mb-1">Fully Paid Invoices</p>
               <p className="text-xl font-extrabold text-white">
                 {filteredInvoices.filter(i => i.payment_status === 'Full Payment Received').length}
               </p>

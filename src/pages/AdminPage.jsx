@@ -147,7 +147,7 @@ export default function AdminPage() {
           </div>
         }
         stats={[
-          { icon: Users, label: 'Total Registered Users', value: roles?.length ?? 0, sub: 'Active Accounts', color: 'purple' },
+          { icon: Users, label: 'Total Registered Users', value: roles?.length ?? 0, sub: 'Active Accounts', color: 'orange' },
           { icon: Shield, label: 'Active Admins', value: adminCount, sub: 'Full System Access', color: 'green' },
           { icon: Lock, label: 'Standard Users', value: userCount, sub: 'Portal Viewers', color: 'amber' },
           { icon: CheckCircle2, label: 'System Status', value: 'Healthy', sub: 'Supabase RLS Active', color: 'cyan' },
@@ -183,7 +183,7 @@ export default function AdminPage() {
       )}
 
       {/* Invite Modal */}
-      <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title="Invite New User" icon={<UserPlus size={18} className="text-purple-400" />}>
+      <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title="Invite New User" icon={<UserPlus size={18} className="text-orange-400" />}>
         <form onSubmit={handleInvite} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-400 mb-1.5">Email Address</label>

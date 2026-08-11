@@ -9,11 +9,12 @@ import NotificationDetailModal from './NotificationDetailModal'
 import useScrollReveal from '../hooks/useScrollReveal'
 import {
   LayoutDashboard, FileText, Receipt, PieChart, Settings, Database, ShoppingBag,
-  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2, CheckCircle2, Edit2
+  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2, CheckCircle2, Edit2, Home
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const NAV = [
+  { label: 'Home Page', icon: Home, path: '/home' },
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'JMS', icon: FileText, path: '/jms' },
   { label: 'Invoices', icon: Receipt, path: '/invoices' },
@@ -316,12 +317,12 @@ export default function Layout() {
       <div className="flex items-center justify-between px-4 h-16 border-b border-slate-800 shrink-0">
         {!collapsed && (
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-500 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-purple-600/30">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-r from-orange-600 to-red-500 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-orange-600/30">
               M
             </div>
             <div>
               <p className="text-sm font-extrabold text-white leading-tight tracking-tight">MM</p>
-              <p className="text-[10px] font-semibold text-purple-400 uppercase tracking-wider leading-tight">Contractor</p>
+              <p className="text-[10px] font-semibold text-orange-400 uppercase tracking-wider leading-tight">Contractor</p>
             </div>
           </div>
         )}
@@ -356,15 +357,15 @@ export default function Layout() {
       <div className="p-3 border-t border-slate-800 shrink-0">
         {!collapsed && (
           <div className="flex items-center gap-2.5 mb-2 px-2">
-            <img src="/mmc_logo.jpg" alt="MMC Logo" className={`w-8 h-8 rounded-xl object-cover ring-2 ${isAdmin ? 'ring-purple-500' : 'ring-pink-500'}`} />
+            <img src="/mmc_logo.jpg" alt="MMC Logo" className={`w-8 h-8 rounded-xl object-cover ring-2 ${isAdmin ? 'ring-orange-500' : 'ring-red-500'}`} />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 group cursor-pointer" onClick={handleNameEdit} title="Click to edit name">
-                <p className="text-xs font-bold text-white truncate group-hover:text-purple-300 transition-colors">
+                <p className="text-xs font-bold text-white truncate group-hover:text-orange-300 transition-colors">
                   {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
                 </p>
-                <Edit2 size={10} className="text-slate-500 group-hover:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Edit2 size={10} className="text-slate-500 group-hover:text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800 inline-block mt-0.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-950 text-orange-300 border border-orange-800 inline-block mt-0.5">
                 {isAdmin ? 'MMC Admin' : (role ?? 'user')}
               </span>
             </div>
@@ -402,7 +403,7 @@ export default function Layout() {
         <header className="hidden md:flex items-center justify-between px-6 h-16 bg-slate-900/90 border-b border-slate-800 shrink-0 backdrop-blur-md z-10 shadow-sm relative">
           {/* Left Brand Title */}
           <div className="flex items-center gap-2.5">
-            <span className="text-base font-extrabold text-purple-400 tracking-tight">MM CONTRACTOR</span>
+            <span className="text-base font-extrabold text-orange-400 tracking-tight">MM CONTRACTOR</span>
             <span className="text-xs font-bold uppercase tracking-widest text-slate-400">PORTAL</span>
           </div>
 
@@ -414,22 +415,22 @@ export default function Layout() {
               placeholder="Search work orders, invoices, JMS..."
               value={globalSearch}
               onChange={e => setGlobalSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-full bg-slate-800 border border-slate-700/60 text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full pl-10 pr-4 py-2 rounded-full bg-slate-800 border border-slate-700/60 text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </form>
 
           {/* Right Profile Avatar Pill */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2.5 pl-3">
-              <img src="/mmc_logo.jpg" alt="Avatar" className="w-9 h-9 rounded-full object-cover ring-2 ring-purple-500 shadow-sm" />
+              <img src="/mmc_logo.jpg" alt="Avatar" className="w-9 h-9 rounded-full object-cover ring-2 ring-orange-500 shadow-sm" />
               <div className="text-left hidden lg:block">
                 <div className="flex items-center gap-1.5 group cursor-pointer" onClick={handleNameEdit} title="Click to edit name">
-                  <p className="text-xs font-bold text-white leading-tight group-hover:text-purple-300 transition-colors">
+                  <p className="text-xs font-bold text-white leading-tight group-hover:text-orange-300 transition-colors">
                     {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'MMC User'}
                   </p>
-                  <Edit2 size={10} className="text-slate-500 group-hover:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Edit2 size={10} className="text-slate-500 group-hover:text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <p className="text-[10px] font-semibold text-purple-400 leading-tight">
+                <p className="text-[10px] font-semibold text-orange-400 leading-tight">
                   {isAdmin ? 'MMC Director' : 'Contractor User'}
                 </p>
               </div>
@@ -443,7 +444,7 @@ export default function Layout() {
             <Menu size={20} />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-purple-600 text-white font-extrabold text-xs flex items-center justify-center">M</div>
+            <div className="w-7 h-7 rounded-xl bg-orange-600 text-white font-extrabold text-xs flex items-center justify-center">M</div>
             <p className="text-sm font-extrabold text-white">MMC</p>
           </div>
           <div className="w-5" />

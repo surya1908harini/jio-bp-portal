@@ -23,7 +23,7 @@ function AmountCard({ label, amount, color = 'blue' }) {
     amber: 'border-amber-700/40 bg-amber-900/20 text-amber-400',
     cyan: 'border-cyan-700/40 bg-cyan-900/20 text-cyan-400',
     red: 'border-jio-red-700/40 bg-jio-red-900/20 text-jio-red-400',
-    purple: 'border-purple-700/40 bg-purple-900/20 text-purple-400',
+    orange: 'border-orange-700/40 bg-orange-900/20 text-orange-400',
   };
   return (
     <div className={`rounded-xl border p-3 ${cls[color]}`}>
@@ -76,14 +76,14 @@ export default function SummaryModal({ row, onClose }) {
     { key: 'status', header: 'Status', render: r => {
       const isCancelled = String(r.work_description || '').includes('[Cancelled:') || String(r.status || '').toLowerCase().includes('cancel')
       if (isCancelled) return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-950 text-rose-300 border border-rose-800">JMS DELETE</span>
-      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-950 text-purple-300 border border-purple-800">{r.status || 'Pending'}</span>
+      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-950 text-orange-300 border border-orange-800">{r.status || 'Pending'}</span>
     }},
   ];
 
   const invColumns = [
     { key: 'inv_number', header: 'Inv No', render: r => <span className="font-semibold text-white">{r.inv_number}</span> },
     { key: 'inv_date', header: 'Inv Date', render: r => formatDate(r.inv_date) },
-    { key: 'jms_no', header: 'JMS No', render: r => <span className="font-semibold text-purple-300">{r.jms_no}</span> },
+    { key: 'jms_no', header: 'JMS No', render: r => <span className="font-semibold text-orange-300">{r.jms_no}</span> },
     { key: 'grand_total', header: 'Grand Total', render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.grand_total)}</span> },
     { key: 'payment_status', header: 'Payment Status', render: r => {
       const isCancelled = String(r.work_description || '').includes('[Cancelled:') || String(r.payment_status || r.status || '').toLowerCase().includes('cancel')
@@ -193,7 +193,7 @@ export default function SummaryModal({ row, onClose }) {
                 onClose();
                 navigate(`/search?search=${encodeURIComponent(work_order_number)}`);
               }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-lg hover:shadow-purple-500/25"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs transition-all shadow-lg hover:shadow-orange-500/25"
             >
               <Search size={14} /> FULL SEARCH
             </button>

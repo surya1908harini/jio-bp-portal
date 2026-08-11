@@ -385,7 +385,7 @@ export default function BudgetPage() {
           </div>
         }
         stats={[
-          { icon: FileText, label: 'Work Orders', value: fyRecords.length, sub: activeFy === 'overall' ? 'All FY' : `FY ${activeFy}`, color: 'purple' },
+          { icon: FileText, label: 'Work Orders', value: fyRecords.length, sub: activeFy === 'overall' ? 'All FY' : `FY ${activeFy}`, color: 'orange' },
           { icon: TrendingUp, label: 'FO Total Budget', value: formatINR(totalFoBudget), sub: 'Total Allocation', color: 'blue' },
           { icon: PieChartIcon, label: 'Budget Consumed', value: formatINR(totalConsumedBudget), sub: 'Total Spent', color: 'red' },
           { icon: CheckCircle2, label: 'Remaining Budget', value: formatINR(totalRemainingBudget), sub: 'Available Balance', color: totalRemainingBudget >= 0 ? 'green' : 'red' },
@@ -418,7 +418,7 @@ export default function BudgetPage() {
             onClick={() => setViewMode('grid')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               viewMode === 'grid'
-                ? 'bg-purple-600 text-white shadow-md'
+                ? 'bg-orange-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -428,7 +428,7 @@ export default function BudgetPage() {
             onClick={() => setViewMode('list')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               viewMode === 'list'
-                ? 'bg-purple-600 text-white shadow-md'
+                ? 'bg-orange-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
@@ -466,7 +466,7 @@ export default function BudgetPage() {
 
                 const bannerGradient = isClosed
                   ? 'bg-gradient-to-r from-slate-700 via-slate-600 to-slate-500'
-                  : 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500'
+                  : 'bg-gradient-to-r from-orange-600 via-red-600 to-rose-500'
 
                 return (
                   <div
@@ -489,7 +489,7 @@ export default function BudgetPage() {
                       <h3 className="text-lg font-extrabold text-white tracking-tight leading-snug">
                         WO #{b.work_order_number || '—'}
                       </h3>
-                      <p className="text-xs text-purple-100 opacity-90 truncate mt-0.5">
+                      <p className="text-xs text-orange-100 opacity-90 truncate mt-0.5">
                         {b.operation || 'No operation details'}
                       </p>
                     </div>
@@ -589,7 +589,7 @@ export default function BudgetPage() {
                       onClick={() => handlePageChange(pageNum)}
                       className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
                         currentPage === pageNum
-                          ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                          ? 'bg-orange-600 text-white shadow-md shadow-orange-600/30'
                           : 'bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-white hover:bg-slate-700'
                       }`}
                     >

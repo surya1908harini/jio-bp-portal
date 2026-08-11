@@ -1,11 +1,17 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Link as LinkIcon, Bell, ClipboardList, IndianRupee, FileText, PieChart, ExternalLink, ChevronRight, Loader2 } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
+import { ArrowRight, Link as LinkIcon, Bell, ClipboardList, IndianRupee, FileText, PieChart, ExternalLink, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { homeDb, jmsDb, invoiceDb } from '../lib/db'
 import { formatINR } from '../lib/utils'
+import { useAuth } from '../context/AuthContext'
+import { useState } from 'react'
+import toast from 'react-hot-toast'
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const qc = useQueryClient()
+  const { user, isAdmin } = useAuth()
+  const [newPendingWork, setNewPendingWork] = useState('')
 
   // Fetch Admin Settings
   const { data: settings, isLoading: loadingSettings } = useQuery({
@@ -63,8 +69,29 @@ export default function HomePage() {
     pending_desc = 'Review and update pending manual assignments effortlessly through the integrated task flow.',
     notification_title = 'NOTIFICATION FOR OFFICE WORK',
     notification_desc = 'EX (WIFI DUE DATE 29/MM/YYYY)',
+    pending_works_list = [],
+    notifications_list = [],
     links = []
   } = settings || {}
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: (payload) => homeDb.updateSettings(payload),
+    onSuccess: () => qc.invalidateQueries(['home-settings']),
+    onError: (err) => toast.error(err.message)
+  })
+
+  const handleAddPendingWork = () => {
+    if (!newPendingWork.trim()) return
+    const newList = [...pending_works_list, { text: newPendingWork }]
+    updateSettingsMutation.mutate({ pending_works_list: newList })
+    setNewPendingWork('')
+  }
+
+  const handleDeletePendingWork = (idx) => {
+    const newList = [...pending_works_list]
+    newList.splice(idx, 1)
+    updateSettingsMutation.mutate({ pending_works_list: newList })
+  }
 
   return (
     <div className="min-h-screen bg-[#030303] text-white overflow-x-hidden selection:bg-orange-500/30 relative font-sans">
@@ -91,10 +118,16 @@ export default function HomePage() {
           </div>
           
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => {
+              if (window.confirm('Are you sure you want to log out?')) {
+                // simple logout
+                localStorage.clear()
+                window.location.href = '/login'
+              }
+            }}
             className="px-5 py-2 bg-white text-black text-sm font-bold rounded-full hover:bg-slate-200 transition-colors shadow-[0_0_15px_rgba(255,255,255,0.3)]"
           >
-            Login
+            Logout
           </button>
         </div>
       </nav>
@@ -112,7 +145,7 @@ export default function HomePage() {
           
           <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.1]">
             Manage Your <br className="hidden sm:block" />
-            <span className="bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-orange-400 via-red-500 to-red-500 bg-clip-text text-transparent">
               Enterprise Work
             </span>
           </h1>
@@ -133,7 +166,40 @@ export default function HomePage() {
                 <ClipboardList size={26} />
               </div>
               <h3 className="relative z-10 text-xl font-bold text-white mb-3 tracking-wide">{pending_title}</h3>
-              <p className="relative z-10 text-slate-400 text-sm leading-relaxed whitespace-pre-line">{pending_desc}</p>
+              <p className="relative z-10 text-slate-400 text-sm leading-relaxed whitespace-pre-line mb-4">{pending_desc}</p>
+              
+              <div className="relative z-10 w-full space-y-2 max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
+                {pending_works_list.length > 0 ? (
+                  pending_works_list.map((pw, i) => (
+                    <div key={i} className="flex items-center justify-between bg-black/40 p-2 rounded border border-white/5 text-xs text-slate-300">
+                      <span>• {pw.text}</span>
+                      {isAdmin && (
+                        <button onClick={() => handleDeletePendingWork(i)} className="text-slate-500 hover:text-red-400 transition-colors ml-2">
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-xs text-slate-500 italic">No pending works.</div>
+                )}
+              </div>
+
+              {isAdmin && (
+                <div className="relative z-10 flex items-center gap-2 mt-4 w-full pt-4 border-t border-white/10">
+                  <input 
+                    type="text" 
+                    value={newPendingWork}
+                    onChange={e => setNewPendingWork(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAddPendingWork()}
+                    placeholder="Add new pending work..."
+                    className="flex-1 bg-black/50 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-orange-500"
+                  />
+                  <button onClick={handleAddPendingWork} disabled={!newPendingWork.trim() || updateSettingsMutation.isPending} className="bg-orange-500 hover:bg-orange-600 text-white p-1.5 rounded transition-colors disabled:opacity-50">
+                    <Plus size={14} />
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="group relative rounded-3xl border border-white/10 bg-[#0a0a0f]/80 backdrop-blur-xl p-8 hover:border-orange-500/40 transition-all duration-500 flex flex-col items-start justify-center min-h-[220px] cursor-default overflow-hidden">
@@ -143,7 +209,20 @@ export default function HomePage() {
                 <Bell size={26} />
               </div>
               <h3 className="relative z-10 text-xl font-bold text-white mb-3 tracking-wide">{notification_title}</h3>
-              <p className="relative z-10 text-slate-400 text-sm leading-relaxed whitespace-pre-line">{notification_desc}</p>
+              <p className="relative z-10 text-slate-400 text-sm leading-relaxed whitespace-pre-line mb-4">{notification_desc}</p>
+              
+              <div className="relative z-10 w-full space-y-2 max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
+                {notifications_list.length > 0 ? (
+                  notifications_list.map((nl, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-black/40 p-2 rounded border border-white/5 text-xs text-red-200">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                      <span>{nl.text}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-xs text-slate-500 italic">No new notifications.</div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -225,10 +304,10 @@ export default function HomePage() {
         </main>
 
         {/* Action Footer */}
-        <footer className="mt-16 flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
+        <footer className="mt-16 flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in pb-16" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
           
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/dashboard')}
             className="group relative px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg font-bold text-sm tracking-wide text-white shadow-[0_0_30px_-5px_rgba(249,115,22,0.6)] hover:shadow-[0_0_50px_-5px_rgba(249,115,22,0.8)] hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 overflow-hidden"
           >
             <span className="relative z-10">ENTER MMC ACCOUNTS PAGE</span>
@@ -237,9 +316,10 @@ export default function HomePage() {
           </button>
           
           <button
+            onClick={() => navigate('/dashboard')}
             className="px-8 py-4 rounded-lg font-bold text-sm tracking-wide text-white bg-white/5 border border-white/10 hover:bg-white/10 transition-colors flex items-center gap-2"
           >
-            Learn More
+            Go to Dashboard
           </button>
           
         </footer>

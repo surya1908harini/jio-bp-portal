@@ -196,7 +196,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* ── Full Width Hero Banner ── */}
-      <div className="w-full rounded-3xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 p-5 lg:p-6 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between reveal-on-scroll hover-elevate">
+      <div className="w-full rounded-3xl bg-gradient-to-r from-orange-600 via-orange-600 to-red-600 p-5 lg:p-6 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between reveal-on-scroll hover-elevate">
         <div className="absolute -right-10 -bottom-10 w-96 h-96 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
         <div>
@@ -209,14 +209,14 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-extrabold tracking-tight text-white leading-tight">
             MM Contractor Portal Executive Overview
           </h1>
-          <p className="text-sm text-purple-100 mt-2 max-w-2xl leading-relaxed">
+          <p className="text-sm text-orange-100 mt-2 max-w-2xl leading-relaxed">
             Real-time billing, contract validity, and stage releases tracking for <strong>FY {CURRENT_FY}</strong>.
           </p>
 
           <div className="flex items-center gap-3 mt-6 flex-wrap">
             <Link
               to="/budget"
-              className="px-5 py-2.5 rounded-full bg-white text-purple-700 font-bold text-xs shadow-lg hover:bg-purple-50 hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2"
+              className="px-5 py-2.5 rounded-full bg-white text-orange-700 font-bold text-xs shadow-lg hover:bg-orange-50 hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2"
             >
               <PieChartIcon size={15} /> View Budget Status
             </Link>
@@ -226,19 +226,19 @@ export default function DashboardPage() {
         {/* Mini Stat Boxes */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-4 border-t border-white/20">
           <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm cursor-pointer" onClick={() => navigate('/jms')}>
-            <p className="text-[10px] text-purple-200 uppercase font-semibold">Total JMS</p>
+            <p className="text-[10px] text-orange-200 uppercase font-semibold">Total JMS</p>
             <p className="text-xl font-extrabold text-white mt-0.5">{totalJmsCount}</p>
           </div>
           <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm cursor-pointer" onClick={() => navigate(`/jms?slot=released_a3&fy=${CURRENT_FY}`)}>
-            <p className="text-[10px] text-purple-200 uppercase font-semibold">Released A3</p>
+            <p className="text-[10px] text-orange-200 uppercase font-semibold">Released A3</p>
             <p className="text-xl font-extrabold text-emerald-300 mt-0.5">{a3Released}</p>
           </div>
           <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm cursor-pointer" onClick={() => navigate('/invoices')}>
-            <p className="text-[10px] text-purple-200 uppercase font-semibold">Total Invoices</p>
+            <p className="text-[10px] text-orange-200 uppercase font-semibold">Total Invoices</p>
             <p className="text-xl font-extrabold text-white mt-0.5">{currentInvList.length}</p>
           </div>
           <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm cursor-pointer" onClick={() => navigate(`/jms?slot=pending_a1&fy=${CURRENT_FY}`)}>
-            <p className="text-[10px] text-purple-200 uppercase font-semibold">Pending JMS</p>
+            <p className="text-[10px] text-orange-200 uppercase font-semibold">Pending JMS</p>
             <p className="text-xl font-extrabold text-amber-300 mt-0.5">{pendingJmsCount}</p>
           </div>
         </div>
@@ -257,7 +257,7 @@ export default function DashboardPage() {
                 <select
                   value={trendFy}
                   onChange={e => setTrendFy(e.target.value)}
-                  className="bg-slate-800 text-purple-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-purple-500/40 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all cursor-pointer"
+                  className="bg-slate-800 text-orange-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-orange-500/40 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all cursor-pointer"
                 >
                   <option value="2023-24">FY 2023-24</option>
                   <option value="2024-25">FY 2024-25</option>
@@ -268,11 +268,11 @@ export default function DashboardPage() {
               <p className="text-xs text-slate-400 mt-0.5">Live distribution of JMS entries vs Invoices for FY {trendFy}</p>
             </div>
             <div className="flex items-center gap-4 text-xs font-semibold">
-              <span className="flex items-center gap-1.5 text-purple-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" /> JMS Records
+              <span className="flex items-center gap-1.5 text-orange-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" /> JMS Records
               </span>
-              <span className="flex items-center gap-1.5 text-pink-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-pink-500 animate-pulse" /> Invoices
+              <span className="flex items-center gap-1.5 text-red-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" /> Invoices
               </span>
             </div>
           </div>
@@ -339,7 +339,7 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-base font-bold text-white">JMS Details</h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-950 text-orange-300 border border-orange-800">
                 FY {CURRENT_FY}
               </span>
             </div>
@@ -485,8 +485,8 @@ export default function DashboardPage() {
              <span className="flex items-center gap-1.5 text-blue-400">
                <span className="w-2.5 h-2.5 rounded-sm bg-blue-500" /> Invoice Amount
              </span>
-             <span className="flex items-center gap-1.5 text-pink-400">
-               <span className="w-2.5 h-2.5 rounded-sm bg-pink-500" /> Purchase Amount
+             <span className="flex items-center gap-1.5 text-red-400">
+               <span className="w-2.5 h-2.5 rounded-sm bg-red-500" /> Purchase Amount
              </span>
              <span className="flex items-center gap-1.5 text-emerald-400">
                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Net Profit/Loss

@@ -177,7 +177,7 @@ export default function MasterPage() {
                 onClick={() => setOfficerRole(key)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   officerRole === key
-                    ? 'bg-slate-800 text-purple-300 border border-purple-500/40 font-bold'
+                    ? 'bg-slate-800 text-orange-300 border border-orange-500/40 font-bold'
                     : 'bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -188,7 +188,7 @@ export default function MasterPage() {
 
           <div className="glass-card p-5 space-y-4">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <UserCheck size={16} className="text-purple-400" /> Add New Officer to {roleLabels[officerRole]}
+              <UserCheck size={16} className="text-orange-400" /> Add New Officer to {roleLabels[officerRole]}
             </h3>
             <form onSubmit={handleAddOfficer} className="flex gap-3 items-center max-w-xl">
               <input
@@ -227,7 +227,7 @@ export default function MasterPage() {
                       <tr key={off.id} className="hover:bg-slate-900/50 transition-colors">
                         <td className="p-3 font-mono text-slate-500">{idx + 1}</td>
                         <td className="p-3 font-semibold text-white">{off.name}</td>
-                        <td className="p-3 text-purple-300 font-mono text-[11px]">{roleLabels[officerRole]}</td>
+                        <td className="p-3 text-orange-300 font-mono text-[11px]">{roleLabels[officerRole]}</td>
                         <td className="p-3 text-right">
                           <button
                             onClick={() => handleDeleteOfficer(off.id)}

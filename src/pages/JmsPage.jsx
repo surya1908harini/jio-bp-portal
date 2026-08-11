@@ -121,7 +121,7 @@ function StatCard({ label, value, color = 'slate' }) {
     blue:   'border-jio-blue-700/40 bg-jio-blue-900/30',
     amber:  'border-amber-700/40 bg-amber-900/20',
     green:  'border-emerald-700/40 bg-emerald-900/20',
-    purple: 'border-purple-700/40 bg-purple-900/20',
+    orange: 'border-orange-700/40 bg-orange-900/20',
     cyan:   'border-cyan-700/40 bg-cyan-900/20',
     red:    'border-jio-red-700/40 bg-jio-red-900/20',
     slate:  'border-slate-700/40 bg-slate-800/40',
@@ -478,7 +478,7 @@ export default function JmsPage() {
     { key: 'site',             header: 'Site' },
     { key: 'status',           header: 'Status',                render: r => <StatusBadge status={r.status} /> },
     { key: 'work_description', header: 'Description' },
-    { key: 'inv_number',       header: 'Invoice Number',        render: r => <span className="font-semibold text-purple-300">{r.inv_number || '—'}</span> },
+    { key: 'inv_number',       header: 'Invoice Number',        render: r => <span className="font-semibold text-orange-300">{r.inv_number || '—'}</span> },
     { key: 'inv_posting_date', header: 'Invoice Date',          render: r => <span className="font-mono text-cyan-300">{formatDate(r.inv_posting_date) || '—'}</span> },
     { key: 'payment_date',     header: 'Payment Date',          render: r => <span className="font-mono text-emerald-300 font-semibold">{formatDate(r.payment_date) || '—'}</span> },
     {
@@ -618,7 +618,7 @@ export default function JmsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
               <StatCard label="Total JMS"     value={sortedRecords.length}      color="blue"   />
               <StatCard label="Pending A1"     value={(byStatus['Pending A1'] || 0) + (byStatus['Pending'] || 0) + (byStatus['A1'] || 0)} color="amber" />
-              <StatCard label="Pending A2"     value={(byStatus['Pending A2'] || 0) + (byStatus['A2'] || 0)} color="purple" />
+              <StatCard label="Pending A2"     value={(byStatus['Pending A2'] || 0) + (byStatus['A2'] || 0)} color="orange" />
               <StatCard label="Pending QSD"    value={(byStatus['Pending QSD'] || 0) + (byStatus['QSD'] || 0)} color="cyan" />
               <StatCard label="Pending A3"     value={(byStatus['Pending A3'] || 0) + (byStatus['A3'] || 0)} color="blue" />
               <StatCard label="Released by A3" value={(byStatus['Released by A3'] || 0) + (byStatus['Invoiced'] || 0)} color="green" />

@@ -11,7 +11,7 @@ export default function ModuleHeader({
   const { isAdmin } = useAuth()
 
   const chipColors = {
-    purple: 'bg-purple-600/20 text-purple-300 border-purple-600/40',
+    orange: 'bg-orange-600/20 text-orange-300 border-orange-600/40',
     green:  'bg-emerald-600/20 text-emerald-300 border-emerald-600/40',
     amber:  'bg-amber-500/20 text-amber-300 border-amber-500/40',
     red:    'bg-rose-500/20 text-rose-300 border-rose-500/40',
@@ -22,7 +22,7 @@ export default function ModuleHeader({
   }
 
   return (
-    <div className="rounded-2xl bg-gradient-to-r from-purple-700 via-fuchsia-600 to-pink-600 px-4 py-2.5 text-white shadow-lg relative overflow-hidden">
+    <div className="rounded-2xl bg-gradient-to-r from-orange-700 via-orange-600 to-red-600 px-4 py-2.5 text-white shadow-lg relative overflow-hidden">
       <div className="absolute -right-6 -bottom-6 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
       {/* Row 1: Title + FY badge + Action buttons */}
@@ -36,7 +36,7 @@ export default function ModuleHeader({
                 {isAdmin ? 'MMC Admin' : 'User'}
               </span>
             </div>
-            {subtitle && <p className="text-[10px] text-purple-100 font-medium truncate">{subtitle}</p>}
+            {subtitle && <p className="text-[10px] text-orange-100 font-medium truncate">{subtitle}</p>}
           </div>
         </div>
 
@@ -57,7 +57,7 @@ export default function ModuleHeader({
             return (
               <div
                 key={i}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[10px] font-semibold ${chipColors[st.color || 'purple']} bg-black/20 backdrop-blur-sm`}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[10px] font-semibold ${chipColors[st.color || 'orange']} bg-black/20 backdrop-blur-sm`}
               >
                 <Icon size={11} />
                 <span className="text-white/70">{st.label}:</span>

@@ -100,7 +100,7 @@ export default function NotificationPage() {
           </div>
         }
         stats={[
-          { icon: Bell,          label: 'Total Active Alerts', value: allNotifications.length, sub: 'Actionable items', color: 'purple' },
+          { icon: Bell,          label: 'Total Active Alerts', value: allNotifications.length, sub: 'Actionable items', color: 'orange' },
           { icon: ShieldAlert,   label: 'High Priority',      value: highPriorityCount, sub: 'Requires attention', color: 'cyan' },
           { icon: Clock,         label: 'Unread Alerts',       value: unreadNotifications.length, sub: 'New notifications', color: 'amber' },
           { icon: CheckCircle2,  label: 'Read History',        value: readNotifications.length, sub: 'Archived items', color: 'green' },
@@ -114,7 +114,7 @@ export default function NotificationPage() {
             onClick={() => setActiveTab('unread')}
             className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-semibold transition-all ${
               activeTab === 'unread'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
@@ -131,7 +131,7 @@ export default function NotificationPage() {
             onClick={() => setActiveTab('read')}
             className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-semibold transition-all ${
               activeTab === 'read'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
@@ -204,19 +204,19 @@ export default function NotificationPage() {
               <div
                 key={n.id}
                 onClick={() => handleOpenDetail(n)}
-                className={`glass-card p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer transition-all hover:border-purple-500/50 hover:bg-slate-900/90 group ${
+                className={`glass-card p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer transition-all hover:border-orange-500/50 hover:bg-slate-900/90 group ${
                   isHigh ? 'border-l-4 border-l-rose-500 bg-rose-950/10' : ''
                 }`}
               >
                 <div className="flex items-start gap-3.5 flex-1 min-w-0">
                   {/* Category Icon */}
-                  <div className={`p-2.5 rounded-xl border flex-shrink-0 mt-0.5 ${n.color || 'bg-purple-950/80 text-purple-400 border-purple-800/60'}`}>
+                  <div className={`p-2.5 rounded-xl border flex-shrink-0 mt-0.5 ${n.color || 'bg-orange-950/80 text-orange-400 border-orange-800/60'}`}>
                     <IconComponent size={18} />
                   </div>
 
                   <div className="space-y-1 min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-purple-300 transition-colors">
+                      <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-orange-300 transition-colors">
                         {n.title}
                       </h3>
                       {isHigh && (
@@ -240,7 +240,7 @@ export default function NotificationPage() {
                 <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
                   <button
                     onClick={(e) => { e.stopPropagation(); handleOpenDetail(n) }}
-                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-purple-600 hover:text-white transition-all flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-orange-600 hover:text-white transition-all flex items-center gap-1.5"
                   >
                     <Eye size={13} /> View Details
                   </button>

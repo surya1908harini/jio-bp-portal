@@ -32,8 +32,11 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Routes>
-        <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <HomePage />} />
-        <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+        <Route path="/" element={user ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/login" element={user ? <Navigate to="/home" replace /> : <LoginPage />} />
+
+        {/* Protected Fullscreen Pages */}
+        <Route path="/home" element={<PrivateRoute><HomePage /></PrivateRoute>} />
 
         <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
           <Route path="dashboard" element={<DashboardPage />} />
@@ -67,7 +70,7 @@ export default function App() {
           <Route path="admin"        element={<AdminRoute><AdminPage /></AdminRoute>} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </ErrorBoundary>
   )

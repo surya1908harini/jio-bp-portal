@@ -28,13 +28,13 @@ export default function NotificationDetailModal({ notif, onClose, onNavigate }) 
     <Modal open={!!notif} onClose={onClose} title="Notification Record Details" size="max-w-xl">
       <div className="space-y-4">
         {/* ── Top Header Banner Card ────────────────────── */}
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 text-white shadow-xl flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-orange-600 via-red-600 to-rose-600 text-white shadow-xl flex items-center justify-between">
           <div>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-white/20 backdrop-blur-md text-white border border-white/30">
               {category.toUpperCase()} ALERT
             </span>
             <h3 className="text-base font-extrabold text-white mt-1.5 leading-snug">{title}</h3>
-            <p className="text-xs text-purple-100 mt-0.5">{sub}</p>
+            <p className="text-xs text-orange-100 mt-0.5">{sub}</p>
           </div>
           <span className="px-3 py-1 rounded-xl text-xs font-bold bg-black/30 border border-white/20">
             {severity === 'high' ? 'URGENT' : `${days}d`}
@@ -48,7 +48,7 @@ export default function NotificationDetailModal({ notif, onClose, onNavigate }) 
 
             {category === 'invoice' && (
               <>
-                <DetailRow label="Invoice Number" value={`#${record.inv_number || '—'}`} color="text-purple-300" />
+                <DetailRow label="Invoice Number" value={`#${record.inv_number || '—'}`} color="text-orange-300" />
                 <DetailRow label="Work Order No" value={record.work_order_number} />
                 <DetailRow label="JMS Number" value={record.jms_no} />
                 <DetailRow label="Invoice Date" value={formatDate(record.inv_date)} />
@@ -62,7 +62,7 @@ export default function NotificationDetailModal({ notif, onClose, onNavigate }) 
 
             {category === 'budget' && (
               <>
-                <DetailRow label="Work Order Number" value={`WO #${record.work_order_number || '—'}`} color="text-purple-300" />
+                <DetailRow label="Work Order Number" value={`WO #${record.work_order_number || '—'}`} color="text-orange-300" />
                 <DetailRow label="ARC Number" value={record.arc_number} />
                 <DetailRow label="Operation" value={record.operation} />
                 <DetailRow label="Validity Period" value={formatValidityRange(record.validity_of_contract) || record.validity_of_contract} />
@@ -74,7 +74,7 @@ export default function NotificationDetailModal({ notif, onClose, onNavigate }) 
 
             {category === 'jms' && (
               <>
-                <DetailRow label="JMS Number" value={`JMS #${record.jms_no || '—'}`} color="text-purple-300" />
+                <DetailRow label="JMS Number" value={`JMS #${record.jms_no || '—'}`} color="text-orange-300" />
                 <DetailRow label="Work Order Number" value={record.work_order_number} />
                 <DetailRow label="Create Date" value={formatDate(record.jms_create_date || record.created_at)} />
                 <DetailRow label="Net Amount" value={formatINR(record.net_amount)} color="text-emerald-400" />
@@ -89,7 +89,7 @@ export default function NotificationDetailModal({ notif, onClose, onNavigate }) 
             {record.pdf_url && (
               <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-950/80 border border-slate-800 mt-3">
                 <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
-                  <FileText size={16} className="text-purple-400" />
+                  <FileText size={16} className="text-orange-400" />
                   <span>Attached PDF Document</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -97,7 +97,7 @@ export default function NotificationDetailModal({ notif, onClose, onNavigate }) 
                     href={record.pdf_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 py-1.5 rounded-xl bg-purple-950 text-purple-300 border border-purple-800 text-xs font-semibold hover:bg-purple-900 transition-colors flex items-center gap-1"
+                    className="px-3 py-1.5 rounded-xl bg-orange-950 text-orange-300 border border-orange-800 text-xs font-semibold hover:bg-orange-900 transition-colors flex items-center gap-1"
                   >
                     <Eye size={13} /> View
                   </a>
@@ -126,7 +126,7 @@ export default function NotificationDetailModal({ notif, onClose, onNavigate }) 
           <button
             type="button"
             onClick={handleGoToPage}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 hover:opacity-95 active:scale-95 transition-all flex items-center gap-2"
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-red-500 text-white font-bold text-xs shadow-lg shadow-orange-600/30 hover:opacity-95 active:scale-95 transition-all flex items-center gap-2"
           >
             <ExternalLink size={14} /> Open Full Record Page
           </button>

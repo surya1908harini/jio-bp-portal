@@ -49,7 +49,7 @@ export default function MultiSelectDropdown({ options, selected = [], onChange, 
           {selected.length === 0 ? (
             <span className="text-slate-400 text-xs">{placeholder}</span>
           ) : (
-            <span className="text-xs font-bold text-white bg-purple-950 px-2 py-0.5 rounded-lg border border-purple-800 flex items-center gap-1">
+            <span className="text-xs font-bold text-white bg-orange-950 px-2 py-0.5 rounded-lg border border-orange-800 flex items-center gap-1">
               {selected.length} selected
             </span>
           )}
@@ -71,7 +71,7 @@ export default function MultiSelectDropdown({ options, selected = [], onChange, 
           </div>
 
           <div className="flex items-center justify-between px-2 py-1 text-[11px] font-semibold border-b border-slate-800">
-            <button type="button" onClick={toggleSelectAll} className="text-purple-400 hover:text-purple-300">
+            <button type="button" onClick={toggleSelectAll} className="text-orange-400 hover:text-orange-300">
               {isAllSelected ? 'Deselect All' : 'Select All'}
             </button>
             {selected.length > 0 && (
@@ -95,12 +95,12 @@ export default function MultiSelectDropdown({ options, selected = [], onChange, 
                     onClick={() => toggleOption(val)}
                     className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs cursor-pointer transition-colors ${
                       isSelected
-                        ? 'bg-purple-950/80 text-purple-300 border border-purple-800/60 font-semibold'
+                        ? 'bg-orange-950/80 text-orange-300 border border-orange-800/60 font-semibold'
                         : 'text-slate-300 hover:bg-slate-800'
                     }`}
                   >
                     <span className="truncate">{label}</span>
-                    {isSelected && <Check size={14} className="text-purple-400 shrink-0" />}
+                    {isSelected && <Check size={14} className="text-orange-400 shrink-0" />}
                   </div>
                 )
               })

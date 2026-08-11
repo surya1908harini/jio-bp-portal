@@ -6,7 +6,7 @@ import PdfCell from './PdfCell'
 function DetailItem({ label, value, color = 'text-white', highlight = false }) {
   return (
     <div className={`p-3 rounded-xl border flex flex-col justify-between ${
-      highlight ? 'bg-slate-900 border-purple-500/40 shadow-inner' : 'bg-slate-950/60 border-slate-800'
+      highlight ? 'bg-slate-900 border-orange-500/40 shadow-inner' : 'bg-slate-950/60 border-slate-800'
     }`}>
       <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">{label}</span>
       <span className={`text-xs sm:text-sm font-bold font-mono mt-1 ${color}`}>{value || '—'}</span>
@@ -31,9 +31,9 @@ export default function RecordDetailModal({ record, type = 'invoice', onClose, o
     <Modal open={!!record} onClose={onClose} title={title} size="max-w-3xl">
       <div className="space-y-5">
         {/* Header Summary Pill Banner */}
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/80 via-slate-900 to-slate-950 border border-purple-800/50 flex flex-wrap items-center justify-between gap-3">
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-orange-950/80 via-slate-900 to-slate-950 border border-orange-800/50 flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-1">
-            <p className="text-xs font-semibold text-purple-300 uppercase tracking-wider">
+            <p className="text-xs font-semibold text-orange-300 uppercase tracking-wider">
               {type.toUpperCase()} SUMMARY DETAILS
             </p>
             <h3 className="text-lg font-extrabold text-white">
@@ -55,7 +55,7 @@ export default function RecordDetailModal({ record, type = 'invoice', onClose, o
               </span>
             )}
             {record.status && !record.payment_status && (
-              <span className="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-purple-950 text-purple-300 border border-purple-800 shadow-md">
+              <span className="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-orange-950 text-orange-300 border border-orange-800 shadow-md">
                 {record.status}
               </span>
             )}
@@ -66,7 +66,7 @@ export default function RecordDetailModal({ record, type = 'invoice', onClose, o
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {isInvoice && (
             <>
-              <DetailItem label="Invoice Number" value={record.inv_number} color="text-purple-400" highlight />
+              <DetailItem label="Invoice Number" value={record.inv_number} color="text-orange-400" highlight />
               <DetailItem label="Invoice Date" value={formatDate(record.inv_date)} color="text-cyan-400" />
               <DetailItem label="JMS Number" value={record.jms_no} color="text-white" />
               <DetailItem label="Work Order" value={record.work_order_number} color="text-white" />
@@ -77,9 +77,9 @@ export default function RecordDetailModal({ record, type = 'invoice', onClose, o
               <DetailItem label="RO Code" value={record.ro_code} color="text-slate-300" />
 
               <DetailItem label="Total (Before Tax)" value={formatINR(record.total)} color="text-blue-400" highlight />
-              <DetailItem label="IGST (18%)" value={formatINR(record.igst)} color="text-purple-300" />
-              <DetailItem label="CGST (9%)" value={formatINR(record.cgst)} color="text-purple-300" />
-              <DetailItem label="SGST (9%)" value={formatINR(record.sgst)} color="text-purple-300" />
+              <DetailItem label="IGST (18%)" value={formatINR(record.igst)} color="text-orange-300" />
+              <DetailItem label="CGST (9%)" value={formatINR(record.cgst)} color="text-orange-300" />
+              <DetailItem label="SGST (9%)" value={formatINR(record.sgst)} color="text-orange-300" />
               <DetailItem label="Grand Total" value={formatINR(record.grand_total)} color="text-emerald-400" highlight />
 
               <DetailItem label="Invoice Posting Date" value={formatDate(record.inv_posting_date)} color="text-cyan-300" highlight />
@@ -100,7 +100,7 @@ export default function RecordDetailModal({ record, type = 'invoice', onClose, o
 
           {isJms && (
             <>
-              <DetailItem label="JMS Number" value={record.jms_no} color="text-purple-400" highlight />
+              <DetailItem label="JMS Number" value={record.jms_no} color="text-orange-400" highlight />
               <DetailItem label="JMS Create Date" value={formatDate(record.jms_create_date || record.inv_date || record.a1_release_date)} color="text-cyan-400" />
               <DetailItem label="Period of Work" value={record.period_of_work} color="text-white" />
               <DetailItem label="Work Order Number" value={record.work_order_number} color="text-white" />
@@ -117,7 +117,7 @@ export default function RecordDetailModal({ record, type = 'invoice', onClose, o
               <DetailItem label="QSD Release Date" value={formatDate(record.qsd_release_date)} color="text-slate-300" />
               <DetailItem label="A3 Name" value={record.a3_name} color="text-slate-300" />
 
-              <DetailItem label="Invoice Number" value={record.inv_number} color="text-purple-300" />
+              <DetailItem label="Invoice Number" value={record.inv_number} color="text-orange-300" />
               <DetailItem label="Invoice Date" value={formatDate(record.inv_date)} color="text-slate-300" />
               <DetailItem label="Invoice Posting Date" value={formatDate(record.inv_posting_date)} color="text-slate-300" />
               <DetailItem label="Payment Date" value={formatDate(record.payment_date)} color="text-emerald-300" />
@@ -126,7 +126,7 @@ export default function RecordDetailModal({ record, type = 'invoice', onClose, o
 
           {isBudget && (
             <>
-              <DetailItem label="Work Order Number" value={record.work_order_number} color="text-purple-400" highlight />
+              <DetailItem label="Work Order Number" value={record.work_order_number} color="text-orange-400" highlight />
               <DetailItem label="Operation" value={record.operation} color="text-white" />
               <DetailItem label="ARC Number" value={record.arc_number} color="text-slate-300" />
               <DetailItem label="WO Status" value={record.status === 'Closed' ? 'WO Closed' : 'Active'} color={record.status === 'Closed' ? 'text-slate-400' : 'text-emerald-400'} highlight />

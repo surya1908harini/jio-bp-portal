@@ -66,9 +66,9 @@ function RemarkBadge({ remarks, onClick }) {
   )
 }
 
-function StatCard({ label, value, sub, color = 'purple' }) {
+function StatCard({ label, value, sub, color = 'orange' }) {
   const cls = {
-    purple: 'border-purple-800/40 bg-purple-950/30 text-purple-300',
+    orange: 'border-orange-800/40 bg-orange-950/30 text-orange-300',
     blue: 'border-blue-800/40 bg-blue-950/30 text-blue-300',
     emerald: 'border-emerald-800/40 bg-emerald-950/30 text-emerald-300',
     amber: 'border-amber-800/40 bg-amber-950/30 text-amber-300',
@@ -303,14 +303,14 @@ export default function PurchaseBillPage() {
   const columns = [
     { key: 's_no', header: 'S.NO', render: r => <span className="font-mono text-slate-400">{r.s_no}</span> },
     { key: 'trade_name', header: 'Trade / Legal Name', render: r => <span className="font-bold text-white">{r.trade_name || '—'}</span> },
-    { key: 'supplier_gstin', header: 'GSTIN of Supplier', render: r => <span className="font-mono text-purple-300 text-xs font-semibold">{r.supplier_gstin || '—'}</span> },
+    { key: 'supplier_gstin', header: 'GSTIN of Supplier', render: r => <span className="font-mono text-orange-300 text-xs font-semibold">{r.supplier_gstin || '—'}</span> },
     { key: 'inv_number', header: 'Invoice Number', render: r => <span className="font-bold text-cyan-300 font-mono">{r.inv_number || '—'}</span> },
     { key: 'inv_date', header: 'Invoice Date', render: r => <span className="font-mono text-xs text-slate-300">{formatDate(r.inv_date) || '—'}</span> },
     { key: 'taxable_value', header: 'Taxable Value', render: r => <span className="text-blue-400 font-semibold">{formatINR(r.taxable_value)}</span> },
     { key: 'cgst', header: 'Central Tax (₹)', render: r => <span className="text-slate-300 font-mono">{formatINR(r.cgst)}</span> },
     { key: 'sgst', header: 'State/UT Tax (₹)', render: r => <span className="text-slate-300 font-mono">{formatINR(r.sgst)}</span> },
     { key: 'invoice_value', header: 'Invoice Value', render: r => <span className="text-emerald-400 font-bold">{formatINR(r.invoice_value)}</span> },
-    { key: 'hb_rb', header: 'HB/RB', render: r => <span className="font-mono text-purple-300 font-semibold">{r.hb_rb || '—'}</span> },
+    { key: 'hb_rb', header: 'HB/RB', render: r => <span className="font-mono text-orange-300 font-semibold">{r.hb_rb || '—'}</span> },
     { key: 'remarks', header: 'REMARKS', render: r => <RemarkBadge remarks={r.remarks} onClick={e => handleToggleRemarks(r, e)} /> },
   ]
 
@@ -332,7 +332,7 @@ export default function PurchaseBillPage() {
           </div>
         }
         stats={[
-          { icon: ShoppingBag, label: 'Total Purchase Bills', value: monthRecords.length, sub: (() => { if (activeMonth === 'all') return `FY ${activeFy}`; const mn = MONTHS.find(m => m.value === String(activeMonth))?.label || ''; const fyStart = parseInt((activeFy || '').split('-')[0]) || new Date().getFullYear(); const yr = Number(activeMonth) >= 4 ? fyStart : fyStart + 1; return `${mn} ${yr}`; })(), color: 'purple' },
+          { icon: ShoppingBag, label: 'Total Purchase Bills', value: monthRecords.length, sub: (() => { if (activeMonth === 'all') return `FY ${activeFy}`; const mn = MONTHS.find(m => m.value === String(activeMonth))?.label || ''; const fyStart = parseInt((activeFy || '').split('-')[0]) || new Date().getFullYear(); const yr = Number(activeMonth) >= 4 ? fyStart : fyStart + 1; return `${mn} ${yr}`; })(), color: 'orange' },
           { icon: DollarSign, label: 'Taxable Value', value: formatINR(totalTaxable), sub: 'Before Tax', color: 'blue' },
           { icon: FileText, label: 'CGST + SGST Tax', value: formatINR(totalCgst + totalSgst), sub: 'Total Taxes', color: 'amber' },
           { icon: CheckCircle2, label: 'Total HB Amount', value: formatINR(totalInvoiceValue), sub: `Received: ${receivedCount} | Pending: ${notReceivedCount}`, color: 'emerald' },

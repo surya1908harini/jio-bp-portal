@@ -17,6 +17,7 @@ export default function HomeSettings() {
     pending_desc: '',
     notification_title: '',
     notification_desc: '',
+    notifications_list: [],
     links: []
   })
 
@@ -27,6 +28,7 @@ export default function HomeSettings() {
         pending_desc: settings.pending_desc || '',
         notification_title: settings.notification_title || '',
         notification_desc: settings.notification_desc || '',
+        notifications_list: Array.isArray(settings.notifications_list) ? settings.notifications_list : [],
         links: Array.isArray(settings.links) ? settings.links : []
       })
     }
@@ -54,6 +56,13 @@ export default function HomeSettings() {
     }))
   }
 
+  const addNotification = () => {
+    setForm(prev => ({
+      ...prev,
+      notifications_list: [...prev.notifications_list, { text: '' }]
+    }))
+  }
+
   const updateLink = (index, field, value) => {
     const newLinks = [...form.links]
     newLinks[index][field] = value
@@ -64,6 +73,18 @@ export default function HomeSettings() {
     const newLinks = [...form.links]
     newLinks.splice(index, 1)
     setForm(prev => ({ ...prev, links: newLinks }))
+  }
+
+  const updateNotification = (index, value) => {
+    const newList = [...form.notifications_list]
+    newList[index].text = value
+    setForm(prev => ({ ...prev, notifications_list: newList }))
+  }
+
+  const removeNotification = (index) => {
+    const newList = [...form.notifications_list]
+    newList.splice(index, 1)
+    setForm(prev => ({ ...prev, notifications_list: newList }))
   }
 
   if (isLoading) return <div className="p-8 text-center text-slate-400">Loading settings...</div>
@@ -102,9 +123,14 @@ export default function HomeSettings() {
 
         {/* Notifications Section */}
         <div className="glass-card p-6 border-red-500/20">
-          <h3 className="text-lg font-bold text-red-400 mb-4 flex items-center gap-2">
-            Notifications Block
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-red-400 flex items-center gap-2">
+              Notifications Block
+            </h3>
+            <button onClick={addNotification} className="btn-ghost py-1 px-2 text-xs">
+              <Plus size={14} /> Add Notification
+            </button>
+          </div>
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Title</label>
@@ -116,14 +142,34 @@ export default function HomeSettings() {
                 placeholder="e.g. NOTIFICATION FOR OFFICE WORK"
               />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Description (Example)</label>
-              <textarea
-                value={form.notification_desc}
-                onChange={e => setForm(p => ({ ...p, notification_desc: e.target.value }))}
-                className="input-field min-h-[80px] border-slate-700/50 focus:border-red-500"
-                placeholder="e.g. WIFI DUE DATE 29/MM/YYYY"
-              />
+            
+            <div className="pt-2 border-t border-slate-700/50 mt-4">
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Notification Items</label>
+              {form.notifications_list.length === 0 ? (
+                <div className="text-center py-4 text-slate-500 text-xs border border-dashed border-slate-700 rounded-lg">
+                  No notifications. Click "Add Notification"
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {form.notifications_list.map((notif, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={notif.text}
+                        onChange={e => updateNotification(idx, e.target.value)}
+                        placeholder="e.g. WIFI DUE DATE 29/MM/YYYY"
+                        className="input-field py-1.5 text-sm"
+                      />
+                      <button
+                        onClick={() => removeNotification(idx)}
+                        className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

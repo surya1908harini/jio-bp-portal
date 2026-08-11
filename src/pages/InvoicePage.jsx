@@ -75,7 +75,7 @@ function StatCard({ label, value, sub, color = 'blue' }) {
     blue: 'border-jio-blue-800/40 bg-jio-blue-900/30 text-jio-blue-400',
     green: 'border-emerald-800/40 bg-emerald-900/20 text-emerald-400',
     amber: 'border-amber-800/40 bg-amber-900/20 text-amber-400',
-    purple: 'border-purple-800/40 bg-purple-900/20 text-purple-400',
+    orange: 'border-orange-800/40 bg-orange-900/20 text-orange-400',
     cyan: 'border-cyan-800/40 bg-cyan-900/20 text-cyan-400',
   }
   return (
@@ -530,7 +530,7 @@ export default function InvoicePage() {
   const columns = [
     { key: 'inv_number',               header: 'Invoice Number',     render: r => <span className="font-semibold text-white">{r.inv_number}</span> },
     { key: 'inv_date',                 header: 'Inv Date',           render: r => formatDate(r.inv_date) },
-    { key: 'jms_no',                   header: 'JMS No',             render: r => <span className="font-semibold text-purple-300">{r.jms_no}</span> },
+    { key: 'jms_no',                   header: 'JMS No',             render: r => <span className="font-semibold text-orange-300">{r.jms_no}</span> },
     { key: 'site',                     header: 'Site' },
     { key: 'work_description',         header: 'Description' },
     { key: 'total',                    header: 'Net Amount',         render: r => <span className="text-blue-400 font-medium">{formatINR(r.total)}</span> },
@@ -588,7 +588,7 @@ export default function InvoicePage() {
           </div>
         }
         stats={[
-          { icon: Receipt, label: 'Total Invoices', value: monthRecords.length, sub: `Grand Total: ${formatINR(totalGT)}`, color: 'purple' },
+          { icon: Receipt, label: 'Total Invoices', value: monthRecords.length, sub: `Grand Total: ${formatINR(totalGT)}`, color: 'orange' },
           { icon: CheckCircle2, label: 'Full Payment Received', value: fullPaidCnt, sub: `Received: ${formatINR(totalRec)}`, color: 'green' },
           { icon: DollarSign, label: 'Pending Invoice Amount', value: formatINR(pendingAmount), sub: 'Total Pending ₹ Amount', color: 'rose' },
           { icon: Calculator, label: 'Pending Invoices Count', value: pendingCount, sub: 'Invoices Pending Payment', color: 'amber' },
@@ -628,7 +628,7 @@ export default function InvoicePage() {
               <StatCard label="Total Invoices"  value={monthRecords.length}      color="blue"   />
               <StatCard label="Grand Total"     value={formatINR(totalGT)}      color="green"  />
               <StatCard label="TDS"             value={formatINR(totalTDS)}     color="amber"  />
-              <StatCard label="SD/Retention"    value={formatINR(totalSD)}      color="purple" />
+              <StatCard label="SD/Retention"    value={formatINR(totalSD)}      color="orange" />
               <StatCard label="Amt Received"    value={formatINR(totalRec)}     color="cyan"   />
               <StatCard label="Full Paid"        value={fullPaidCnt}             color="green"  />
               <StatCard label="Net Received"     value={netAmtCnt}               color="blue"   />

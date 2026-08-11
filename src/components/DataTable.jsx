@@ -178,7 +178,7 @@ export default function DataTable({
           <select
             value={pageSize}
             onChange={e => setPageSize(Number(e.target.value))}
-            className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500"
+            className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 font-semibold focus:outline-none focus:ring-1 focus:ring-orange-500"
           >
             <option value={15}>15 rows</option>
             <option value={25}>25 rows</option>
@@ -210,7 +210,7 @@ export default function DataTable({
                     type="checkbox"
                     checked={allPaginatedSelected}
                     onChange={toggleSelectAll}
-                    className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                    className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-orange-600 focus:ring-orange-500 cursor-pointer"
                     title="Select All Rows"
                   />
                 </th>
@@ -240,7 +240,7 @@ export default function DataTable({
             {loading ? (
               <tr>
                 <td colSpan={columns.length + (isAdmin && enableSelection ? 1 : 0)} className="text-center py-12 text-slate-500">
-                  <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                   Loading records…
                 </td>
               </tr>
@@ -256,7 +256,7 @@ export default function DataTable({
                   <tr
                     key={row.id || i}
                     className={`group animate-fade-in ${onRowClick ? 'cursor-pointer hover:bg-slate-800/60' : ''} ${
-                      isSelected ? 'bg-purple-950/40 border-purple-500/40' : ''
+                      isSelected ? 'bg-orange-950/40 border-orange-500/40' : ''
                     }`}
                     onClick={() => onRowClick?.(row)}
                   >
@@ -266,7 +266,7 @@ export default function DataTable({
                           type="checkbox"
                           checked={isSelected}
                           onChange={e => toggleSelectRow(row, e)}
-                          className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                          className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-orange-600 focus:ring-orange-500 cursor-pointer"
                         />
                       </td>
                     )}

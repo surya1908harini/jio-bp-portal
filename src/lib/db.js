@@ -618,6 +618,8 @@ export const homeDb = {
       pending_desc: 'Review and update pending manual assignments effortlessly through the integrated task flow.',
       notification_title: 'NOTIFICATION FOR OFFICE WORK',
       notification_desc: 'EX (WIFI DUE DATE 29/MM/YYYY)',
+      pending_works_list: [],
+      notifications_list: [],
       links: []
     }
   },
