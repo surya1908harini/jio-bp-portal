@@ -8,6 +8,7 @@ import { formatDate } from '../lib/utils'
 import DataTable from '../components/DataTable'
 import Modal from '../components/Modal'
 import ModuleHeader from '../components/ModuleHeader'
+import HomeSettings from '../components/HomeSettings'
 
 export default function AdminPage() {
   const { user } = useAuth()
@@ -16,6 +17,7 @@ export default function AdminPage() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole,  setInviteRole]  = useState('user')
   const [inviting,    setInviting]    = useState(false)
+  const [activeTab,   setActiveTab]   = useState('users')
 
   // Fetch all user roles via supabase directly
   const { data: roles, isLoading } = useQuery({
@@ -152,16 +154,36 @@ export default function AdminPage() {
         ]}
       />
 
-      <div className="glass-card p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Users size={16} className="text-jio-blue-400" />
-          <h2 className="text-sm font-semibold text-white">System Users ({roles?.length ?? 0})</h2>
-        </div>
-        <DataTable columns={columns} data={roles ?? []} loading={isLoading} emptyMessage="No users found" />
+      {/* Tabs Navigation */}
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeTab === 'users' ? 'bg-slate-800 text-white border-b-2 border-orange-500' : 'text-slate-400 hover:text-slate-200'}`}
+        >
+          User Roles
+        </button>
+        <button
+          onClick={() => setActiveTab('home_settings')}
+          className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeTab === 'home_settings' ? 'bg-slate-800 text-white border-b-2 border-orange-500' : 'text-slate-400 hover:text-slate-200'}`}
+        >
+          Home Page Settings
+        </button>
       </div>
 
+      {activeTab === 'users' ? (
+        <div className="glass-card p-5 animate-fade-in">
+          <div className="flex items-center gap-2 mb-4">
+            <Users size={16} className="text-jio-blue-400" />
+            <h2 className="text-sm font-semibold text-white">System Users ({roles?.length ?? 0})</h2>
+          </div>
+          <DataTable columns={columns} data={roles ?? []} loading={isLoading} emptyMessage="No users found" />
+        </div>
+      ) : (
+        <HomeSettings />
+      )}
+
       {/* Invite Modal */}
-      <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title="Invite User" size="max-w-md">
+      <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title="Invite New User" icon={<UserPlus size={18} className="text-purple-400" />}>
         <form onSubmit={handleInvite} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-400 mb-1.5">Email Address</label>

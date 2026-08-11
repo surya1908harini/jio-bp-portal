@@ -1,8 +1,70 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Link as LinkIcon, Bell, ClipboardList, IndianRupee, FileText, PieChart, ExternalLink, ChevronRight } from 'lucide-react'
+import { ArrowRight, Link as LinkIcon, Bell, ClipboardList, IndianRupee, FileText, PieChart, ExternalLink, ChevronRight, Loader2 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { homeDb, jmsDb, invoiceDb } from '../lib/db'
+import { formatINR } from '../lib/utils'
 
 export default function HomePage() {
   const navigate = useNavigate()
+
+  // Fetch Admin Settings
+  const { data: settings, isLoading: loadingSettings } = useQuery({
+    queryKey: ['home-settings'],
+    queryFn: () => homeDb.getSettings()
+  })
+
+  // Fetch JMS and Invoices to compute current month stats
+  const { data: jmsList = [] } = useQuery({
+    queryKey: ['jms', 'all'],
+    queryFn: () => jmsDb.listAll()
+  })
+  
+  const { data: invoiceList = [] } = useQuery({
+    queryKey: ['invoices', 'all'],
+    queryFn: () => invoiceDb.listAll()
+  })
+
+  // Compute Current Month Stats
+  const currentMonth = new Date().getMonth()
+  const currentYear = new Date().getFullYear()
+
+  // 1. Current Month JMS
+  const currentMonthJms = jmsList.filter(j => {
+    const d = j.jms_create_date ? new Date(j.jms_create_date) : null
+    return d && d.getMonth() === currentMonth && d.getFullYear() === currentYear
+  })
+  const jmsCount = currentMonthJms.length
+  const jmsTotal = currentMonthJms.reduce((acc, j) => acc + (Number(j.net_amount) || 0), 0)
+
+  // 2. Current Month Invoices & GST
+  const currentMonthInvoices = invoiceList.filter(i => {
+    const d = i.inv_date ? new Date(i.inv_date) : null
+    return d && d.getMonth() === currentMonth && d.getFullYear() === currentYear
+  })
+  const invoiceCount = currentMonthInvoices.length
+  const invoiceTotal = currentMonthInvoices.reduce((acc, i) => acc + (Number(i.grand_total) || 0), 0)
+  
+  // Calculate GST Total
+  const gstTotal = currentMonthInvoices.reduce((acc, i) => {
+    const igst = Number(i.igst) || 0
+    const cgst = Number(i.cgst) || 0
+    const sgst = Number(i.sgst) || 0
+    return acc + igst + cgst + sgst
+  }, 0)
+
+  if (loadingSettings) {
+    return <div className="min-h-screen bg-[#030303] flex items-center justify-center text-orange-500">
+      <Loader2 size={40} className="animate-spin" />
+    </div>
+  }
+
+  const {
+    pending_title = 'PENDING WORKS IN TYPE MANUAL',
+    pending_desc = 'Review and update pending manual assignments effortlessly through the integrated task flow.',
+    notification_title = 'NOTIFICATION FOR OFFICE WORK',
+    notification_desc = 'EX (WIFI DUE DATE 29/MM/YYYY)',
+    links = []
+  } = settings || {}
 
   return (
     <div className="min-h-screen bg-[#030303] text-white overflow-x-hidden selection:bg-orange-500/30 relative font-sans">
@@ -70,8 +132,8 @@ export default function HomePage() {
               <div className="relative z-10 w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500/20 to-red-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 mb-6 group-hover:scale-110 transition-transform duration-500 shadow-[0_0_20px_rgba(249,115,22,0.15)]">
                 <ClipboardList size={26} />
               </div>
-              <h3 className="relative z-10 text-xl font-bold text-white mb-3 tracking-wide">PENDING WORKS IN TYPE MANUAL</h3>
-              <p className="relative z-10 text-slate-400 text-sm leading-relaxed">Review and update pending manual assignments effortlessly through the integrated task flow.</p>
+              <h3 className="relative z-10 text-xl font-bold text-white mb-3 tracking-wide">{pending_title}</h3>
+              <p className="relative z-10 text-slate-400 text-sm leading-relaxed whitespace-pre-line">{pending_desc}</p>
             </div>
 
             <div className="group relative rounded-3xl border border-white/10 bg-[#0a0a0f]/80 backdrop-blur-xl p-8 hover:border-orange-500/40 transition-all duration-500 flex flex-col items-start justify-center min-h-[220px] cursor-default overflow-hidden">
@@ -80,8 +142,8 @@ export default function HomePage() {
               <div className="relative z-10 w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-6 group-hover:scale-110 transition-transform duration-500 shadow-[0_0_20px_rgba(239,68,68,0.15)]">
                 <Bell size={26} />
               </div>
-              <h3 className="relative z-10 text-xl font-bold text-white mb-3 tracking-wide">NOTIFICATION FOR OFFICE WORK</h3>
-              <p className="relative z-10 text-slate-400 text-sm leading-relaxed">Stay updated with critical alerts. <br/>EX: <span className="text-orange-400 font-semibold">WIFI DUE DATE 29/MM/YYYY</span></p>
+              <h3 className="relative z-10 text-xl font-bold text-white mb-3 tracking-wide">{notification_title}</h3>
+              <p className="relative z-10 text-slate-400 text-sm leading-relaxed whitespace-pre-line">{notification_desc}</p>
             </div>
           </div>
 
@@ -96,7 +158,8 @@ export default function HomePage() {
                 <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">GST TOTALS</span>
               </div>
               <h4 className="relative z-10 text-sm font-bold text-white mb-1">Current Month GST 1</h4>
-              <p className="relative z-10 text-xs text-slate-400 font-medium tracking-wide">TOTAL BY IGST / CGST / SGST</p>
+              <p className="relative z-10 text-[10px] text-slate-400 font-bold tracking-wide uppercase mb-3">Total by IGST/CGST/SGST</p>
+              <p className="relative z-10 text-xl font-black text-orange-400">{formatINR(gstTotal)}</p>
             </div>
 
             <div className="group relative rounded-3xl border border-white/10 bg-[#0a0a0f]/80 backdrop-blur-xl p-6 flex flex-col hover:border-orange-500/30 transition-all duration-500 overflow-hidden">
@@ -108,7 +171,11 @@ export default function HomePage() {
                 <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">JMS RECORDS</span>
               </div>
               <h4 className="relative z-10 text-sm font-bold text-white mb-1">Current Month JMS</h4>
-              <p className="relative z-10 text-xs text-slate-400 font-medium tracking-wide">COUNT AND AMOUNT</p>
+              <p className="relative z-10 text-[10px] text-slate-400 font-bold tracking-wide uppercase mb-3">Count & Amount</p>
+              <div className="relative z-10 flex items-center justify-between">
+                <span className="text-lg font-black text-white">{jmsCount}</span>
+                <span className="text-lg font-black text-red-400">{formatINR(jmsTotal)}</span>
+              </div>
             </div>
 
             <div className="group relative rounded-3xl border border-white/10 bg-[#0a0a0f]/80 backdrop-blur-xl p-6 flex flex-col hover:border-orange-500/30 transition-all duration-500 overflow-hidden">
@@ -120,7 +187,11 @@ export default function HomePage() {
                 <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">INVOICES</span>
               </div>
               <h4 className="relative z-10 text-sm font-bold text-white mb-1">Current Month Invoice</h4>
-              <p className="relative z-10 text-xs text-slate-400 font-medium tracking-wide">COUNT AND AMOUNT</p>
+              <p className="relative z-10 text-[10px] text-slate-400 font-bold tracking-wide uppercase mb-3">Count & Amount</p>
+              <div className="relative z-10 flex items-center justify-between">
+                <span className="text-lg font-black text-white">{invoiceCount}</span>
+                <span className="text-lg font-black text-amber-400">{formatINR(invoiceTotal)}</span>
+              </div>
             </div>
           </div>
 
@@ -134,15 +205,21 @@ export default function HomePage() {
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <a key={i} href="#" className="flex flex-col items-center justify-center p-5 rounded-2xl bg-black/40 border border-white/5 hover:bg-white/5 hover:border-orange-500/30 transition-all group relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-t from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-orange-400 group-hover:scale-110 group-hover:bg-orange-500/10 transition-all duration-300 mb-4 border border-white/5">
-                    <ExternalLink size={18} />
-                  </div>
-                  <span className="text-sm font-semibold text-slate-300 group-hover:text-white transition-colors">Portal Link {i}</span>
-                </a>
-              ))}
+              {links.length > 0 ? (
+                links.map((link, i) => (
+                  <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-5 rounded-2xl bg-black/40 border border-white/5 hover:bg-white/5 hover:border-orange-500/30 transition-all group relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-t from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-slate-400 group-hover:text-orange-400 group-hover:scale-110 group-hover:bg-orange-500/10 transition-all duration-300 mb-4 border border-white/5">
+                      <ExternalLink size={18} />
+                    </div>
+                    <span className="text-sm font-semibold text-slate-300 group-hover:text-white transition-colors">{link.name}</span>
+                  </a>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-6 text-slate-500 text-sm">
+                  No links added yet. Admin can add links in the Admin settings.
+                </div>
+              )}
             </div>
           </div>
         </main>

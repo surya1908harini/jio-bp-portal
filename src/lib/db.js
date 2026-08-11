@@ -600,3 +600,38 @@ export const purchaseBillDb = {
   }
 }
 
+// ============================================================
+// HOME PAGE SETTINGS DB
+// ============================================================
+export const homeDb = {
+  getSettings: async () => {
+    const { data, error } = await supabase
+      .from('home_settings')
+      .select('*')
+      .limit(1)
+      .single()
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching home settings:', error)
+    }
+    return data || {
+      pending_title: 'PENDING WORKS IN TYPE MANUAL',
+      pending_desc: 'Review and update pending manual assignments effortlessly through the integrated task flow.',
+      notification_title: 'NOTIFICATION FOR OFFICE WORK',
+      notification_desc: 'EX (WIFI DUE DATE 29/MM/YYYY)',
+      links: []
+    }
+  },
+
+  updateSettings: async (payload) => {
+    // We assume there's always one row with ID '00000000-0000-0000-0000-000000000001'
+    const id = '00000000-0000-0000-0000-000000000001'
+    const { data, error } = await supabase
+      .from('home_settings')
+      .upsert({ id, ...payload, updated_at: new Date() })
+      .select()
+      .single()
+    if (error) throw error
+    return data
+  }
+}
+
