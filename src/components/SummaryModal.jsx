@@ -35,6 +35,27 @@ function AmountCard({ label, amount, color = 'blue' }) {
 
 export default function SummaryModal({ row, onClose }) {
   const navigate = useNavigate();
+  const [showRecords, setShowRecords] = useState(false);
+  const workOrderNumber = row?.work_order_number;
+
+  const { data: jmsList = [], isLoading: jmsLoading } = useQuery({
+    queryKey: ['jms', 'by-wo', workOrderNumber],
+    queryFn: async () => {
+      const all = await jmsDb.listAll();
+      return all.filter(j => j.work_order_number === workOrderNumber);
+    },
+    enabled: showRecords && !!workOrderNumber,
+  });
+
+  const { data: invoiceList = [], isLoading: invoiceLoading } = useQuery({
+    queryKey: ['invoices', 'by-wo', workOrderNumber],
+    queryFn: async () => {
+      const all = await invoiceDb.listAll();
+      return all.filter(i => i.work_order_number === workOrderNumber);
+    },
+    enabled: showRecords && !!workOrderNumber,
+  });
+
   if (!row) return null;
 
   const {
@@ -47,26 +68,6 @@ export default function SummaryModal({ row, onClose }) {
     ? Math.min(100, Math.round((total_consumed / fo_total_budget) * 100))
     : 0;
   const isOverdraft = (balance_available || 0) < 0;
-
-  const [showRecords, setShowRecords] = useState(false);
-
-  const { data: jmsList = [], isLoading: jmsLoading } = useQuery({
-    queryKey: ['jms', 'by-wo', work_order_number],
-    queryFn: async () => {
-      const all = await jmsDb.listAll();
-      return all.filter(j => j.work_order_number === work_order_number);
-    },
-    enabled: showRecords && !!work_order_number,
-  });
-
-  const { data: invoiceList = [], isLoading: invoiceLoading } = useQuery({
-    queryKey: ['invoices', 'by-wo', work_order_number],
-    queryFn: async () => {
-      const all = await invoiceDb.listAll();
-      return all.filter(i => i.work_order_number === work_order_number);
-    },
-    enabled: showRecords && !!work_order_number,
-  });
 
   const jmsColumns = [
     { key: 'jms_no', header: 'JMS No', render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
