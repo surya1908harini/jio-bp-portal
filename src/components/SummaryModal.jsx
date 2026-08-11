@@ -1,5 +1,7 @@
 import Modal from './Modal';
 import { formatINR, formatValidityRange } from '../lib/utils';
+import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
 
 function SummaryRow({ label, value, color = 'text-white' }) {
   return (
@@ -28,6 +30,7 @@ function AmountCard({ label, amount, color = 'blue' }) {
 }
 
 export default function SummaryModal({ row, onClose }) {
+  const navigate = useNavigate();
   if (!row) return null;
 
   const {
@@ -126,6 +129,19 @@ export default function SummaryModal({ row, onClose }) {
               ⚠ Budget is in overdraft — consumed exceeds total budget
             </p>
           )}
+        </div>
+
+        {/* ── Actions ────────────────────────────── */}
+        <div className="flex justify-end pt-2 border-t border-slate-800">
+          <button 
+            onClick={() => {
+              onClose();
+              navigate(`/search?search=${encodeURIComponent(work_order_number)}`);
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-lg hover:shadow-purple-500/25"
+          >
+            <Search size={14} /> SEE RECORDS
+          </button>
         </div>
       </div>
     </Modal>
