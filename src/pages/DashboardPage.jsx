@@ -86,7 +86,6 @@ export default function DashboardPage() {
   const pendingQsd= currentJmsList.filter(j => { const st = String(j.status || '').trim().toLowerCase(); return st === 'pending qsd' || st === 'qsd' }).length
   const pendingA3 = currentJmsList.filter(j => { const st = String(j.status || '').trim().toLowerCase(); return st === 'pending a3' || st === 'a3' }).length
 
-  const totalInvAmt = currentInvList.reduce((s, i) => s + (i.grand_total || 0), 0)
 
   // Donut chart: JMS breakdown
   const pieData = [
@@ -158,7 +157,6 @@ export default function DashboardPage() {
     })
   }, [pbFyList])
 
-  const totalPbAmount = currentPbList.reduce((s, b) => s + (Number(b.hb_rb) || Number(b.invoice_value) || 0), 0)
 
   // Monthly Profit & Loss Data
   const [pnlFy, setPnlFy] = useState(CURRENT_FY)
@@ -246,38 +244,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Invoicing Summary (single card replacing Quick Actions + Contract Budget) ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 reveal-on-scroll">
-        <div className="rounded-3xl bg-emerald-600 p-5 text-white shadow-xl flex flex-col justify-between hover-elevate">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">INVOICING TOTAL</span>
-              <DollarSign size={20} />
-            </div>
-            <h3 className="text-2xl font-extrabold text-white">{formatINR(totalInvAmt)}</h3>
-            <p className="text-xs text-emerald-100 mt-1">{currentInvList.length} Total Invoices Issued</p>
-          </div>
-          <div className="mt-4 pt-3 border-t border-emerald-500/50 flex items-center justify-between text-xs text-emerald-100">
-            <span>FY {CURRENT_FY} Billing</span>
-            <Link to="/invoices" className="font-bold underline hover:text-white transition-all">View Invoices →</Link>
-          </div>
-        </div>
-
-        <div className="rounded-3xl bg-indigo-700 p-5 text-white shadow-xl flex flex-col justify-between hover-elevate">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-200">PURCHASE BILLS TOTAL</span>
-              <ShoppingBag size={20} />
-            </div>
-            <h3 className="text-2xl font-extrabold text-white">{formatINR(totalPbAmount)}</h3>
-            <p className="text-xs text-indigo-200 mt-1">{currentPbList.length} Purchase Bills — FY {CURRENT_FY}</p>
-          </div>
-          <div className="mt-4 pt-3 border-t border-indigo-500/50 flex items-center justify-between text-xs text-indigo-200">
-            <span>Supplier Invoice Total</span>
-            <Link to="/purchase-bills" className="font-bold underline hover:text-white transition-all">View Bills →</Link>
-          </div>
-        </div>
-      </div>
 
       {/* ── Month-wise Purchase Bill Bar Chart ── */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl hover-elevate reveal-on-scroll">
