@@ -73,7 +73,11 @@ export default function SummaryModal({ row, onClose }) {
     { key: 'jms_no', header: 'JMS No', render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
     { key: 'jms_create_date', header: 'JMS Date', render: r => formatDate(r.jms_create_date || r.inv_date) },
     { key: 'net_amount', header: 'Net Amount', render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.net_amount)}</span> },
-    { key: 'status', header: 'Status', render: r => <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-950 text-purple-300 border border-purple-800">{r.status || 'Pending'}</span> },
+    { key: 'status', header: 'Status', render: r => {
+      const isCancelled = String(r.work_description || '').includes('[Cancelled:') || String(r.status || '').toLowerCase().includes('cancel')
+      if (isCancelled) return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-950 text-rose-300 border border-rose-800">JMS DELETE</span>
+      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-950 text-purple-300 border border-purple-800">{r.status || 'Pending'}</span>
+    }},
   ];
 
   const invColumns = [
@@ -81,7 +85,11 @@ export default function SummaryModal({ row, onClose }) {
     { key: 'inv_date', header: 'Inv Date', render: r => formatDate(r.inv_date) },
     { key: 'jms_no', header: 'JMS No', render: r => <span className="font-semibold text-purple-300">{r.jms_no}</span> },
     { key: 'grand_total', header: 'Grand Total', render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.grand_total)}</span> },
-    { key: 'payment_status', header: 'Payment Status', render: r => <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700">{r.payment_status || 'Pending'}</span> },
+    { key: 'payment_status', header: 'Payment Status', render: r => {
+      const isCancelled = String(r.work_description || '').includes('[Cancelled:') || String(r.payment_status || r.status || '').toLowerCase().includes('cancel')
+      if (isCancelled) return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-950 text-rose-300 border border-rose-800">INVOICE DELETE</span>
+      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700">{r.payment_status || 'Pending'}</span>
+    }},
   ];
 
   return (
