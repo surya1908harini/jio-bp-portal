@@ -170,7 +170,7 @@ export default function PurchaseBillPage() {
   const totalTaxable = useMemo(() => monthRecords.reduce((s, r) => s + (Number(r.taxable_value) || 0), 0), [monthRecords])
   const totalCgst = useMemo(() => monthRecords.reduce((s, r) => s + (Number(r.cgst) || 0), 0), [monthRecords])
   const totalSgst = useMemo(() => monthRecords.reduce((s, r) => s + (Number(r.sgst) || 0), 0), [monthRecords])
-  const totalInvoiceValue = useMemo(() => monthRecords.reduce((s, r) => s + (Number(r.invoice_value) || 0), 0), [monthRecords])
+  const totalInvoiceValue = useMemo(() => monthRecords.reduce((s, r) => s + (Number(r.hb_rb) || Number(r.invoice_value) || 0), 0), [monthRecords])
   const receivedCount = useMemo(() => monthRecords.filter(r => String(r.remarks || '').toUpperCase().includes('RECEIVED') && !String(r.remarks || '').toUpperCase().includes('NOT')).length, [monthRecords])
   const notReceivedCount = useMemo(() => monthRecords.length - receivedCount, [monthRecords, receivedCount])
 
@@ -335,7 +335,7 @@ export default function PurchaseBillPage() {
           { icon: ShoppingBag, label: 'Total Purchase Bills', value: monthRecords.length, sub: (() => { if (activeMonth === 'all') return `FY ${activeFy}`; const mn = MONTHS.find(m => m.value === String(activeMonth))?.label || ''; const fyStart = parseInt((activeFy || '').split('-')[0]) || new Date().getFullYear(); const yr = Number(activeMonth) >= 4 ? fyStart : fyStart + 1; return `${mn} ${yr}`; })(), color: 'purple' },
           { icon: DollarSign, label: 'Taxable Value', value: formatINR(totalTaxable), sub: 'Before Tax', color: 'blue' },
           { icon: FileText, label: 'CGST + SGST Tax', value: formatINR(totalCgst + totalSgst), sub: 'Total Taxes', color: 'amber' },
-          { icon: CheckCircle2, label: 'Total Invoice Value', value: formatINR(totalInvoiceValue), sub: `Received: ${receivedCount} | Pending: ${notReceivedCount}`, color: 'emerald' },
+          { icon: CheckCircle2, label: 'Total HB Amount', value: formatINR(totalInvoiceValue), sub: `Received: ${receivedCount} | Pending: ${notReceivedCount}`, color: 'emerald' },
         ]}
       />
 

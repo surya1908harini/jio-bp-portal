@@ -153,12 +153,12 @@ export default function DashboardPage() {
         const d = new Date(b.inv_date)
         return !isNaN(d.getTime()) && (d.getMonth() + 1) === m.num
       })
-      const amount = rows.reduce((s, b) => s + (Number(b.invoice_value) || 0), 0)
+      const amount = rows.reduce((s, b) => s + (Number(b.hb_rb) || Number(b.invoice_value) || 0), 0)
       return { name: m.name, num: m.num, amount, count: rows.length }
     })
   }, [pbFyList])
 
-  const totalPbAmount = currentPbList.reduce((s, b) => s + (Number(b.invoice_value) || 0), 0)
+  const totalPbAmount = currentPbList.reduce((s, b) => s + (Number(b.hb_rb) || Number(b.invoice_value) || 0), 0)
 
   return (
     <div className="space-y-6">
