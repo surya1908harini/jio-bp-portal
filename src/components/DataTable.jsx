@@ -57,7 +57,17 @@ export default function DataTable({
   const topScrollRef = useRef(null)
   const bottomScrollRef = useRef(null)
   const tableRef = useRef(null)
+  const containerRef = useRef(null)
   const [tableWidth, setTableWidth] = useState(0)
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    setTimeout(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  }
 
   useEffect(() => {
     if (tableRef.current) {
@@ -121,7 +131,7 @@ export default function DataTable({
   const endRecord   = pageSize > 0 ? Math.min(currentPage * pageSize, sorted.length) : sorted.length
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" ref={containerRef}>
       {/* Bulk Selection Action Bar */}
       {isAdmin && enableSelection && selectedIds.length > 0 && (
         <div className="p-3 rounded-2xl bg-rose-950/80 border border-rose-800/80 flex items-center justify-between gap-3 animate-slide-in shadow-xl">
@@ -298,7 +308,7 @@ export default function DataTable({
         {pageSize > 0 && totalPages > 1 && (
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => setCurrentPage(1)}
+              onClick={() => handlePageChange(1)}
               disabled={currentPage === 1}
               className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-300 transition-colors"
               title="First Page"
@@ -306,7 +316,7 @@ export default function DataTable({
               <ChevronsLeft size={14} />
             </button>
             <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
               className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-300 transition-colors"
               title="Previous Page"
@@ -319,7 +329,7 @@ export default function DataTable({
             </span>
 
             <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
               className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-300 transition-colors"
               title="Next Page"
@@ -327,7 +337,7 @@ export default function DataTable({
               <ChevronRight size={14} />
             </button>
             <button
-              onClick={() => setCurrentPage(totalPages)}
+              onClick={() => handlePageChange(totalPages)}
               disabled={currentPage === totalPages}
               className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-300 transition-colors"
               title="Last Page"
