@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'react-router-dom'
 import {
@@ -58,6 +58,16 @@ export default function BudgetPage() {
   const [viewMode, setViewMode]      = useState('grid') // 'grid' or 'list'
   const [searchQuery, setSearchQuery] = useState(initialSearch)
   const [currentPage, setCurrentPage] = useState(1)
+  const gridContainerRef = useRef(null)
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    setTimeout(() => {
+      if (gridContainerRef.current) {
+        gridContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  }
 
   useEffect(() => {
     const s = searchParams.get('search')
@@ -430,7 +440,7 @@ export default function BudgetPage() {
 
       {/* ── Content View Rendering (Grid Cards vs List Table) ── */}
       {viewMode === 'grid' ? (
-        <div className="space-y-6">
+        <div className="space-y-6" ref={gridContainerRef}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {sortedRecords.length === 0 ? (
               <div className="col-span-full text-center py-12 glass-card text-slate-400">
@@ -565,7 +575,7 @@ export default function BudgetPage() {
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
                   className="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 hover:bg-slate-700 transition-colors"
                 >
@@ -576,7 +586,7 @@ export default function BudgetPage() {
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
                     <button
                       key={pageNum}
-                      onClick={() => setCurrentPage(pageNum)}
+                      onClick={() => handlePageChange(pageNum)}
                       className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
                         currentPage === pageNum
                           ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
@@ -589,7 +599,7 @@ export default function BudgetPage() {
                 </div>
 
                 <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
                   className="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 hover:bg-slate-700 transition-colors"
                 >
