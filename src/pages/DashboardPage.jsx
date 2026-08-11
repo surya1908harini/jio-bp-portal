@@ -8,7 +8,7 @@ import {
   FileText, Receipt, PieChart as PieChartIcon, Clock, CheckCircle, TrendingUp, Calendar,
   ArrowRight, Shield, Activity, Sparkles, Award, Zap, DollarSign, Layers, Plus, ExternalLink, ShoppingBag
 } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area, ComposedChart, Line, Legend } from 'recharts'
 
 export default function DashboardPage() {
   const { user, isAdmin } = useAuth()
@@ -160,6 +160,41 @@ export default function DashboardPage() {
 
   const totalPbAmount = currentPbList.reduce((s, b) => s + (Number(b.hb_rb) || Number(b.invoice_value) || 0), 0)
 
+  // Monthly Profit & Loss Data
+  const [pnlFy, setPnlFy] = useState(CURRENT_FY)
+  const pnlMonthData = useMemo(() => {
+    const months = [
+      { name: 'Apr', num: 4 }, { name: 'May', num: 5 }, { name: 'Jun', num: 6 },
+      { name: 'Jul', num: 7 }, { name: 'Aug', num: 8 }, { name: 'Sep', num: 9 },
+      { name: 'Oct', num: 10 }, { name: 'Nov', num: 11 }, { name: 'Dec', num: 12 },
+      { name: 'Jan', num: 1 }, { name: 'Feb', num: 2 }, { name: 'Mar', num: 3 },
+    ]
+
+    const pbRowsForFy = purchaseBillList.filter(b => getPbFy(b) === pnlFy)
+    const invRowsForFy = invoiceList.filter(i => getInvFy(i) === pnlFy)
+
+    return months.map(m => {
+      const pbs = pbRowsForFy.filter(b => {
+        if (!b.inv_date) return false
+        const d = new Date(b.inv_date)
+        return !isNaN(d.getTime()) && (d.getMonth() + 1) === m.num
+      })
+      const purchase = pbs.reduce((s, b) => s + (Number(b.hb_rb) || Number(b.invoice_value) || 0), 0)
+
+      const invs = invRowsForFy.filter(i => {
+        const dateStr = i.inv_date || i.created_at
+        if (!dateStr) return false
+        const d = new Date(dateStr)
+        return !isNaN(d.getTime()) && (d.getMonth() + 1) === m.num
+      })
+      const invoice = invs.reduce((s, i) => s + (Number(i.grand_total) || 0), 0)
+
+      const profit = invoice - purchase
+
+      return { name: m.name, num: m.num, purchase, invoice, profit }
+    })
+  }, [purchaseBillList, invoiceList, pnlFy])
+
   return (
     <div className="space-y-6">
       {/* ── Full Width Hero Banner ── */}
@@ -301,6 +336,66 @@ export default function DashboardPage() {
                 }}
               />
             </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ── Monthly Profit & Loss Chart ── */}
+      <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl hover-elevate reveal-on-scroll">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-white">Monthly Profit & Loss</h3>
+              <select
+                value={pnlFy}
+                onChange={e => setPnlFy(e.target.value)}
+                className="bg-slate-800 text-emerald-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer"
+              >
+                <option value="2023-24">FY 2023-24</option>
+                <option value="2024-25">FY 2024-25</option>
+                <option value="2025-26">FY 2025-26</option>
+                <option value="2026-27">FY 2026-27 (Current)</option>
+              </select>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">Compare Invoice Amount vs Purchase Amount and net Profit/Loss</p>
+          </div>
+          <div className="flex items-center gap-4 text-xs font-semibold">
+             <span className="flex items-center gap-1.5 text-blue-400">
+               <span className="w-2.5 h-2.5 rounded-sm bg-blue-500" /> Invoice Amount
+             </span>
+             <span className="flex items-center gap-1.5 text-pink-400">
+               <span className="w-2.5 h-2.5 rounded-sm bg-pink-500" /> Purchase Amount
+             </span>
+             <span className="flex items-center gap-1.5 text-emerald-400">
+               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Net Profit/Loss
+             </span>
+          </div>
+        </div>
+
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={pnlMonthData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <defs>
+                <linearGradient id="invGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.9}/>
+                  <stop offset="95%" stopColor="#60a5fa" stopOpacity={0.5}/>
+                </linearGradient>
+                <linearGradient id="pbGrad2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ec4899" stopOpacity={0.9}/>
+                  <stop offset="95%" stopColor="#f472b6" stopOpacity={0.5}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
+              <YAxis stroke="#64748b" fontSize={10} tickLine={false} tickFormatter={v => v >= 1000 ? `₹${(v/1000).toFixed(0)}K` : `₹${v}`} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                formatter={(value, name) => [formatINR(value), name === 'invoice' ? 'Invoice Amount' : name === 'purchase' ? 'Purchase Amount' : 'Profit/Loss']}
+                labelFormatter={label => `Month: ${label}`}
+              />
+              <Bar dataKey="invoice" fill="url(#invGrad)" radius={[4, 4, 0, 0]} barSize={20} isAnimationActive animationDuration={1400} />
+              <Bar dataKey="purchase" fill="url(#pbGrad2)" radius={[4, 4, 0, 0]} barSize={20} isAnimationActive animationDuration={1400} />
+              <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#0f172a' }} isAnimationActive animationDuration={1600} />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </div>
