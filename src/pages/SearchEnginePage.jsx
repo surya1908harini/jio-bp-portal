@@ -354,6 +354,7 @@ export default function SearchEnginePage() {
                   onChange={e => setJmsEndDate(e.target.value)}
                   className="input-field py-1.5"
                 />
+              </div>
             </div>
           </div>
           )}
