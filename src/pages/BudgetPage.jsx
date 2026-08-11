@@ -21,6 +21,7 @@ import ModuleHeader from '../components/ModuleHeader'
 const EMPTY_FORM = {
   operation: '', description: '', arc_number: '', work_order_number: '',
   validity_of_contract: '', fo_total_budget: '', payment_timeframe_days: '30', status: 'Active',
+  financial_year: CURRENT_FY,
 }
 
 const IMPORT_MAP = {
@@ -666,6 +667,16 @@ export default function BudgetPage() {
             <select name="status" value={form.status || 'Active'} onChange={handleChange} className="input-field">
               <option value="Active">Active Work Order</option>
               <option value="Closed">WO Closed</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1">Financial Year</label>
+            <select name="financial_year" value={form.financial_year || CURRENT_FY} onChange={handleChange} className="input-field">
+              <option value="2023-24">FY 2023-24</option>
+              <option value="2024-25">FY 2024-25</option>
+              <option value="2025-26">FY 2025-26</option>
+              <option value="2026-27">FY 2026-27</option>
             </select>
           </div>
 

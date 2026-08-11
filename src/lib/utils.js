@@ -213,6 +213,7 @@ export function formatValidityRange(validityStr) {
 // ──────────────────────────────────────────────
 export function getBudgetRecordFy(r) {
   if (!r) return '2024-25'
+  if (r.financial_year) return r.financial_year
   try {
     const { endDate, startDate } = parseValidity(r.validity_of_contract)
     const targetDate = endDate || startDate
