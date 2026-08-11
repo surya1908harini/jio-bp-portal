@@ -61,12 +61,12 @@ export default function BudgetPage() {
   const gridContainerRef = useRef(null)
 
   const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
+    setCurrentPage(newPage)
     setTimeout(() => {
       if (gridContainerRef.current) {
-        gridContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        gridContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }
-    }, 100);
+    }, 100)
   }
 
   useEffect(() => {
