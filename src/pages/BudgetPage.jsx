@@ -79,35 +79,7 @@ export default function BudgetPage() {
     queryFn: () => budgetDb.listAll(),
   })
 
-  // Fetch JMS to compute corrected consumed (exclude cancelled JMS from budget totals)
-  const { data: allJmsList = [] } = useQuery({
-    queryKey: ['jms', 'all'],
-    queryFn: () => jmsDb.listAll(),
-  })
-
-  // Build a map: work_order_number → cancelled JMS net_amount sum
-  const cancelledJmsDeductionMap = useMemo(() => {
-    const map = {}
-    allJmsList.forEach(j => {
-      const desc = String(j.work_description || '')
-      const isCancelled = desc.includes('[Cancelled:') || String(j.status || '').toLowerCase().includes('cancel')
-      if (isCancelled && j.work_order_number) {
-        const woKey = String(j.work_order_number).trim().toLowerCase()
-        map[woKey] = (map[woKey] || 0) + (j.net_amount || 0)
-      }
-    })
-    return map
-  }, [allJmsList])
-
-  // Patch total_consumed: subtract cancelled JMS amounts from budget_summary view totals
-  const allRecords = useMemo(() => {
-    return allBudgetRaw.map(b => {
-      const woKey = String(b.work_order_number || '').trim().toLowerCase()
-      const deduction = cancelledJmsDeductionMap[woKey] || 0
-      const correctedConsumed = Math.max(0, (b.total_consumed || 0) - deduction)
-      return { ...b, total_consumed: correctedConsumed }
-    })
-  }, [allBudgetRaw, cancelledJmsDeductionMap])
+  const allRecords = allBudgetRaw
 
   const fyRecords = useMemo(() => {
     if (activeFy === 'overall') return allRecords

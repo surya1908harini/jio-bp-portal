@@ -359,9 +359,35 @@ export const invoiceDb = {
 // ═══════════════════════════════════════════════════════════
 // BUDGET RECORDS  (reads from budget_summary view)
 // ═══════════════════════════════════════════════════════════
+
+async function fetchAndPatchBudgetRecords(baseQueryFn) {
+  const [budgetRecords, jmsRecords] = await Promise.all([
+    fetchPagedData(baseQueryFn),
+    jmsDb.listAll()
+  ])
+  
+  const cancelledMap = {}
+  jmsRecords.forEach(j => {
+    const desc = String(j.work_description || '')
+    const isCancelled = desc.includes('[Cancelled:') || String(j.status || '').toLowerCase().includes('cancel')
+    if (isCancelled && j.work_order_number) {
+      const woKey = String(j.work_order_number).trim().toLowerCase()
+      cancelledMap[woKey] = (cancelledMap[woKey] || 0) + (j.net_amount || 0)
+    }
+  })
+
+  return budgetRecords.map(b => {
+    const woKey = String(b.work_order_number || '').trim().toLowerCase()
+    const deduction = cancelledMap[woKey] || 0
+    const total_consumed = Math.max(0, (b.total_consumed || 0) - deduction)
+    const balance_available = (b.fo_total_budget || 0) - total_consumed
+    return { ...b, total_consumed, balance_available }
+  })
+}
+
 export const budgetDb = {
   list: async (fy) => {
-    const records = await fetchPagedData(() =>
+    const records = await fetchAndPatchBudgetRecords(() =>
       supabase
         .from('budget_summary')
         .select('*')
@@ -372,7 +398,7 @@ export const budgetDb = {
   },
 
   listAll: async () => {
-    const records = await fetchPagedData(() =>
+    const records = await fetchAndPatchBudgetRecords(() =>
       supabase
         .from('budget_summary')
         .select('*')
