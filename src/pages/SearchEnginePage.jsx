@@ -34,6 +34,7 @@ export default function SearchEnginePage() {
   const { isAdmin } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState('jms') // 'jms' or 'invoice'
+  const [showFilters, setShowFilters] = useState(false)
 
   // Fetch Database Data
   const { data: jmsList = [], isLoading: jmsLoading }         = useQuery({ queryKey: ['jms', 'all'],     queryFn: () => jmsDb.listAll() })
@@ -62,6 +63,7 @@ export default function SearchEnginePage() {
     if (queryWo) {
       setSelectedJmsWorkOrders([queryWo])
       setSelectedInvWorkOrders([queryWo])
+      setShowFilters(true) // Open filters automatically if query is present
       // Optionally remove the query from URL after applying so it doesn't get stuck on refresh
       setSearchParams({})
     }
@@ -246,30 +248,43 @@ export default function SearchEnginePage() {
         subtitle="Multi-select query engine for JMS numbers, Work Orders, date ranges, and monthly/yearly invoice aggregations."
       />
 
-      {/* Main Search Mode Tabs */}
-      <div className="flex bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 backdrop-blur-md w-fit">
-        <button
-          onClick={() => setActiveTab('jms')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
-            activeTab === 'jms'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-          }`}
-        >
-          <FileText size={15} />
-          JMS Search & Multi-Select Engine
-        </button>
+      {/* Main Search Mode Tabs & Toggle */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 backdrop-blur-md w-fit">
+          <button
+            onClick={() => setActiveTab('jms')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              activeTab === 'jms'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <FileText size={15} />
+            JMS Search & Multi-Select Engine
+          </button>
 
-        <button
-          onClick={() => setActiveTab('invoice')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
-            activeTab === 'invoice'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          <button
+            onClick={() => setActiveTab('invoice')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              activeTab === 'invoice'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Receipt size={15} />
+            Invoice Search & Multi-Select Engine
+          </button>
+        </div>
+
+        <button 
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl border font-bold text-xs transition-all ${
+            showFilters 
+              ? 'bg-slate-700 text-white border-slate-600 shadow-inner' 
+              : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800 hover:text-white'
           }`}
         >
-          <Receipt size={15} />
-          Invoice Search & Multi-Select Engine
+          <Filter size={15} /> {showFilters ? 'Hide Advanced Filters' : 'Show Advanced Filters'}
         </button>
       </div>
 
@@ -277,7 +292,8 @@ export default function SearchEnginePage() {
       {activeTab === 'jms' && (
         <div className="space-y-6">
           {/* Query Filter Controls Panel */}
-          <div className="glass-card p-5 space-y-4 border-l-4 border-l-purple-500 relative z-30">
+          {showFilters && (
+            <div className="glass-card p-5 space-y-4 border-l-4 border-l-purple-500 relative z-30 animate-slide-in">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
                 <Search size={16} className="text-purple-400" /> JMS Multi-Select Query Controls
@@ -338,9 +354,9 @@ export default function SearchEnginePage() {
                   onChange={e => setJmsEndDate(e.target.value)}
                   className="input-field py-1.5"
                 />
-              </div>
             </div>
           </div>
+          )}
 
           {/* Aggregation Summary Cards Panel */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -395,7 +411,8 @@ export default function SearchEnginePage() {
       {activeTab === 'invoice' && (
         <div className="space-y-6">
           {/* Query Filter Controls Panel */}
-          <div className="glass-card p-5 space-y-4 border-l-4 border-l-cyan-500 relative z-30">
+          {showFilters && (
+            <div className="glass-card p-5 space-y-4 border-l-4 border-l-cyan-500 relative z-30 animate-slide-in">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
                 <Search size={16} className="text-cyan-400" /> Invoice Multi-Select Query Controls
@@ -459,6 +476,7 @@ export default function SearchEnginePage() {
               </div>
             </div>
           </div>
+          )}
 
           {/* Aggregation Summary Cards Panel */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
