@@ -196,7 +196,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* ── Full Width Hero Banner ── */}
-      <div className="w-full rounded-3xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 p-7 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between reveal-on-scroll hover-elevate">
+      <div className="w-full rounded-3xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 p-5 lg:p-6 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between reveal-on-scroll hover-elevate">
         <div className="absolute -right-10 -bottom-10 w-96 h-96 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
         <div>
@@ -224,7 +224,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Mini Stat Boxes */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-5 border-t border-white/20">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-4 border-t border-white/20">
           <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm cursor-pointer" onClick={() => navigate('/jms')}>
             <p className="text-[10px] text-purple-200 uppercase font-semibold">Total JMS</p>
             <p className="text-xl font-extrabold text-white mt-0.5">{totalJmsCount}</p>
@@ -245,128 +245,8 @@ export default function DashboardPage() {
       </div>
 
 
-      {/* ── Month-wise Purchase Bill Bar Chart ── */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl hover-elevate reveal-on-scroll">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-white">Month-wise Purchase Bill Amount</h3>
-              <select
-                value={pbFy}
-                onChange={e => setPbFy(e.target.value)}
-                className="bg-slate-800 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
-              >
-                <option value="2023-24">FY 2023-24</option>
-                <option value="2024-25">FY 2024-25</option>
-                <option value="2025-26">FY 2025-26</option>
-                <option value="2026-27">FY 2026-27 (Current)</option>
-              </select>
-            </div>
-            <p className="text-xs text-slate-400 mt-0.5">Total invoice value purchased per month — FY {pbFy}</p>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs font-semibold">
-            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-            <span className="text-indigo-400">Invoice Value (₹)</span>
-          </div>
-        </div>
-
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={pbMonthData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-              <defs>
-                <linearGradient id="pbGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.9}/>
-                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.5}/>
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
-              <YAxis stroke="#64748b" fontSize={10} tickLine={false} tickFormatter={v => v >= 1000 ? `₹${(v/1000).toFixed(0)}K` : `₹${v}`} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
-                formatter={(value, name) => [formatINR(value), 'Invoice Value']}
-                labelFormatter={label => `Month: ${label}`}
-              />
-              <Bar
-                dataKey="amount"
-                fill="url(#pbGrad)"
-                radius={[6, 6, 0, 0]}
-                isAnimationActive
-                animationDuration={1400}
-                style={{ cursor: 'pointer' }}
-                onClick={(data) => {
-                  if (data && data.payload && data.payload.num) {
-                    navigate(`/purchase-bills?month=${data.payload.num}&fy=${pbFy}`);
-                  } else if (data && data.num) {
-                    navigate(`/purchase-bills?month=${data.num}&fy=${pbFy}`);
-                  }
-                }}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* ── Monthly Profit & Loss Chart ── */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl hover-elevate reveal-on-scroll">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-white">Monthly Profit & Loss</h3>
-              <select
-                value={pnlFy}
-                onChange={e => setPnlFy(e.target.value)}
-                className="bg-slate-800 text-emerald-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer"
-              >
-                <option value="2023-24">FY 2023-24</option>
-                <option value="2024-25">FY 2024-25</option>
-                <option value="2025-26">FY 2025-26</option>
-                <option value="2026-27">FY 2026-27 (Current)</option>
-              </select>
-            </div>
-            <p className="text-xs text-slate-400 mt-0.5">Compare Invoice Amount vs Purchase Amount and net Profit/Loss</p>
-          </div>
-          <div className="flex items-center gap-4 text-xs font-semibold">
-             <span className="flex items-center gap-1.5 text-blue-400">
-               <span className="w-2.5 h-2.5 rounded-sm bg-blue-500" /> Invoice Amount
-             </span>
-             <span className="flex items-center gap-1.5 text-pink-400">
-               <span className="w-2.5 h-2.5 rounded-sm bg-pink-500" /> Purchase Amount
-             </span>
-             <span className="flex items-center gap-1.5 text-emerald-400">
-               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Net Profit/Loss
-             </span>
-          </div>
-        </div>
-
-        <div className="h-72 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={pnlMonthData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-              <defs>
-                <linearGradient id="invGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.9}/>
-                  <stop offset="95%" stopColor="#60a5fa" stopOpacity={0.5}/>
-                </linearGradient>
-                <linearGradient id="pbGrad2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ec4899" stopOpacity={0.9}/>
-                  <stop offset="95%" stopColor="#f472b6" stopOpacity={0.5}/>
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
-              <YAxis stroke="#64748b" fontSize={10} tickLine={false} tickFormatter={v => v >= 1000 ? `₹${(v/1000).toFixed(0)}K` : `₹${v}`} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
-                formatter={(value, name) => [formatINR(value), name === 'invoice' ? 'Invoice Amount' : name === 'purchase' ? 'Purchase Amount' : 'Profit/Loss']}
-                labelFormatter={label => `Month: ${label}`}
-              />
-              <Bar dataKey="invoice" fill="url(#invGrad)" radius={[4, 4, 0, 0]} barSize={20} isAnimationActive animationDuration={1400} />
-              <Bar dataKey="purchase" fill="url(#pbGrad2)" radius={[4, 4, 0, 0]} barSize={20} isAnimationActive animationDuration={1400} />
-              <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#0f172a' }} isAnimationActive animationDuration={1600} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* ── Dynamic Area Trend Chart & Donut Chart ── */}
+      
+{/* ── Dynamic Area Trend Chart & Donut Chart ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 reveal-on-scroll">
         {/* Monthly Activity Area Chart */}
         <div className="lg:col-span-2 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl hover-elevate">
@@ -519,6 +399,130 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </div>
+    
+{/* ── Month-wise Purchase Bill Bar Chart ── */}
+      <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl hover-elevate reveal-on-scroll">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-white">Month-wise Purchase Bill Amount</h3>
+              <select
+                value={pbFy}
+                onChange={e => setPbFy(e.target.value)}
+                className="bg-slate-800 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+              >
+                <option value="2023-24">FY 2023-24</option>
+                <option value="2024-25">FY 2024-25</option>
+                <option value="2025-26">FY 2025-26</option>
+                <option value="2026-27">FY 2026-27 (Current)</option>
+              </select>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">Total invoice value purchased per month — FY {pbFy}</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold">
+            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+            <span className="text-indigo-400">Invoice Value (₹)</span>
+          </div>
+        </div>
+
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={pbMonthData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <defs>
+                <linearGradient id="pbGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.9}/>
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.5}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
+              <YAxis stroke="#64748b" fontSize={10} tickLine={false} tickFormatter={v => v >= 1000 ? `₹${(v/1000).toFixed(0)}K` : `₹${v}`} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                formatter={(value, name) => [formatINR(value), 'Invoice Value']}
+                labelFormatter={label => `Month: ${label}`}
+              />
+              <Bar
+                dataKey="amount"
+                fill="url(#pbGrad)"
+                radius={[6, 6, 0, 0]}
+                isAnimationActive
+                animationDuration={1400}
+                style={{ cursor: 'pointer' }}
+                onClick={(data) => {
+                  if (data && data.payload && data.payload.num) {
+                    navigate(`/purchase-bills?month=${data.payload.num}&fy=${pbFy}`);
+                  } else if (data && data.num) {
+                    navigate(`/purchase-bills?month=${data.num}&fy=${pbFy}`);
+                  }
+                }}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      
+{/* ── Monthly Profit & Loss Chart ── */}
+      <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl hover-elevate reveal-on-scroll">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-white">Monthly Profit & Loss</h3>
+              <select
+                value={pnlFy}
+                onChange={e => setPnlFy(e.target.value)}
+                className="bg-slate-800 text-emerald-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer"
+              >
+                <option value="2023-24">FY 2023-24</option>
+                <option value="2024-25">FY 2024-25</option>
+                <option value="2025-26">FY 2025-26</option>
+                <option value="2026-27">FY 2026-27 (Current)</option>
+              </select>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">Compare Invoice Amount vs Purchase Amount and net Profit/Loss</p>
+          </div>
+          <div className="flex items-center gap-4 text-xs font-semibold">
+             <span className="flex items-center gap-1.5 text-blue-400">
+               <span className="w-2.5 h-2.5 rounded-sm bg-blue-500" /> Invoice Amount
+             </span>
+             <span className="flex items-center gap-1.5 text-pink-400">
+               <span className="w-2.5 h-2.5 rounded-sm bg-pink-500" /> Purchase Amount
+             </span>
+             <span className="flex items-center gap-1.5 text-emerald-400">
+               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Net Profit/Loss
+             </span>
+          </div>
+        </div>
+
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={pnlMonthData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <defs>
+                <linearGradient id="invGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.9}/>
+                  <stop offset="95%" stopColor="#60a5fa" stopOpacity={0.5}/>
+                </linearGradient>
+                <linearGradient id="pbGrad2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ec4899" stopOpacity={0.9}/>
+                  <stop offset="95%" stopColor="#f472b6" stopOpacity={0.5}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
+              <YAxis stroke="#64748b" fontSize={10} tickLine={false} tickFormatter={v => v >= 1000 ? `₹${(v/1000).toFixed(0)}K` : `₹${v}`} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                formatter={(value, name) => [formatINR(value), name === 'invoice' ? 'Invoice Amount' : name === 'purchase' ? 'Purchase Amount' : 'Profit/Loss']}
+                labelFormatter={label => `Month: ${label}`}
+              />
+              <Bar dataKey="invoice" fill="url(#invGrad)" radius={[4, 4, 0, 0]} barSize={20} isAnimationActive animationDuration={1400} />
+              <Bar dataKey="purchase" fill="url(#pbGrad2)" radius={[4, 4, 0, 0]} barSize={20} isAnimationActive animationDuration={1400} />
+              <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#0f172a' }} isAnimationActive animationDuration={1600} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      
+</div>
   )
 }
