@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import Layout from './components/Layout'
+import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import JmsPage from './pages/JmsPage'
@@ -31,10 +32,10 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Routes>
+        <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <HomePage />} />
         <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
 
-        <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
           <Route path="dashboard" element={<DashboardPage />} />
 
           {/* JMS */}
