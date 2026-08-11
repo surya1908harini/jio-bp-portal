@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import {
   Search, Filter, Calendar, FileText, Receipt, DollarSign, Download, Clock, CheckCircle2,
   TrendingUp, Globe, Building, ArrowRight, RefreshCw, Calculator, Layers
@@ -31,6 +32,7 @@ const YEARS = ['2023', '2024', '2025', '2026', '2027']
 
 export default function SearchEnginePage() {
   const { isAdmin } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState('jms') // 'jms' or 'invoice'
 
   // Fetch Database Data
@@ -53,6 +55,17 @@ export default function SearchEnginePage() {
   const [invKeyword, setInvKeyword]                 = useState('')
 
   const [selectedRecord, setSelectedRecord] = useState(null)
+
+  // Pre-fill Work Order from URL if navigated from Budget Page
+  useEffect(() => {
+    const queryWo = searchParams.get('search')
+    if (queryWo) {
+      setSelectedJmsWorkOrders([queryWo])
+      setSelectedInvWorkOrders([queryWo])
+      // Optionally remove the query from URL after applying so it doesn't get stuck on refresh
+      setSearchParams({})
+    }
+  }, [searchParams, setSearchParams])
 
   // Options for Dropdowns
   const allJmsNoOptions = useMemo(() => {
