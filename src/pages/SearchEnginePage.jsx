@@ -369,7 +369,7 @@ export default function SearchEnginePage() {
 
             <div className="rounded-2xl border border-emerald-800/50 bg-emerald-950/30 p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider mb-1">Total JMS Net Value</p>
-              <p className="text-xl font-extrabold text-emerald-400 font-mono">{formatINR(totalJmsNetValue)}</p>
+              <p className="text-xl font-extrabold text-emerald-400">{formatINR(totalJmsNetValue)}</p>
               <p className="text-[11px] text-slate-400 mt-0.5">Aggregated Net Amount</p>
             </div>
 
@@ -489,13 +489,13 @@ export default function SearchEnginePage() {
 
             <div className="rounded-2xl border border-emerald-800/50 bg-emerald-950/30 p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider mb-1">Total Grand Total Value</p>
-              <p className="text-xl font-extrabold text-emerald-400 font-mono">{formatINR(totalInvGrandTotal)}</p>
+              <p className="text-xl font-extrabold text-emerald-400">{formatINR(totalInvGrandTotal)}</p>
               <p className="text-[11px] text-slate-400 mt-0.5">Inclusive of GST</p>
             </div>
 
             <div className="rounded-2xl border border-amber-800/50 bg-amber-950/30 p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-amber-300 uppercase tracking-wider mb-1">Received Bill Amount</p>
-              <p className="text-xl font-extrabold text-amber-400 font-mono">{formatINR(totalInvReceived)}</p>
+              <p className="text-xl font-extrabold text-amber-400">{formatINR(totalInvReceived)}</p>
               <p className="text-[11px] text-slate-400 mt-0.5">Total Collections</p>
             </div>
 
