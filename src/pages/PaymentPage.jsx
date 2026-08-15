@@ -370,20 +370,16 @@ export default function PaymentPage() {
 
 
       {document.getElementById('topbar-center') && createPortal(
-        <div className="flex gap-1.5 items-center justify-center flex-wrap">
-          {TABS.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-1.5 py-1 rounded-xl text-[10px] font-semibold transition-all whitespace-normal text-center w-[100px] leading-[1.15] h-8 flex items-center justify-center ${
-                activeTab === tab.key 
-                  ? 'bg-gray-900 text-white shadow-sm border border-gray-900' 
-                  : 'bg-white dark:bg-[#1e1e2d] border-gray-200 dark:border-gray-800 text-gray-600 dark:text-white dark:text-white hover:text-gray-900 dark:text-white border hover:bg-gray-50 dark:bg-[#151521] shadow-sm'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex items-center justify-center">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value)}
+            className="bg-white dark:bg-[#1e1e2d] border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm min-w-[250px]"
+          >
+            {TABS.map(tab => (
+              <option key={tab.key} value={tab.key}>{tab.label}</option>
+            ))}
+          </select>
         </div>,
         document.getElementById('topbar-center')
       )}

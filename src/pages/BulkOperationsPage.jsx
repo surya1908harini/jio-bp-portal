@@ -25,10 +25,7 @@ const ACTIONS = {
     { id: 'TO_INVOICED', label: 'Move to Invoiced', prevStage: 'A3', requiresDate: true, dateLabel: 'A3 Release Date' }
   ],
   INVOICE: [
-    { id: 'CREATE_MULTI', label: 'Create Multiple Invoices', isCreate: true },
-    { id: 'GST_PAID', label: 'Mark as GST Paid', requiresDate: true, dateLabel: 'GST Received Date' },
-    { id: 'NET_PAID', label: 'Mark as Net Amount Received', requiresDate: true, dateLabel: 'Net Amount Received Date' },
-    { id: 'FULL_PAID', label: 'Mark as Full Paid', requiresDate: true, dateLabel: 'Full Payment Received Date' }
+    { id: 'CREATE_MULTI', label: 'Create Multiple Invoices', isCreate: true }
   ],
   BUDGET: [
     { id: 'CREATE_MULTI', label: 'Create Multiple Budgets', isCreate: true },
@@ -196,10 +193,7 @@ export default function BulkOperationsPage() {
           updates.push(jmsDb.update(id, payload))
         } 
         else if (activeModule === 'INVOICE') {
-          if (activeAction === 'GST_PAID') { payload = { ...record, payment_status: 'GST Payment Only Received', gst_amount_received_date: dateValue } }
-          else if (activeAction === 'NET_PAID') { payload = { ...record, payment_status: 'Net Amount Received', full_amount_received_date: dateValue } }
-          else if (activeAction === 'FULL_PAID') { payload = { ...record, payment_status: 'Full Payment Received', full_amount_received_date: dateValue } }
-          updates.push(invoiceDb.update(id, payload))
+          // No bulk actions other than CREATE_MULTI for INVOICE right now
         }
         else if (activeModule === 'BUDGET') {
           if (activeAction === 'CLOSE') { payload = { ...record, status: 'Closed' } }
@@ -248,24 +242,38 @@ export default function BulkOperationsPage() {
 
   return (
     <div className="space-y-6 animate-page-enter">
-      <ModuleHeader title="Bulk Operations" subtitle="Perform mass updates and create multiple records via Spreadsheet." />
+      <ModuleHeader title="OPERATION WARD" subtitle="" />
 
       {/* Centered Operation Type Selector in Header area */}
       <div className="flex justify-center mb-6">
-        <div className="bg-white dark:bg-[#1e1e2d] shadow-md border border-gray-200 dark:border-gray-800 rounded-xl p-2 inline-flex flex-wrap justify-center gap-2 max-w-4xl">
-          {MODULES.map(m => (
-            <button key={m.id} onClick={() => { setActiveModule(m.id); setActiveAction(ACTIONS[m.id][0].id); }}
-              className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${activeModule === m.id ? 'bg-jio-blue-600 text-white shadow-md' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a24]'}`}>
-              {m.label}
-            </button>
-          ))}
+        <div className="bg-white dark:bg-[#1e1e2d] shadow-md border border-gray-200 dark:border-gray-800 rounded-xl p-4 inline-flex flex-wrap justify-center items-center gap-4 max-w-4xl">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wider flex items-center gap-1">
+              <Filter size={12}/> Target Module
+            </label>
+            <select
+              value={activeModule}
+              onChange={(e) => { setActiveModule(e.target.value); setActiveAction(ACTIONS[e.target.value][0].id); }}
+              className="bg-white dark:bg-[#151521] border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-jio-blue-500 shadow-sm"
+            >
+              {MODULES.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+            </select>
+          </div>
+          
           <div className="w-px h-8 bg-gray-300 dark:bg-gray-700 mx-2 self-center hidden sm:block"></div>
-          {currentActions.map(act => (
-            <button key={act.id} onClick={() => setActiveAction(act.id)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${activeAction === act.id ? 'bg-amber-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a24]'}`}>
-              {act.isCreate ? <span className="flex items-center gap-1"><Table2 size={12}/> {act.label}</span> : act.label}
-            </button>
-          ))}
+          
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-gray-500 dark:text-white uppercase tracking-wider flex items-center gap-1">
+              <Zap size={12}/> Bulk Action
+            </label>
+            <select
+              value={activeAction}
+              onChange={(e) => setActiveAction(e.target.value)}
+              className="bg-white dark:bg-[#151521] border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"
+            >
+              {currentActions.map(act => <option key={act.id} value={act.id}>{act.label}</option>)}
+            </select>
+          </div>
         </div>
       </div>
 

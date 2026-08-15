@@ -9,7 +9,7 @@ import NotificationDetailModal from './NotificationDetailModal'
 import useScrollReveal from '../hooks/useScrollReveal'
 import {
   LayoutDashboard, FileText, Receipt, PieChart, Settings, Database, ShoppingBag, Layers, ClipboardCheck,
-  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2, CheckCircle2, Edit2, Home, Banknote, Sun, Moon
+  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2, CheckCircle2, Edit2, Home, Banknote, Sun, Moon, Activity
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -21,7 +21,7 @@ const PRIMARY_NAV = [
   { label: 'Payments', icon: Banknote, path: '/payments' },
   { label: 'Purchase Bill', icon: ShoppingBag, path: '/purchase-bills' },
   { label: 'Budget', icon: PieChart, path: '/budget' },
-  { label: 'Bulk Ops', icon: Layers, path: '/bulk-operations', adminOnly: true },
+  { label: 'OPERATION WARD', icon: Activity, path: '/bulk-operations', adminOnly: true },
   { label: 'PF Clearance', icon: ClipboardCheck, path: '/pf-clearance' },
 ]
 
@@ -433,7 +433,8 @@ export default function Layout() {
                location.pathname.includes('/pf-clearance') ? 'PF Clearance' :
                location.pathname.includes('/purchase-bills') ? 'Purchase Bills' :
                location.pathname.includes('/budget') ? 'Budget Analysis' :
-               location.pathname.includes('/payments') ? 'Payments' : 'Portal'}
+               location.pathname.includes('/payments') ? 'Payments' : 
+               location.pathname.includes('/bulk-operations') ? 'OPERATION WARD' : 'Portal'}
             </h1>
           </div>
 

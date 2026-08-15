@@ -217,7 +217,7 @@ export default function DataTable({
             <tr>
               {/* Checkbox Column */}
               {isAdmin && enableSelection && (
-                <th className="w-10 text-center px-2">
+                <th className="w-10 text-center px-2 sticky left-0 bg-white dark:bg-[#1e1e2d] z-30 shadow-[4px_0_12px_rgba(0,0,0,0.03)] border-r border-gray-200 dark:border-gray-800">
                   <input
                     type="checkbox"
                     checked={allPaginatedSelected}
@@ -227,14 +227,17 @@ export default function DataTable({
                   />
                 </th>
               )}
-              {columns.map(col => {
+              {columns.map((col, idx) => {
                 const isActions = col.key === '_actions' || col.key === 'actions'
+                const isFirstData = idx === 0
                 return (
                   <th
                     key={col.key || col.header}
                     onClick={() => col.sortable !== false && col.key && handleSort(col.key)}
                     className={`${col.className || ''} ${col.sortable !== false && col.key ? 'cursor-pointer select-none hover:text-orange-500' : ''} ${
                       isActions ? 'sticky right-0 bg-white dark:bg-[#1e1e2d]/95 backdrop-blur-md shadow-[-6px_0_16px_rgba(0,0,0,0.05)] z-20 border-l border-gray-200 dark:border-gray-800 text-right px-4' : ''
+                    } ${
+                      isFirstData ? `sticky ${isAdmin && enableSelection ? 'left-10' : 'left-0'} bg-white dark:bg-[#1e1e2d] z-20 shadow-[4px_0_12px_rgba(0,0,0,0.03)] border-r border-gray-200 dark:border-gray-800` : ''
                     }`}
                   >
                     <span className="inline-flex items-center gap-1">
@@ -273,7 +276,7 @@ export default function DataTable({
                     onClick={() => onRowClick?.(row)}
                   >
                     {isAdmin && enableSelection && (
-                      <td className="w-10 text-center px-2" onClick={e => e.stopPropagation()}>
+                      <td className="w-10 text-center px-2 sticky left-0 bg-white dark:bg-[#1e1e2d] z-20 border-r border-gray-200 dark:border-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-[#151521]" onClick={e => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -282,15 +285,18 @@ export default function DataTable({
                         />
                       </td>
                     )}
-                    {columns.map(col => {
+                    {columns.map((col, idx) => {
                       const isActions = col.key === '_actions' || col.key === 'actions'
+                      const isFirstData = idx === 0
                       return (
                         <td
                           key={col.key || col.header}
                           className={`${col.className || ''} ${
                             isActions
-                              ? 'sticky right-0 bg-white dark:bg-[#1e1e2d] group-hover:bg-gray-50 dark:bg-[#151521] transition-colors shadow-[-6px_0_16px_rgba(0,0,0,0.05)] z-10 border-l border-gray-100 dark:border-gray-800/50 px-4 whitespace-nowrap'
+                              ? 'sticky right-0 bg-white dark:bg-[#1e1e2d] group-hover:bg-gray-50 dark:group-hover:bg-[#151521] transition-colors shadow-[-6px_0_16px_rgba(0,0,0,0.05)] z-10 border-l border-gray-100 dark:border-gray-800/50 px-4 whitespace-nowrap'
                               : ''
+                          } ${
+                            isFirstData ? `sticky ${isAdmin && enableSelection ? 'left-10' : 'left-0'} bg-white dark:bg-[#1e1e2d] group-hover:bg-gray-50 dark:group-hover:bg-[#151521] z-10 border-r border-gray-100 dark:border-gray-800/50 shadow-[4px_0_12px_rgba(0,0,0,0.02)]` : ''
                           }`}
                         >
                           {col.render ? col.render(row) : (col.accessor ? col.accessor(row) : row[col.key]) ?? '—'}

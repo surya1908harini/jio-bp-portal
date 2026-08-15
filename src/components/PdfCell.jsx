@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { FileText, Upload, Trash2, Eye, Download, Loader2 } from 'lucide-react'
+import Modal from './Modal'
 import { uploadPdf, deletePdf } from '../lib/utils'
 import toast from 'react-hot-toast'
 
@@ -14,6 +15,7 @@ import toast from 'react-hot-toast'
  */
 export default function PdfCell({ pdfUrl, onSave, onDelete, folder = 'general', isAdmin, downloadName }) {
   const [uploading, setUploading] = useState(false)
+  const [viewOpen, setViewOpen] = useState(false)
   const inputRef = useRef()
 
   const handleUpload = async (e) => {
@@ -82,15 +84,13 @@ export default function PdfCell({ pdfUrl, onSave, onDelete, folder = 'general', 
   if (pdfUrl) {
     return (
       <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
-        <a
-          href={pdfUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={(e) => { e.stopPropagation(); setViewOpen(true); }}
           title="View PDF"
           className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-950/70 text-red-400 border border-red-700/50 hover:bg-red-900 hover:text-white transition-colors text-xs font-semibold shadow-sm"
         >
           <Eye size={12} /> View
-        </a>
+        </button>
 
         <button
           onClick={handleDownload}
@@ -108,6 +108,12 @@ export default function PdfCell({ pdfUrl, onSave, onDelete, folder = 'general', 
           >
             <Trash2 size={13} />
           </button>
+        )}
+        
+        {viewOpen && (
+          <Modal open={viewOpen} onClose={() => setViewOpen(false)} title="View Document" size="max-w-6xl">
+            <iframe src={pdfUrl} className="w-full h-[75vh] border-0 rounded bg-white" />
+          </Modal>
         )}
       </div>
     )
