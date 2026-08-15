@@ -557,14 +557,14 @@ export default function InvoicePage() {
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-16">Invoice:</span>
             <PdfCell pdfUrl={r.pdf_url} folder="invoices" isAdmin={isAdmin}
-              downloadName={`Invoice_${r.invoice_number || ''}`}
+              downloadName={`Invoice_${r.inv_number || 'Doc'}`.replace(/[^a-zA-Z0-9_-]/g, '_')}
               onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url: url })}
               onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url: null })} />
           </div>
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-16">E-Invoice:</span>
             <PdfCell pdfUrl={r.pdf_url_2} folder="invoices" isAdmin={isAdmin}
-              downloadName={`E-Invoice_${r.invoice_number || ''}`}
+              downloadName={`E-Invoice_${r.inv_number || 'Doc'}`.replace(/[^a-zA-Z0-9_-]/g, '_')}
               onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url_2: url })}
               onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url_2: null })} />
           </div>

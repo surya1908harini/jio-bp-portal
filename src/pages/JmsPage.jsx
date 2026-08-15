@@ -502,7 +502,7 @@ export default function JmsPage() {
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-12">FSR:</span>
             <PdfCell pdfUrl={r.pdf_url} folder="jms" isAdmin={isAdmin}
-              downloadName={`${r.site_description || ''}_FSR`}
+              downloadName={`${r.site || 'Site'}_${r.work_description || 'Desc'}_FSR`.replace(/[^a-zA-Z0-9_-]/g, '_')}
               onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url: url })}
               onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url: null })} />
           </div>
