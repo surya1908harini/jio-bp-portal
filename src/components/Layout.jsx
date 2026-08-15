@@ -9,7 +9,7 @@ import NotificationDetailModal from './NotificationDetailModal'
 import useScrollReveal from '../hooks/useScrollReveal'
 import {
   LayoutDashboard, FileText, Receipt, PieChart, Settings, Database, ShoppingBag, Layers, ClipboardCheck,
-  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2, CheckCircle2, Edit2, Home, Banknote, Sun, Moon, Activity
+  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2, CheckCircle2, Edit2, Home, Banknote, Sun, Moon, Activity, UploadCloud
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -21,6 +21,8 @@ const PRIMARY_NAV = [
   { label: 'Payments', icon: Banknote, path: '/payments' },
   { label: 'Purchase Bill', icon: ShoppingBag, path: '/purchase-bills' },
   { label: 'Budget', icon: PieChart, path: '/budget' },
+  { label: 'Upload Work Order', icon: UploadCloud, path: '/upload-work-order', adminOnly: true },
+  { label: 'FSR Generator', icon: FileText, path: '/fsr-generator' },
   { label: 'OPERATION WARD', icon: Activity, path: '/bulk-operations', adminOnly: true },
   { label: 'Template Studio', icon: Layers, path: '/template-studio' },
   { label: 'PF Clearance', icon: ClipboardCheck, path: '/pf-clearance' },
@@ -435,6 +437,8 @@ export default function Layout() {
                location.pathname.includes('/purchase-bills') ? 'Purchase Bills' :
                location.pathname.includes('/budget') ? 'Budget Analysis' :
                location.pathname.includes('/payments') ? 'Payments' : 
+               location.pathname.includes('/upload-work-order') ? 'Upload Work Order' : 
+               location.pathname.includes('/fsr-generator') ? 'Smart FSR' : 
                location.pathname.includes('/template-studio') ? 'Template Studio' : 
                location.pathname.includes('/bulk-operations') ? 'OPERATION WARD' : 'Portal'}
             </h1>

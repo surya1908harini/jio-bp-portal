@@ -16,6 +16,8 @@ import MasterPage from './pages/MasterPage'
 import BulkOperationsPage from './pages/BulkOperationsPage'
 import PfClearancePage from './pages/PfClearancePage'
 import TemplateGeneratorPage from './pages/TemplateGeneratorPage'
+import WorkOrderUploadPage from './pages/WorkOrderUploadPage'
+import FSRGeneratorPage from './pages/FSRGeneratorPage'
 import ErrorBoundary from './components/ErrorBoundary'
 
 function PrivateRoute({ children }) {
@@ -66,6 +68,10 @@ export default function App() {
           
           {/* Bulk Operations */}
           <Route path="bulk-operations" element={<AdminRoute><BulkOperationsPage /></AdminRoute>} />
+
+          {/* Work Orders & FSR */}
+          <Route path="upload-work-order" element={<AdminRoute><WorkOrderUploadPage /></AdminRoute>} />
+          <Route path="fsr-generator" element={<FSRGeneratorPage />} />
 
           {/* Template Studio */}
           <Route path="template-studio" element={<TemplateGeneratorPage />} />

@@ -987,3 +987,32 @@ export const pfDb = {
     return true
   }
 }
+
+// ----------------------------------------------------------------------
+// WORK ORDERS DB (Supabase)
+// ----------------------------------------------------------------------
+export const workOrderDb = {
+  getAll: async () => {
+    const { data, error } = await supabase.from('work_orders').select('*').order('created_at', { ascending: false })
+    if (error) throw error
+    return data
+  },
+  
+  create: async (payload) => {
+    const { data, error } = await supabase.from('work_orders').insert([payload]).select().single()
+    if (error) throw error
+    return data
+  },
+  
+  getItemsByWoId: async (woId) => {
+    const { data, error } = await supabase.from('work_order_items').select('*').eq('wo_id', woId)
+    if (error) throw error
+    return data
+  },
+  
+  insertItems: async (itemsPayload) => {
+    const { data, error } = await supabase.from('work_order_items').insert(itemsPayload)
+    if (error) throw error
+    return data
+  }
+}
