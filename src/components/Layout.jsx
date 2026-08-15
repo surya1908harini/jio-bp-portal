@@ -22,6 +22,7 @@ const PRIMARY_NAV = [
   { label: 'Purchase Bill', icon: ShoppingBag, path: '/purchase-bills' },
   { label: 'Budget', icon: PieChart, path: '/budget' },
   { label: 'OPERATION WARD', icon: Activity, path: '/bulk-operations', adminOnly: true },
+  { label: 'Doc Generator', icon: FileText, path: '/document-generator' },
   { label: 'PF Clearance', icon: ClipboardCheck, path: '/pf-clearance' },
 ]
 
@@ -434,6 +435,7 @@ export default function Layout() {
                location.pathname.includes('/purchase-bills') ? 'Purchase Bills' :
                location.pathname.includes('/budget') ? 'Budget Analysis' :
                location.pathname.includes('/payments') ? 'Payments' : 
+               location.pathname.includes('/document-generator') ? 'Doc Generator' : 
                location.pathname.includes('/bulk-operations') ? 'OPERATION WARD' : 'Portal'}
             </h1>
           </div>
