@@ -15,6 +15,7 @@ import AdminPage from './pages/AdminPage'
 import MasterPage from './pages/MasterPage'
 import BulkOperationsPage from './pages/BulkOperationsPage'
 import PfClearancePage from './pages/PfClearancePage'
+import TemplateGeneratorPage from './pages/TemplateGeneratorPage'
 import ErrorBoundary from './components/ErrorBoundary'
 
 function PrivateRoute({ children }) {
@@ -65,6 +66,9 @@ export default function App() {
           
           {/* Bulk Operations */}
           <Route path="bulk-operations" element={<AdminRoute><BulkOperationsPage /></AdminRoute>} />
+
+          {/* Template Studio */}
+          <Route path="template-studio" element={<TemplateGeneratorPage />} />
 
           {/* PF Clearance */}
           <Route path="pf-clearance" element={<PfClearancePage />} />
