@@ -551,12 +551,23 @@ export default function InvoicePage() {
     { key: 'gst_amount_received_date', header: 'GST Received Date',  render: r => <span className="font-mono text-emerald-300">{formatDate(r.gst_amount_received_date) || '—'}</span> },
     { key: 'payment_status',           header: 'Payment Status',     render: r => <PaymentBadge status={r.payment_status} /> },
     {
-      key: 'pdf', header: 'PDF', sortable: false,
+      key: 'pdf', header: 'Documents', sortable: false,
       render: r => (
-        <div onClick={e => e.stopPropagation()}>
-          <PdfCell pdfUrl={r.pdf_url} folder="invoices" isAdmin={isAdmin}
-            onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url: url })}
-            onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url: null })} />
+        <div className="flex flex-col gap-2" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-16">Invoice:</span>
+            <PdfCell pdfUrl={r.pdf_url} folder="invoices" isAdmin={isAdmin}
+              downloadName={`Invoice_${r.invoice_number || ''}`}
+              onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url: url })}
+              onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url: null })} />
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-16">E-Invoice:</span>
+            <PdfCell pdfUrl={r.pdf_url_2} folder="invoices" isAdmin={isAdmin}
+              downloadName={`E-Invoice_${r.invoice_number || ''}`}
+              onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url_2: url })}
+              onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url_2: null })} />
+          </div>
         </div>
       )
     },

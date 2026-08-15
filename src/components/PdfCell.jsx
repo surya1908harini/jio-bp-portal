@@ -12,7 +12,7 @@ import toast from 'react-hot-toast'
  *   folder   : string          — subfolder in Supabase storage
  *   isAdmin  : bool
  */
-export default function PdfCell({ pdfUrl, onSave, onDelete, folder = 'general', isAdmin }) {
+export default function PdfCell({ pdfUrl, onSave, onDelete, folder = 'general', isAdmin, downloadName }) {
   const [uploading, setUploading] = useState(false)
   const inputRef = useRef()
 
@@ -60,7 +60,7 @@ export default function PdfCell({ pdfUrl, onSave, onDelete, folder = 'general', 
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = pdfUrl.split('/').pop() || 'document.pdf'
+      a.download = downloadName ? `${downloadName}.pdf` : (pdfUrl.split('/').pop() || 'document.pdf')
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)

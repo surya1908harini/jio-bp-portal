@@ -390,6 +390,7 @@ export default function BudgetPage() {
       key: 'pdf', header: 'PDF Doc', sortable: false,
       render: r => (
         <PdfCell pdfUrl={r.pdf_url} folder="budget" isAdmin={isAdmin}
+          downloadName={`PO_${r.work_order_number || ''}_${r.operation || ''}`}
           onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url: url })}
           onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url: null })} />
       )
@@ -565,6 +566,7 @@ export default function BudgetPage() {
                         pdfUrl={b.pdf_url}
                         folder="budget"
                         isAdmin={isAdmin}
+                        downloadName={`PO_${b.work_order_number || ''}_${b.operation || ''}`}
                         onSave={url => pdfMutation.mutateAsync({ id: b.id, pdf_url: url })}
                         onDelete={() => pdfMutation.mutateAsync({ id: b.id, pdf_url: null })}
                       />

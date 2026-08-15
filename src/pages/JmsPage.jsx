@@ -491,12 +491,23 @@ export default function JmsPage() {
       )
     },
     {
-      key: 'pdf', header: 'PDF', sortable: false,
+      key: 'pdf', header: 'Documents', sortable: false,
       render: r => (
-        <div onClick={e => e.stopPropagation()}>
-          <PdfCell pdfUrl={r.pdf_url} folder="jms" isAdmin={isAdmin}
-            onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url: url })}
-            onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url: null })} />
+        <div className="flex flex-col gap-2" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-12">FSR:</span>
+            <PdfCell pdfUrl={r.pdf_url} folder="jms" isAdmin={isAdmin}
+              downloadName={`${r.site_description || ''}_FSR`}
+              onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url: url })}
+              onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url: null })} />
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-12">Other:</span>
+            <PdfCell pdfUrl={r.pdf_url_2} folder="jms" isAdmin={isAdmin}
+              downloadName={`${r.site_description || ''}_DOC`}
+              onSave={url => pdfMutation.mutateAsync({ id: r.id, pdf_url_2: url })}
+              onDelete={() => pdfMutation.mutateAsync({ id: r.id, pdf_url_2: null })} />
+          </div>
         </div>
       )
     },

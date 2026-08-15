@@ -311,7 +311,6 @@ export default function Layout() {
           {!sidebarCollapsed && (
             <div className="flex items-center gap-2 cursor-pointer h-10" onClick={() => navigate('/home')}>
                <div className="w-8 h-8 rounded bg-orange-500 flex items-center justify-center font-black text-white">MM</div>
-               <span className="font-bold tracking-widest text-xs uppercase">AirFlow</span>
             </div>
           )}
           <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-2 text-gray-500 dark:text-white dark:text-white hover:text-orange-500 rounded-lg hover:bg-gray-200 mx-auto transition-colors">
@@ -378,7 +377,6 @@ export default function Layout() {
             <div className="p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded bg-orange-500 flex items-center justify-center font-black text-white">MM</div>
-                <span className="font-bold tracking-widest text-xs uppercase">AirFlow</span>
               </div>
               <button onClick={() => setMobileOpen(false)} className="text-gray-400 dark:text-white hover:text-gray-900 dark:text-white p-1 rounded hover:bg-gray-100 dark:bg-gray-800">
                 <X size={20} />

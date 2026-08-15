@@ -137,7 +137,7 @@ function clean(obj) {
   const result = {}
   for (const [k, v] of Object.entries(synced)) {
     if (k === 'fy') continue // ignore invalid 'fy' property not present in schema
-    if (v === '' || (v === null && k !== 'pdf_url') || v === undefined) continue
+    if (v === '' || (v === null && k !== 'pdf_url' && k !== 'pdf_url_2') || v === undefined) continue
 
     if (NUMERIC_KEYS.has(k)) {
       if (typeof v === 'string') {
