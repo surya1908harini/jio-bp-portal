@@ -16,24 +16,39 @@ const NUMERIC_KEYS = new Set([
 
 // PDF Fallback Helper
 const PDF_FALLBACK_KEY = 'portal_pdf_fallback_map'
+const PDF_FALLBACK_KEY_2 = 'portal_pdf_fallback_map_2'
+
 function getPdfFallbackMap() {
   try { return JSON.parse(localStorage.getItem(PDF_FALLBACK_KEY)) || {} } catch (e) { return {} }
 }
+function getPdfFallbackMap2() {
+  try { return JSON.parse(localStorage.getItem(PDF_FALLBACK_KEY_2)) || {} } catch (e) { return {} }
+}
+
 function setPdfFallback(id, url) {
   const map = getPdfFallbackMap()
   if (url === null) delete map[id]
   else map[id] = url
   localStorage.setItem(PDF_FALLBACK_KEY, JSON.stringify(map))
 }
+function setPdfFallback2(id, url) {
+  const map = getPdfFallbackMap2()
+  if (url === null) delete map[id]
+  else map[id] = url
+  localStorage.setItem(PDF_FALLBACK_KEY_2, JSON.stringify(map))
+}
+
 function applyPdfFallback(rows) {
-  const map = getPdfFallbackMap()
+  const map1 = getPdfFallbackMap()
+  const map2 = getPdfFallbackMap2()
   return rows.map(r => {
     // If the column exists in Supabase, it will be either a string or null.
     // If it is completely missing, it will be undefined.
     // We only fallback if it's undefined (missing column) to avoid zombie PDFs
     // reappearing after a successful delete (which sets it to null).
-    const finalUrl = r.pdf_url !== undefined ? r.pdf_url : map[r.id]
-    return { ...r, pdf_url: finalUrl }
+    const finalUrl1 = r.pdf_url !== undefined ? r.pdf_url : map1[r.id]
+    const finalUrl2 = r.pdf_url_2 !== undefined ? r.pdf_url_2 : map2[r.id]
+    return { ...r, pdf_url: finalUrl1, pdf_url_2: finalUrl2 }
   })
 }
 
@@ -282,10 +297,15 @@ export const jmsDb = {
       .single()
 
     if (error && (error.message?.includes('schema cache') || error.message?.includes('does not exist') || error.message?.includes('pdf_url'))) {
-      if ('pdf_url' in cleaned) {
+      if ('pdf_url' in cleaned && error.message?.includes('pdf_url') && !error.message?.includes('pdf_url_2')) {
         setPdfFallback(id, cleaned.pdf_url)
         delete cleaned.pdf_url
-        if (Object.keys(cleaned).length > 0) {
+      }
+      if ('pdf_url_2' in cleaned && (error.message?.includes('pdf_url_2') || error.message?.includes('schema cache'))) {
+        setPdfFallback2(id, cleaned.pdf_url_2)
+        delete cleaned.pdf_url_2
+      }
+      if (Object.keys(cleaned).length > 0) {
           const retry = await supabase.from('jms_records').update(cleaned).eq('id', id).select().single()
           data = retry.data
           error = retry.error
@@ -293,7 +313,6 @@ export const jmsDb = {
           error = null
           data = payload
         }
-      }
     }
 
     if (error) throw error
@@ -392,9 +411,13 @@ export const invoiceDb = {
       .single()
     
     if (error && (error.message?.includes('schema cache') || error.message?.includes('does not exist') || error.message?.includes('pdf_url'))) {
-      if ('pdf_url' in cleaned) {
+      if ('pdf_url' in cleaned && error.message?.includes('pdf_url') && !error.message?.includes('pdf_url_2')) {
         setPdfFallback(id, cleaned.pdf_url)
         delete cleaned.pdf_url
+      }
+      if ('pdf_url_2' in cleaned && (error.message?.includes('pdf_url_2') || error.message?.includes('schema cache'))) {
+        setPdfFallback2(id, cleaned.pdf_url_2)
+        delete cleaned.pdf_url_2
       }
       delete cleaned.arc_number
       delete cleaned.status
