@@ -181,7 +181,7 @@ export default function BudgetPage() {
   })
 
   const pdfMutation = useMutation({
-    mutationFn: ({ id, pdf_url }) => budgetDb.update(id, { pdf_url }),
+    mutationFn: ({ id, ...payload }) => budgetDb.update(id, payload),
     onSuccess: () => qc.invalidateQueries(['budget']),
   })
 

@@ -348,6 +348,11 @@ export default function JmsPage() {
     onError:   (e) => toast.error(e?.message || 'Delete failed'),
   })
 
+  const pdfMutation = useMutation({
+    mutationFn: ({ id, ...payload }) => jmsDb.update(id, payload),
+    onSuccess: () => qc.invalidateQueries(['jms']),
+  })
+
   const importRecords = async (rows) => {
     const mapped = rows.map(raw => {
       const rec = {}

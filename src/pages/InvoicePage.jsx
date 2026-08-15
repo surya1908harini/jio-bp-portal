@@ -349,7 +349,7 @@ export default function InvoicePage() {
   })
 
   const pdfMutation = useMutation({
-    mutationFn: ({ id, pdf_url }) => invoiceDb.update(id, { pdf_url }),
+    mutationFn: ({ id, ...payload }) => invoiceDb.update(id, payload),
     onSuccess: () => qc.invalidateQueries(['invoices']),
   })
 
