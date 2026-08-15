@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Plus, Save, Copy, Trash2, Info } from 'lucide-react'
+import Papa from 'papaparse'
 import toast from 'react-hot-toast'
 
 export default function SpreadsheetGrid({ columns, onSave, title }) {
@@ -27,21 +28,25 @@ export default function SpreadsheetGrid({ columns, onSave, title }) {
     const text = e.clipboardData.getData('Text')
     if (!text) return
 
-    // Split by newlines and tabs
-    const rawRows = text.split(/\r?\n/).filter(r => r.trim())
-    const newRows = rawRows.map(rawRow => {
-      const cells = rawRow.split('\t')
-      const rowObj = {}
-      columns.forEach((col, i) => {
-        rowObj[col.key] = cells[i]?.trim() || ''
-      })
-      return rowObj
-    })
+    Papa.parse(text, {
+      delimiter: '\t', // Excel uses tab separated values in clipboard
+      skipEmptyLines: true,
+      complete: (results) => {
+        const rawRows = results.data
+        const newRows = rawRows.map(cells => {
+          const rowObj = {}
+          columns.forEach((col, i) => {
+            rowObj[col.key] = cells[i]?.trim() || ''
+          })
+          return rowObj
+        })
 
-    if (newRows.length > 0) {
-      setRows(newRows)
-      toast.success(`Imported ${newRows.length} rows from clipboard!`)
-    }
+        if (newRows.length > 0) {
+          setRows(newRows)
+          toast.success(`Imported ${newRows.length} rows from clipboard!`)
+        }
+      }
+    })
   }
 
   const handleSubmit = () => {
