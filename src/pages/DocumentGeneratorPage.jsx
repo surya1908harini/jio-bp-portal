@@ -114,90 +114,109 @@ export default function DocumentGeneratorPage() {
 
 function FSRTemplate({ record }) {
   return (
-    <div className="font-sans text-[12px] leading-relaxed">
-      <div className="text-center mb-6">
-        <h1 className="text-xl font-bold uppercase tracking-widest border-b-2 border-black pb-2 inline-block">Field Service Report (FSR)</h1>
-      </div>
+    <div className="font-sans text-[11px] leading-tight text-black">
+      <style>{`
+        [contenteditable="true"] { outline: none; border-bottom: 1px dashed transparent; min-width: 20px; display: inline-block; }
+        [contenteditable="true"]:hover { border-bottom: 1px dashed #ccc; background-color: #f9fafb; cursor: text; }
+        @media print {
+          [contenteditable="true"] { border: none !important; background-color: transparent !important; }
+        }
+      `}</style>
       
-      <div className="grid grid-cols-2 gap-6 mb-6">
-        <div>
-          <table className="w-full text-left">
-            <tbody>
-              <tr><th className="py-1 w-32 align-top">JMS No:</th><td className="py-1 font-semibold">{record.jms_no || '-'}</td></tr>
-              <tr><th className="py-1 w-32 align-top">Work Order No:</th><td className="py-1 font-semibold">{record.work_order_number || '-'}</td></tr>
-              <tr><th className="py-1 w-32 align-top">Date:</th><td className="py-1 font-semibold">{formatDate(record.jms_create_date) || '-'}</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div>
-          <table className="w-full text-left">
-            <tbody>
-              <tr><th className="py-1 w-24 align-top">Site:</th><td className="py-1 font-semibold uppercase">{record.site || '-'}</td></tr>
-              <tr><th className="py-1 w-24 align-top">RO Code:</th><td className="py-1 font-semibold uppercase">{record.ro_code || '-'}</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <h3 className="font-bold border-b border-gray-400 mb-2">Description of Work</h3>
-        <p className="whitespace-pre-wrap uppercase font-medium">{record.work_description || '-'}</p>
-      </div>
-
-      <table className="w-full border-collapse border border-black mb-6">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="border border-black p-2 text-center w-12">S.No</th>
-            <th className="border border-black p-2 text-left">Particulars / Description</th>
-            <th className="border border-black p-2 text-center w-24">Unit</th>
-            <th className="border border-black p-2 text-center w-24">Qty</th>
-            <th className="border border-black p-2 text-right w-32">Rate</th>
-            <th className="border border-black p-2 text-right w-32">Amount</th>
-          </tr>
-        </thead>
+      <table className="w-full border-collapse border border-black mb-0 table-fixed">
         <tbody>
-          {/* Generic placeholder rows for the grid until format is provided */}
           <tr>
-            <td className="border border-black p-2 text-center">1</td>
-            <td className="border border-black p-2 text-left uppercase font-medium">{record.work_description || '-'}</td>
-            <td className="border border-black p-2 text-center">LS</td>
-            <td className="border border-black p-2 text-center">1</td>
-            <td className="border border-black p-2 text-right">{formatINR(record.net_amount || 0).replace('₹', '')}</td>
-            <td className="border border-black p-2 text-right font-bold">{formatINR(record.net_amount || 0).replace('₹', '')}</td>
+            <th colSpan={3} className="border border-black p-1 text-center font-bold uppercase text-sm tracking-wide">
+              FIELD SERVICE REPORT
+            </th>
           </tr>
-          {/* Empty rows to mimic an excel sheet */}
-          {[...Array(5)].map((_, i) => (
-            <tr key={i} className="h-8">
-              <td className="border border-black p-2"></td>
-              <td className="border border-black p-2"></td>
-              <td className="border border-black p-2"></td>
-              <td className="border border-black p-2"></td>
-              <td className="border border-black p-2"></td>
-              <td className="border border-black p-2"></td>
-            </tr>
-          ))}
-          <tr className="bg-gray-100 font-bold text-sm">
-            <td colSpan={5} className="border border-black p-2 text-right uppercase">Total Net Amount</td>
-            <td className="border border-black p-2 text-right text-lg">{formatINR(record.net_amount || 0)}</td>
+          <tr>
+            <td className="border border-black p-1 align-top"><strong className="mr-1">RO Name :</strong> <span contentEditable suppressContentEditableWarning>{record.site || ''}</span></td>
+            <td className="border border-black p-1 align-top"><strong className="mr-1">IM number reference :</strong> <span contentEditable suppressContentEditableWarning></span></td>
+            <td className="border border-black p-1 align-top"><strong className="mr-1">Time of Reporting :</strong> <span contentEditable suppressContentEditableWarning></span></td>
+          </tr>
+          <tr>
+            <td className="border border-black p-1 align-top"><strong className="mr-1">RO Address :</strong> <span contentEditable suppressContentEditableWarning></span></td>
+            <td className="border border-black p-1 align-top"><strong className="mr-1">Equipment :</strong> <span contentEditable suppressContentEditableWarning></span></td>
+            <td className="border border-black p-1 align-top"><strong className="mr-1">Date of Reporting :</strong> <span contentEditable suppressContentEditableWarning>{formatDate(record.jms_create_date) || ''}</span></td>
+          </tr>
+          <tr>
+            <td className="border border-black p-1 align-top"><strong className="mr-1">RO Code :</strong> <span contentEditable suppressContentEditableWarning>{record.ro_code || ''}</span></td>
+            <td className="border border-black p-1 align-top"><strong className="mr-1">Vendor Code :</strong> <span contentEditable suppressContentEditableWarning>233954</span></td>
+            <td className="border border-black p-1 align-top"><strong className="mr-1">Time of Completion :</strong> <span contentEditable suppressContentEditableWarning></span></td>
+          </tr>
+          <tr>
+            <td className="border border-black p-1 align-top"><strong className="mr-1">RO type (CO/DO) :</strong> <span contentEditable suppressContentEditableWarning>{record.type_of_ro || ''}</span></td>
+            <td className="border border-black p-1 align-top"><strong className="mr-1">Vendor Name :</strong> <span contentEditable suppressContentEditableWarning>MM CONTRACTOR</span></td>
+            <td className="border border-black p-1 align-top"><strong className="mr-1">Date of Completion :</strong> <span contentEditable suppressContentEditableWarning></span></td>
           </tr>
         </tbody>
       </table>
-      
-      <div className="mt-20 grid grid-cols-3 text-center">
-        <div>
-          <div className="border-t border-black w-3/4 mx-auto pt-2 font-bold uppercase">Contractor Sign</div>
-        </div>
-        <div>
-          <div className="border-t border-black w-3/4 mx-auto pt-2 font-bold uppercase">Jio-BP Engineer</div>
-        </div>
-        <div>
-          <div className="border-t border-black w-3/4 mx-auto pt-2 font-bold uppercase">Authorized Signatory</div>
+
+      <table className="w-full border-collapse border-x border-black mb-0 table-fixed">
+        <thead className="bg-transparent">
+          <tr>
+            <th className="border border-black p-1 text-center w-16 font-bold">Sl. NO</th>
+            <th className="border border-black p-1 text-center font-bold">Description of Material / Service</th>
+            <th className="border border-black p-1 text-center w-64 font-bold">Measurements</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[...Array(22)].map((_, i) => (
+            <tr key={i} className="h-[22px]">
+              <td className="border border-black px-1 text-center" contentEditable suppressContentEditableWarning>{i === 0 ? '1' : ''}</td>
+              <td className="border border-black px-2" contentEditable suppressContentEditableWarning>{i === 0 ? record.work_description || '' : ''}</td>
+              <td className="border border-black px-1 text-center" contentEditable suppressContentEditableWarning></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="border border-black p-1 min-h-[60px] flex flex-col">
+        <div className="font-bold mb-1">WORK DESCRIPTION:</div>
+        <div contentEditable suppressContentEditableWarning className="flex-1 whitespace-pre-wrap uppercase px-1">
+          {record.work_description || ''}
         </div>
       </div>
-      
-      <div className="mt-10 text-center text-[10px] text-gray-500 italic border-t pt-4">
-        * This is a system generated Field Service Report. Generic format applied until requested format is provided.
-      </div>
+
+      <table className="w-full border-collapse border-x border-b border-black table-fixed">
+        <tbody>
+          <tr>
+            <td className="border border-black p-1 w-1/2 align-top h-14">
+              <strong className="block mb-1">Service Engineer Remarks</strong>
+              <div contentEditable suppressContentEditableWarning className="w-full h-full"></div>
+            </td>
+            <td className="border border-black p-1 w-1/2 align-top">
+              <strong className="block mb-1">RO Operator / Key Person Remarks</strong>
+              <div contentEditable suppressContentEditableWarning className="w-full h-full"></div>
+            </td>
+          </tr>
+          <tr>
+            <td className="border border-black p-1">
+              <strong className="mr-1">Service Engineer Name:</strong> <span contentEditable suppressContentEditableWarning></span>
+            </td>
+            <td className="border border-black p-1">
+              <strong className="mr-1">RO Operator / Key Person Name:</strong> <span contentEditable suppressContentEditableWarning></span>
+            </td>
+          </tr>
+          <tr>
+            <td className="border border-black p-1">
+              <strong className="mr-1">Mobile Number:</strong> <span contentEditable suppressContentEditableWarning></span>
+            </td>
+            <td className="border border-black p-1">
+              <strong className="mr-1">RO Mobile Number:</strong> <span contentEditable suppressContentEditableWarning></span>
+            </td>
+          </tr>
+          <tr>
+            <td className="border border-black p-1 align-top h-28 relative">
+              <strong>Signature with company seal:</strong>
+            </td>
+            <td className="border border-black p-1 align-top h-28 relative">
+              <strong>Signature with date & RO Seal:</strong>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   )
 }
