@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar, FileText, Clock, CheckCircle, Receipt } from 'lucide-react'
@@ -118,18 +119,18 @@ function StatusBadge({ status }) {
 
 function StatCard({ label, value, color = 'slate' }) {
   const cls = {
-    blue:   'border-jio-blue-700/40 bg-jio-blue-900/30',
-    amber:  'border-amber-700/40 bg-amber-900/20',
-    green:  'border-emerald-700/40 bg-emerald-900/20',
-    orange: 'border-orange-700/40 bg-orange-900/20',
-    cyan:   'border-cyan-700/40 bg-cyan-900/20',
-    red:    'border-jio-red-700/40 bg-jio-red-900/20',
-    slate:  'border-slate-700/40 bg-slate-800/40',
+    blue:   'border-blue-200 bg-blue-50 text-blue-700',
+    amber:  'border-amber-200 bg-amber-50 text-amber-700',
+    green:  'border-emerald-200 bg-emerald-50 text-emerald-700',
+    orange: 'border-orange-200 bg-orange-50 text-orange-700',
+    cyan:   'border-cyan-200 bg-cyan-50 text-cyan-700',
+    red:    'border-red-200 bg-red-50 text-red-700',
+    slate:  'border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1e1e2d] text-gray-700 dark:text-white',
   }
   return (
     <div className={`rounded-xl border p-3 ${cls[color]}`}>
-      <p className="text-[11px] font-medium text-slate-400 mb-1 leading-tight">{label}</p>
-      <p className="text-base font-bold text-white leading-tight">{value}</p>
+      <p className="text-[11px] font-medium text-gray-500 dark:text-white dark:text-white mb-1 leading-tight">{label}</p>
+      <p className="text-base font-bold text-gray-900 dark:text-white leading-tight">{value}</p>
     </div>
   )
 }
@@ -470,17 +471,17 @@ export default function JmsPage() {
   const uniqueWorkOrders = useMemo(() => Array.from(new Set(allRecords.map(j => j.work_order_number?.trim()).concat((masters.work_orders || []).map(w => w.work_order_number?.trim())).filter(Boolean))).sort(), [allRecords, masters.work_orders])
 
   const columns = [
-    { key: 'jms_no',           header: 'JMS No',               render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
-    { key: 'jms_create_date',  header: 'JMS Date',              render: r => formatDate(r.jms_create_date || r.inv_date || r.a1_release_date) },
-    { key: 'period_of_work',   header: 'Period' },
-    { key: 'work_order_number',header: 'Work Order',           render: r => <span className="font-semibold text-slate-200">{r.work_order_number}</span> },
-    { key: 'net_amount',       header: 'Net Amount',            render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.net_amount)}</span> },
-    { key: 'site',             header: 'Site' },
+    { key: 'jms_no',           header: 'JMS No',               render: r => <span className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">{r.jms_no}</span> },
+    { key: 'jms_create_date',  header: 'JMS Date',              render: r => <span className="whitespace-nowrap">{formatDate(r.jms_create_date || r.inv_date || r.a1_release_date)}</span> },
+    { key: 'period_of_work',   header: 'Period',                render: r => <div className="min-w-[100px] whitespace-normal text-xs">{r.period_of_work}</div> },
+    { key: 'work_order_number',header: 'Work Order',           render: r => <span className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">{r.work_order_number}</span> },
+    { key: 'net_amount',       header: 'Net Amount',            render: r => <span className="text-emerald-600 font-semibold whitespace-nowrap">{formatINR(r.net_amount)}</span> },
+    { key: 'site',             header: 'Site',                  render: r => <div className="min-w-[120px] whitespace-normal">{r.site}</div> },
     { key: 'status',           header: 'Status',                render: r => <StatusBadge status={r.status} /> },
-    { key: 'work_description', header: 'Description' },
-    { key: 'inv_number',       header: 'Invoice Number',        render: r => <span className="font-semibold text-orange-300">{r.inv_number || '—'}</span> },
-    { key: 'inv_posting_date', header: 'Invoice Date',          render: r => <span className="font-mono text-cyan-300">{formatDate(r.inv_posting_date) || '—'}</span> },
-    { key: 'payment_date',     header: 'Payment Date',          render: r => <span className="font-mono text-emerald-300 font-semibold">{formatDate(r.payment_date) || '—'}</span> },
+    { key: 'work_description', header: 'Description',           render: r => <div className="min-w-[250px] whitespace-normal text-xs leading-relaxed">{r.work_description}</div> },
+    { key: 'inv_number',       header: 'Invoice Number',        render: r => <span className="font-semibold text-orange-300 whitespace-nowrap">{r.inv_number || '—'}</span> },
+    { key: 'inv_posting_date', header: 'Invoice Date',          render: r => <span className="font-mono text-cyan-300 whitespace-nowrap">{formatDate(r.inv_posting_date) || '—'}</span> },
+    { key: 'payment_date',     header: 'Payment Date',          render: r => <span className="font-mono text-emerald-300 font-semibold whitespace-nowrap">{formatDate(r.payment_date) || '—'}</span> },
     {
       key: 'expected_payment_date', header: 'Expected Payment Date',
       render: r => (
@@ -503,8 +504,8 @@ export default function JmsPage() {
       key: '_actions', header: 'Actions', sortable: false,
       render: r => (
         <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-          <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-jio-blue-800/50 text-jio-blue-400 hover:text-white transition-colors" title="Edit JMS"><Pencil size={14} /></button>
-          <button onClick={() => handleDelete(r.id, r)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors" title="Delete JMS"><Trash2 size={14} /></button>
+          <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-jio-blue-800/50 text-jio-blue-400 hover:text-gray-900 dark:text-white transition-colors" title="Edit JMS"><Pencil size={14} /></button>
+          <button onClick={() => handleDelete(r.id, r)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-gray-900 dark:text-white transition-colors" title="Delete JMS"><Trash2 size={14} /></button>
         </div>
       )
     }] : []),
@@ -515,124 +516,41 @@ export default function JmsPage() {
   const totalPending = sortedRecords.filter(r => !['Released by A3', 'Invoiced'].includes(r.status)).length
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-0">
       <datalist id="site-list">{uniqueSites.map(s => <option key={s} value={s} />)}</datalist>
       <datalist id="a1-list">{uniqueA1Names.map(s => <option key={s} value={s} />)}</datalist>
       <datalist id="a2-list">{uniqueA2Names.map(s => <option key={s} value={s} />)}</datalist>
       <datalist id="qsd-list">{uniqueQsdNames.map(s => <option key={s} value={s} />)}</datalist>
       <datalist id="a3-list">{uniqueA3Names.map(s => <option key={s} value={s} />)}</datalist>
-      {/* Header Banner & Executive Stat Cards */}
-      <ModuleHeader
-        title="JMS Details Management"
-        subtitle={`Joint Measurement Sheet · ${activeFy === 'overall' ? 'All Financial Years' : `FY ${activeFy}`} · ${sortedRecords.length} records`}
-        actions={
-          <div className="flex gap-2 flex-wrap">
-            <button onClick={handleExport} title="Export" className="btn-ghost !px-2 !py-1 !text-xs"><Download size={13} /></button>
-            {isAdmin && (
-              <>
-                <button onClick={() => setImportOpen(true)} title="Import" className="btn-ghost !px-2 !py-1 !text-xs"><Upload size={13} /></button>
-                <button onClick={openAdd} title="Add JMS" className="btn-primary !px-2 !py-1 !text-xs"><Plus size={13} /></button>
-              </>
-            )}
-          </div>
-        }
-      />
-
-      {/* Filters Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
-        <div className="flex items-center gap-2 flex-wrap">
-          <FyTabs basePath="/jms" />
+      {document.getElementById('topbar-center') && createPortal(
+        <div className="flex items-center gap-2">
           <MonthTabs activeMonth={activeMonth} onChange={setActiveMonth} />
           <SlotTabs slots={JMS_SLOTS} active={activeSlot} setActive={setActiveSlot} />
-        </div>
-        <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
-          <span className="text-slate-400 font-medium px-2.5 flex items-center gap-1">
-            <Filter size={12} className="text-jio-blue-400" /> Split FY By:
-          </span>
-          <div className="px-3 py-1 text-xs rounded-lg font-semibold text-slate-300 flex items-center gap-1">
-            <Calendar size={12} /> JMS Date
-          </div>
-        </div>
-      </div>
-
-      {activeFy === 'overall' ? (
-        /* ═══ OVERALL — ALL FINANCIAL YEARS ═══════════════════ */
-        <details className="glass-card group mb-2">
-          <summary className="p-3 text-xs font-bold text-white cursor-pointer select-none flex items-center justify-between hover:bg-white/5 transition-colors">
-            <span className="flex items-center gap-2">
-              <Globe size={14} className="text-jio-blue-400" /> All Financial Years — Overall View
-            </span>
-            <span className="text-slate-400 text-[10px] group-open:rotate-180 transition-transform">▼ Click to Expand</span>
-          </summary>
-          <div className="p-4 border-t border-slate-700/50 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="text-left text-xs font-semibold text-slate-400 pb-2 pr-4">Financial Year</th>
-                  <th className="text-right text-xs font-semibold text-slate-400 pb-2 px-3">Total JMS</th>
-                  <th className="text-right text-xs font-semibold text-slate-400 pb-2 px-3">Pending</th>
-                  <th className="text-right text-xs font-semibold text-slate-400 pb-2 px-3">A3 Released</th>
-                  <th className="text-right text-xs font-semibold text-slate-400 pb-2 px-3">Invoiced</th>
-                  <th className="text-right text-xs font-semibold text-slate-400 pb-2 pl-3">Total Net Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fyStats.map(s => (
-                  <tr key={s.fy} className={`border-b border-slate-800/60`}>
-                    <td className="py-2.5 pr-4">
-                      <span className={`font-semibold text-white`}>
-                        FY {s.fy}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-white font-medium">{s.total}</td>
-                    <td className="py-2.5 px-3 text-right"><span className="text-amber-400">{s.pending}</span></td>
-                    <td className="py-2.5 px-3 text-right"><span className="text-emerald-400">{s.a3}</span></td>
-                    <td className="py-2.5 px-3 text-right"><span className="text-cyan-400">{s.invoiced}</span></td>
-                    <td className="py-2.5 pl-3 text-right font-semibold text-emerald-400">{formatINR(s.amount)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-slate-600">
-                  <td className="py-2.5 pr-4 text-xs font-bold text-slate-300">TOTAL</td>
-                  <td className="py-2.5 px-3 text-right font-bold text-white">{fyStats.reduce((s,r)=>s+r.total,0)}</td>
-                  <td className="py-2.5 px-3 text-right font-bold text-amber-400">{fyStats.reduce((s,r)=>s+r.pending,0)}</td>
-                  <td className="py-2.5 px-3 text-right font-bold text-emerald-400">{fyStats.reduce((s,r)=>s+r.a3,0)}</td>
-                  <td className="py-2.5 px-3 text-right font-bold text-cyan-400">{fyStats.reduce((s,r)=>s+r.invoiced,0)}</td>
-                  <td className="py-2.5 pl-3 text-right font-bold text-emerald-400">{formatINR(fyStats.reduce((s,r)=>s+r.amount,0))}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </details>
-      ) : (
-        /* ═══ CURRENT FY OVERALL ══════════════════════════════ */
-        <details className="glass-card group mb-2">
-          <summary className="p-3 text-xs font-bold text-white cursor-pointer select-none flex items-center justify-between hover:bg-white/5 transition-colors">
-            <span className="flex items-center gap-2">
-              <TrendingUp size={14} className="text-jio-blue-400" /> {(() => { if (activeMonth === 'all') return `FY ${activeFy} Summary`; const mn = MONTHS.find(m => m.value === String(activeMonth))?.label || ''; const fyStart = parseInt((activeFy || '').split('-')[0]) || new Date().getFullYear(); const yr = Number(activeMonth) >= 4 ? fyStart : fyStart + 1; return `${mn} ${yr} Summary`; })()}
-            </span>
-            <span className="text-slate-400 text-[10px] group-open:rotate-180 transition-transform">▼ Click to Expand</span>
-          </summary>
-          <div className="p-4 border-t border-slate-700/50">
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-              <StatCard label="Total JMS"     value={sortedRecords.length}      color="blue"   />
-              <StatCard label="Pending A1"     value={(byStatus['Pending A1'] || 0) + (byStatus['Pending'] || 0) + (byStatus['A1'] || 0)} color="amber" />
-              <StatCard label="Pending A2"     value={(byStatus['Pending A2'] || 0) + (byStatus['A2'] || 0)} color="orange" />
-              <StatCard label="Pending QSD"    value={(byStatus['Pending QSD'] || 0) + (byStatus['QSD'] || 0)} color="cyan" />
-              <StatCard label="Pending A3"     value={(byStatus['Pending A3'] || 0) + (byStatus['A3'] || 0)} color="blue" />
-              <StatCard label="Released by A3" value={(byStatus['Released by A3'] || 0) + (byStatus['Invoiced'] || 0)} color="green" />
-              <StatCard label="Total Net Amt"  value={formatINR(totalNetAmount)} color="green"  />
-            </div>
-          </div>
-        </details>
+        </div>,
+        document.getElementById('topbar-center')
+      )}
+      {document.getElementById('topbar-actions') && createPortal(
+        <div className="flex items-center gap-2">
+          <button onClick={handleExport} title="Export" className="btn-ghost !px-2 !py-1 !text-xs"><Download size={13} /></button>
+          {isAdmin && (
+            <>
+              <button onClick={() => setImportOpen(true)} title="Import" className="btn-ghost !px-2 !py-1 !text-xs"><Upload size={13} /></button>
+              <button onClick={openAdd} title="Add JMS" className="btn-primary !px-2 !py-1 !text-xs"><Plus size={13} /></button>
+            </>
+          )}
+          <FyTabs basePath="/jms" />
+        </div>,
+        document.getElementById('topbar-actions')
       )}
 
+
+
       {/* Table */}
-      <div className="glass-card p-4">
+      <div className="bg-white dark:bg-[#1e1e2d] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm hover:shadow-lg p-4">
         <DataTable columns={columns} data={sortedRecords} loading={isLoading}
-          enableSelection={true}
+          enableSelection={isAdmin}
           onBulkDelete={handleBulkDelete}
+          initialSearch={searchQuery}
           emptyMessage={activeFy === 'overall' ? 'No JMS records found' : `No JMS records for FY ${activeFy}`}
           onRowClick={(row) => setSelectedRowModal(row)} />
       </div>
@@ -672,22 +590,22 @@ export default function JmsPage() {
             { name: 'payment_date',     label: 'Payment Date',         type: 'date' },
           ].map(f => (
             <div key={f.name}>
-              <label className="block text-xs font-medium text-slate-400 mb-1">{f.label}{f.required && ' *'}</label>
+              <label className="block text-xs font-medium text-gray-500 dark:text-white dark:text-white mb-1">{f.label}{f.required && ' *'}</label>
               <input type={f.type || 'text'} name={f.name} value={form[f.name] || ''} onChange={handleChange}
                 list={f.list} required={f.required} className="input-field" step={f.type === 'number' ? '0.01' : undefined} />
             </div>
           ))}
           <div className="col-span-2 md:col-span-3">
-            <label className="block text-xs font-medium text-slate-400 mb-1">Work Description</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-white dark:text-white mb-1">Work Description</label>
             <textarea name="work_description" value={form.work_description || ''} onChange={handleChange} rows={2} className="input-field resize-none" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Status</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-white dark:text-white mb-1">Status</label>
             <select name="status" value={form.status} onChange={handleChange} className="select-field">
               {JMS_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
-          <div className="col-span-2 md:col-span-3 flex justify-end gap-3 pt-2 border-t border-slate-700 mt-2">
+          <div className="col-span-2 md:col-span-3 flex justify-end gap-3 pt-2 border-t border-gray-200 dark:border-gray-800 mt-2">
             <button type="button" onClick={handleClose} className="btn-ghost">Cancel</button>
             <button type="submit" disabled={saveMutation.isPending} className="btn-primary">
               {saveMutation.isPending ? 'Saving…' : editRow ? 'Update JMS' : 'Create JMS'}

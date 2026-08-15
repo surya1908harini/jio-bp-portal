@@ -3,10 +3,10 @@ import { formatINR, formatDate, parseValidity, formatValidityRange } from '../li
 import { FileText, ExternalLink, Download, Eye, AlertTriangle, Clock, DollarSign, CheckCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-function DetailRow({ label, value, color = 'text-white' }) {
+function DetailRow({ label, value, color = 'text-gray-900 dark:text-white' }) {
   return (
-    <div className="flex items-center justify-between py-2 px-3 rounded-xl bg-slate-950/50 border border-slate-800/80">
-      <span className="text-xs font-medium text-slate-400">{label}</span>
+    <div className="flex items-center justify-between py-2 px-3 rounded-xl bg-white dark:bg-[#1e1e2d] border border-gray-200 dark:border-gray-800">
+      <span className="text-xs font-medium text-gray-500 dark:text-white dark:text-white">{label}</span>
       <span className={`text-xs font-bold font-mono ${color}`}>{value || '—'}</span>
     </div>
   )
@@ -30,7 +30,7 @@ export default function NotificationDetailModal({ notif, onClose, onNavigate }) 
         {/* ── Top Header Banner Card ────────────────────── */}
         <div className="p-4 rounded-2xl bg-gradient-to-r from-orange-600 via-red-600 to-rose-600 text-white shadow-xl flex items-center justify-between">
           <div>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-white/20 backdrop-blur-md text-white border border-white/30">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-white dark:bg-[#1e1e2d]/20 backdrop-blur-md text-white border border-white/30">
               {category.toUpperCase()} ALERT
             </span>
             <h3 className="text-base font-extrabold text-white mt-1.5 leading-snug">{title}</h3>
@@ -44,7 +44,7 @@ export default function NotificationDetailModal({ notif, onClose, onNavigate }) 
         {/* ── Record Details Breakdown ─────────────────── */}
         {record ? (
           <div className="space-y-2">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Record Information</p>
+            <p className="text-xs font-bold text-gray-500 dark:text-white dark:text-white uppercase tracking-wider px-1">Record Information</p>
 
             {category === 'invoice' && (
               <>
@@ -87,8 +87,8 @@ export default function NotificationDetailModal({ notif, onClose, onNavigate }) 
 
             {/* PDF View Attachment Link */}
             {record.pdf_url && (
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-950/80 border border-slate-800 mt-3">
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-white dark:bg-[#1e1e2d] border border-gray-200 dark:border-gray-800 mt-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-white dark:text-white">
                   <FileText size={16} className="text-orange-400" />
                   <span>Attached PDF Document</span>
                 </div>
@@ -104,7 +104,7 @@ export default function NotificationDetailModal({ notif, onClose, onNavigate }) 
                   <a
                     href={record.pdf_url}
                     download
-                    className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 text-xs font-medium hover:bg-slate-700 transition-colors flex items-center gap-1"
+                    className="px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-[#151521] text-gray-500 dark:text-white dark:text-white border border-gray-200 dark:border-gray-800 text-xs font-medium hover:bg-slate-700 transition-colors flex items-center gap-1"
                   >
                     <Download size={13} /> Download
                   </a>
@@ -113,13 +113,13 @@ export default function NotificationDetailModal({ notif, onClose, onNavigate }) 
             )}
           </div>
         ) : (
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
+          <div className="p-4 rounded-xl bg-white dark:bg-[#1e1e2d] border border-gray-200 dark:border-gray-800 text-center text-xs text-gray-500 dark:text-white dark:text-white">
             Click "Go to Full Record Page" below to inspect and manage this record.
           </div>
         )}
 
         {/* ── Footer Actions ────────────────────────────── */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-200 dark:border-gray-800">
           <button type="button" onClick={onClose} className="btn-ghost">
             Close
           </button>

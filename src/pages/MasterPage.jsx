@@ -133,13 +133,13 @@ export default function MasterPage() {
       />
 
       {/* Main Tab Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+      <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-3">
         <button
           onClick={() => setActiveTab('officers')}
           className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${
             activeTab === 'officers'
               ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-              : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+              : ' border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-white dark:text-white hover:text-white'
           }`}
         >
           <UserCheck size={15} /> Officer Masters (A1 / A2 / QSD / A3)
@@ -149,7 +149,7 @@ export default function MasterPage() {
           className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${
             activeTab === 'sites'
               ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-              : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+              : ' border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-white dark:text-white hover:text-white'
           }`}
         >
           <MapPin size={15} /> Site Masters
@@ -159,7 +159,7 @@ export default function MasterPage() {
           className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all ${
             activeTab === 'work_orders'
               ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-              : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+              : ' border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-white dark:text-white hover:text-white'
           }`}
         >
           <FileText size={15} /> Work Order & ARC Masters
@@ -177,8 +177,8 @@ export default function MasterPage() {
                 onClick={() => setOfficerRole(key)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   officerRole === key
-                    ? 'bg-slate-800 text-orange-300 border border-orange-500/40 font-bold'
-                    : 'bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-white dark:bg-[#1e1e2d] border-gray-200 dark:border-gray-800 text-orange-300 border border-orange-500/40 font-bold'
+                    : ' border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-white dark:text-white hover:text-gray-900 dark:text-white'
                 }`}
               >
                 {label} ({masters[key]?.length || 0})
@@ -186,8 +186,8 @@ export default function MasterPage() {
             ))}
           </div>
 
-          <div className="glass-card p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+          <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 p-5 space-y-4">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <UserCheck size={16} className="text-orange-400" /> Add New Officer to {roleLabels[officerRole]}
             </h3>
             <form onSubmit={handleAddOfficer} className="flex gap-3 items-center max-w-xl">
@@ -206,27 +206,27 @@ export default function MasterPage() {
           </div>
 
           {/* Officers Table */}
-          <div className="glass-card p-4">
+          <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 p-4">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold text-[10px]">
+                  <tr className="border-b border-gray-200 dark:border-gray-800 text-gray-500 dark:text-white dark:text-white uppercase font-semibold text-[10px]">
                     <th className="p-3">#</th>
                     <th className="p-3">Officer Name</th>
                     <th className="p-3">Master Category</th>
                     <th className="p-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-gray-200">
                   {(masters[officerRole] || []).length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="p-4 text-center text-slate-500 italic">No officers added to this category yet.</td>
+                      <td colSpan={4} className="p-4 text-center text-gray-500 dark:text-white dark:text-white italic">No officers added to this category yet.</td>
                     </tr>
                   ) : (
-                    masters[officerRole].map((off, idx) => (
-                      <tr key={off.id} className="hover:bg-slate-900/50 transition-colors">
-                        <td className="p-3 font-mono text-slate-500">{idx + 1}</td>
-                        <td className="p-3 font-semibold text-white">{off.name}</td>
+                    masters[officerRole].map((off, index) => (
+                      <tr key={off.id} className="hover:bg-white dark:bg-[#1e1e2d] transition-colors">
+                        <td className="p-3 font-mono text-gray-500 dark:text-white dark:text-white">{index + 1}</td>
+                        <td className="p-3 font-semibold text-gray-900 dark:text-white">{off.name}</td>
                         <td className="p-3 text-orange-300 font-mono text-[11px]">{roleLabels[officerRole]}</td>
                         <td className="p-3 text-right">
                           <button
@@ -249,8 +249,8 @@ export default function MasterPage() {
       {/* ── 2. SITES TAB ── */}
       {activeTab === 'sites' && (
         <div className="space-y-5">
-          <div className="glass-card p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+          <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 p-5 space-y-4">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <MapPin size={16} className="text-emerald-400" /> Add New Site to Master List
             </h3>
             <form onSubmit={handleAddSite} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -275,27 +275,27 @@ export default function MasterPage() {
             </form>
           </div>
 
-          <div className="glass-card p-4">
+          <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 p-4">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold text-[10px]">
+                  <tr className="border-b border-gray-200 dark:border-gray-800 text-gray-500 dark:text-white dark:text-white uppercase font-semibold text-[10px]">
                     <th className="p-3">#</th>
                     <th className="p-3">Site Name</th>
                     <th className="p-3">Location / State</th>
                     <th className="p-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-gray-200">
                   {(masters.sites || []).length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="p-4 text-center text-slate-500 italic">No sites added yet.</td>
+                      <td colSpan={4} className="p-4 text-center text-gray-500 dark:text-white dark:text-white italic">No sites added yet.</td>
                     </tr>
                   ) : (
                     masters.sites.map((s, idx) => (
-                      <tr key={s.id} className="hover:bg-slate-900/50 transition-colors">
-                        <td className="p-3 font-mono text-slate-500">{idx + 1}</td>
-                        <td className="p-3 font-semibold text-white">{s.name}</td>
+                      <tr key={s.id} className="hover:bg-white dark:bg-[#1e1e2d] transition-colors">
+                          <td className="p-3 font-mono text-gray-500 dark:text-white dark:text-white">{idx + 1}</td>
+                          <td className="p-3 font-semibold text-gray-900 dark:text-white">{s.name}</td>
                         <td className="p-3 text-emerald-300 font-mono text-[11px]">{s.location || '—'}</td>
                         <td className="p-3 text-right">
                           <button
@@ -318,8 +318,8 @@ export default function MasterPage() {
       {/* ── 3. WORK ORDERS TAB ── */}
       {activeTab === 'work_orders' && (
         <div className="space-y-5">
-          <div className="glass-card p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+          <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 p-5 space-y-4">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <FileText size={16} className="text-amber-400" /> Add Work Order & ARC Master (Work Order with optional ARC No)
             </h3>
             <form onSubmit={handleAddWorkOrder} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -351,11 +351,11 @@ export default function MasterPage() {
             </form>
           </div>
 
-          <div className="glass-card p-4">
+          <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 p-4">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold text-[10px]">
+                  <tr className="border-b border-gray-200 dark:border-gray-800 text-gray-500 dark:text-white dark:text-white uppercase font-semibold text-[10px]">
                     <th className="p-3">#</th>
                     <th className="p-3">Work Order Number</th>
                     <th className="p-3">ARC Number</th>
@@ -363,18 +363,18 @@ export default function MasterPage() {
                     <th className="p-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-gray-200">
                   {(masters.work_orders || []).length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-4 text-center text-slate-500 italic">No Work Orders added to Master yet.</td>
+                      <td colSpan={5} className="p-4 text-center text-gray-500 dark:text-white dark:text-white italic">No Work Orders added to Master yet.</td>
                     </tr>
                   ) : (
                     masters.work_orders.map((w, idx) => (
-                      <tr key={w.id} className="hover:bg-slate-900/50 transition-colors">
-                        <td className="p-3 font-mono text-slate-500">{idx + 1}</td>
-                        <td className="p-3 font-bold text-white">{w.work_order_number}</td>
+                      <tr key={w.id} className="hover:bg-white dark:bg-[#1e1e2d] transition-colors">
+                          <td className="p-3 font-mono text-gray-500 dark:text-white dark:text-white">{idx + 1}</td>
+                          <td className="p-3 font-bold text-gray-900 dark:text-white">{w.work_order_number}</td>
                         <td className="p-3 text-amber-300 font-mono text-[11px]">{w.arc_number || '—'}</td>
-                        <td className="p-3 text-slate-300 max-w-xs truncate">{w.description || '—'}</td>
+                        <td className="p-3 text-gray-700 dark:text-white max-w-xs truncate">{w.description || '—'}</td>
                         <td className="p-3 text-right">
                           <button
                             onClick={() => handleDeleteWorkOrder(w.id)}

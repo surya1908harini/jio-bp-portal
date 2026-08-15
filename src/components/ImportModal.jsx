@@ -59,7 +59,7 @@ export default function ImportModal({ open, onClose, onImport, columnMap = [], t
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
         className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-          dragging ? 'border-jio-blue-500 bg-jio-blue-900/20' : 'border-slate-600 hover:border-jio-blue-600 hover:bg-slate-800/50'
+          dragging ? 'border-jio-blue-500 bg-jio-blue-900/20' : 'border-slate-600 hover:border-jio-blue-600 hover:bg-white dark:bg-[#1e1e2d]'
         }`}
       >
         <input ref={inputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={e => handleFile(e.target.files[0])} />
@@ -67,17 +67,17 @@ export default function ImportModal({ open, onClose, onImport, columnMap = [], t
           <div className="flex items-center justify-center gap-3">
             <FileSpreadsheet size={28} className="text-emerald-400" />
             <div className="text-left">
-              <p className="text-white font-medium text-sm">{file.name}</p>
-              <p className="text-slate-400 text-xs">{(file.size / 1024).toFixed(1)} KB · {preview.length}+ rows detected</p>
+              <p className="text-gray-900 dark:text-white text-sm">{file.name}</p>
+              <p className="text-gray-500 dark:text-white dark:text-white text-xs">{(file.size / 1024).toFixed(1)} KB · {preview.length}+ rows detected</p>
             </div>
-            <button onClick={e => { e.stopPropagation(); setFile(null); setPreview([]); setHeaders([]) }} className="ml-4 text-slate-500 hover:text-slate-300">
+            <button onClick={e => { e.stopPropagation(); setFile(null); setPreview([]); setHeaders([]) }} className="ml-4 text-slate-500 hover:text-gray-500 dark:text-white dark:text-white">
               <X size={16} />
             </button>
           </div>
         ) : (
           <>
             <Upload size={32} className="mx-auto mb-3 text-slate-500" />
-            <p className="text-sm font-medium text-slate-300">Drop your Excel/CSV file here</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-white dark:text-white">Drop your Excel/CSV file here</p>
             <p className="text-xs text-slate-500 mt-1">or click to browse · .xlsx, .xls, .csv supported</p>
           </>
         )}
@@ -85,8 +85,8 @@ export default function ImportModal({ open, onClose, onImport, columnMap = [], t
 
       {/* Column guide */}
       {columnMap.length > 0 && (
-        <div className="mt-4 p-3 bg-slate-800/60 rounded-xl">
-          <p className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Expected Columns</p>
+        <div className="mt-4 p-3 bg-white dark:bg-[#1e1e2d] rounded-xl">
+          <p className="text-xs font-semibold text-gray-500 dark:text-white dark:text-white mb-2 uppercase tracking-wider">Expected Columns</p>
           <div className="flex flex-wrap gap-1.5">
             {columnMap.map(c => (
               <span key={c} className="badge bg-jio-blue-900/50 text-jio-blue-300 border border-jio-blue-700/50">{c}</span>
@@ -98,7 +98,7 @@ export default function ImportModal({ open, onClose, onImport, columnMap = [], t
       {/* Preview table */}
       {preview.length > 0 && (
         <div className="mt-4">
-          <p className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+          <p className="text-xs font-semibold text-gray-500 dark:text-white dark:text-white mb-2 uppercase tracking-wider flex items-center gap-1.5">
             <CheckCircle size={13} className="text-emerald-400" /> Preview (first 5 rows)
           </p>
           <div className="table-container max-h-48">

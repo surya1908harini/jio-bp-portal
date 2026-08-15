@@ -195,69 +195,20 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* ── Full Width Hero Banner ── */}
-      <div className="w-full rounded-3xl bg-gradient-to-r from-orange-600 via-orange-600 to-red-600 p-5 lg:p-6 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between reveal-on-scroll hover-elevate">
-        <div className="absolute -right-10 -bottom-10 w-96 h-96 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-white/20 backdrop-blur-md text-white border border-white/30 flex items-center gap-1.5 animate-pulse-glow">
-              <Sparkles size={12} /> LIVE · {totalJmsCount} ACTIVE JMS RECORDS
-            </span>
-          </div>
-
-          <h1 className="text-3xl font-extrabold tracking-tight text-white leading-tight">
-            MM Contractor Portal Executive Overview
-          </h1>
-          <p className="text-sm text-orange-100 mt-2 max-w-2xl leading-relaxed">
-            Real-time billing, contract validity, and stage releases tracking for <strong>FY {CURRENT_FY}</strong>.
-          </p>
-
-          <div className="flex items-center gap-3 mt-6 flex-wrap">
-            <Link
-              to="/budget"
-              className="px-5 py-2.5 rounded-full bg-white text-orange-700 font-bold text-xs shadow-lg hover:bg-orange-50 hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2"
-            >
-              <PieChartIcon size={15} /> View Budget Status
-            </Link>
-          </div>
-        </div>
-
-        {/* Mini Stat Boxes */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-4 border-t border-white/20">
-          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm cursor-pointer" onClick={() => navigate('/jms')}>
-            <p className="text-[10px] text-orange-200 uppercase font-semibold">Total JMS</p>
-            <p className="text-xl font-extrabold text-white mt-0.5">{totalJmsCount}</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm cursor-pointer" onClick={() => navigate(`/jms?slot=released_a3&fy=${CURRENT_FY}`)}>
-            <p className="text-[10px] text-orange-200 uppercase font-semibold">Released A3</p>
-            <p className="text-xl font-extrabold text-emerald-300 mt-0.5">{a3Released}</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm cursor-pointer" onClick={() => navigate('/invoices')}>
-            <p className="text-[10px] text-orange-200 uppercase font-semibold">Total Invoices</p>
-            <p className="text-xl font-extrabold text-white mt-0.5">{currentInvList.length}</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/20 hover-elevate-sm cursor-pointer" onClick={() => navigate(`/jms?slot=pending_a1&fy=${CURRENT_FY}`)}>
-            <p className="text-[10px] text-orange-200 uppercase font-semibold">Pending JMS</p>
-            <p className="text-xl font-extrabold text-amber-300 mt-0.5">{pendingJmsCount}</p>
-          </div>
-        </div>
-      </div>
-
-
       
-{/* ── Dynamic Area Trend Chart & Donut Chart ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 reveal-on-scroll">
+
+{/* ── Dynamic Area Trend Chart ── */}
+      <div className="grid grid-cols-1 gap-6 reveal-on-scroll">
         {/* Monthly Activity Area Chart */}
-        <div className="lg:col-span-2 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl hover-elevate">
+        <div className="rounded-3xl border border-gray-200 dark:border-gray-800  p-6 shadow-xl hover-elevate">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white">Monthly Activity Trend</h3>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">Monthly Activity Trend</h3>
                 <select
                   value={trendFy}
                   onChange={e => setTrendFy(e.target.value)}
-                  className="bg-slate-800 text-orange-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-orange-500/40 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all cursor-pointer"
+                  className="bg-white dark:bg-[#1e1e2d] border-gray-200 dark:border-gray-800 text-orange-800 text-xs font-bold px-2.5 py-1 rounded-xl border border-orange-500/40 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all cursor-pointer"
                 >
                   <option value="2023-24">FY 2023-24</option>
                   <option value="2024-25">FY 2024-25</option>
@@ -265,14 +216,14 @@ export default function DashboardPage() {
                   <option value="2026-27">FY 2026-27 (Current)</option>
                 </select>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">Live distribution of JMS entries vs Invoices for FY {trendFy}</p>
+              <p className="text-xs text-gray-500 dark:text-white dark:text-white mt-0.5">Live distribution of JMS entries vs Invoices for FY {trendFy}</p>
             </div>
             <div className="flex items-center gap-4 text-xs font-semibold">
-              <span className="flex items-center gap-1.5 text-orange-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse" /> JMS Records
+              <span className="flex items-center gap-1.5 text-teal-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse" /> JMS Records
               </span>
-              <span className="flex items-center gap-1.5 text-red-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" /> Invoices
+              <span className="flex items-center gap-1.5 text-amber-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" /> Invoices
               </span>
             </div>
           </div>
@@ -282,12 +233,12 @@ export default function DashboardPage() {
               <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorJms" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#14b8a6" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="colorInv" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ec4899" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#ec4899" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
@@ -299,7 +250,7 @@ export default function DashboardPage() {
                   type="monotone"
                   dataKey="jms"
                   name="JMS Records"
-                  stroke="#8b5cf6"
+                  stroke="#14b8a6"
                   strokeWidth={3}
                   fillOpacity={1}
                   fill="url(#colorJms)"
@@ -316,7 +267,7 @@ export default function DashboardPage() {
                   type="monotone"
                   dataKey="invoices"
                   name="Invoices"
-                  stroke="#ec4899"
+                  stroke="#f59e0b"
                   strokeWidth={3}
                   fillOpacity={1}
                   fill="url(#colorInv)"
@@ -334,82 +285,18 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Donut Stage Breakdown */}
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl flex flex-col justify-between hover-elevate">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base font-bold text-white">JMS Details</h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-950 text-orange-300 border border-orange-800">
-                FY {CURRENT_FY}
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 mb-4">Stage-wise release & approval breakdown</p>
 
-            <div className="h-44 w-full flex items-center justify-center relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    innerRadius={50}
-                    outerRadius={75}
-                    paddingAngle={3}
-                    dataKey="value"
-                    isAnimationActive
-                    animationDuration={1500}
-                    animationEasing="ease-out"
-                    style={{ cursor: 'pointer' }}
-                    onClick={(data) => {
-                      if (data && data.name) {
-                        const map = {
-                          'Pending A1': 'pending_a1',
-                          'Pending A2': 'pending_a2',
-                          'Pending QSD': 'pending_qsd',
-                          'Pending A3': 'pending_a3',
-                          'Released A3': 'released_a3'
-                        }
-                        const slot = map[data.name] || 'all';
-                        navigate(`/jms?fy=${CURRENT_FY}&slot=${slot}`);
-                      }
-                    }}
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-xl font-extrabold text-white">{totalJmsCount}</span>
-                <span className="text-[9px] text-slate-400 uppercase font-semibold">Total JMS</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-1.5">
-            {pieData.map(item => (
-              <div key={item.name} className="flex items-center justify-between text-xs hover:bg-slate-800/40 p-1 rounded-lg transition-colors">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                  <span className="text-slate-300 font-medium">{item.name}</span>
-                </div>
-                <span className="font-extrabold text-white font-mono">{item.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
     
 {/* ── Month-wise Purchase Bill Bar Chart ── */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl hover-elevate reveal-on-scroll">
+      <div className="rounded-3xl border border-gray-200 dark:border-gray-800  p-6 shadow-xl hover-elevate reveal-on-scroll">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-white">Month-wise Purchase Bill Amount</h3>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">Month-wise Purchase Bill Amount</h3>
               <select
                 value={pbFy}
                 onChange={e => setPbFy(e.target.value)}
-                className="bg-slate-800 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+                className="bg-white dark:bg-[#1e1e2d] border-gray-200 dark:border-gray-800 text-indigo-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
               >
                 <option value="2023-24">FY 2023-24</option>
                 <option value="2024-25">FY 2024-25</option>
@@ -417,11 +304,11 @@ export default function DashboardPage() {
                 <option value="2026-27">FY 2026-27 (Current)</option>
               </select>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">Total invoice value purchased per month — FY {pbFy}</p>
+            <p className="text-xs text-gray-500 dark:text-white dark:text-white mt-0.5">Total invoice value purchased per month — FY {pbFy}</p>
           </div>
           <div className="flex items-center gap-1.5 text-xs font-semibold">
-            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-            <span className="text-indigo-400">Invoice Value (₹)</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
+            <span className="text-cyan-400">Invoice Value (₹)</span>
           </div>
         </div>
 
@@ -430,8 +317,8 @@ export default function DashboardPage() {
             <BarChart data={pbMonthData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="pbGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.9}/>
-                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.5}/>
+                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.9}/>
+                  <stop offset="95%" stopColor="#22d3ee" stopOpacity={0.5}/>
                 </linearGradient>
               </defs>
               <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
@@ -463,15 +350,15 @@ export default function DashboardPage() {
 
       
 {/* ── Monthly Profit & Loss Chart ── */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl hover-elevate reveal-on-scroll">
+      <div className="rounded-3xl border border-gray-200 dark:border-gray-800  p-6 shadow-xl hover-elevate reveal-on-scroll">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-white">Monthly Profit & Loss</h3>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">Monthly Profit & Loss</h3>
               <select
                 value={pnlFy}
                 onChange={e => setPnlFy(e.target.value)}
-                className="bg-slate-800 text-emerald-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer"
+                className="bg-white dark:bg-[#1e1e2d] border-gray-200 dark:border-gray-800 text-emerald-300 text-xs font-bold px-2.5 py-1 rounded-xl border border-emerald-500/40 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer"
               >
                 <option value="2023-24">FY 2023-24</option>
                 <option value="2024-25">FY 2024-25</option>
@@ -479,14 +366,14 @@ export default function DashboardPage() {
                 <option value="2026-27">FY 2026-27 (Current)</option>
               </select>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">Compare Invoice Amount vs Purchase Amount and net Profit/Loss</p>
+            <p className="text-xs text-gray-500 dark:text-white dark:text-white mt-0.5">Compare Invoice Amount vs Purchase Amount and net Profit/Loss</p>
           </div>
           <div className="flex items-center gap-4 text-xs font-semibold">
-             <span className="flex items-center gap-1.5 text-blue-400">
-               <span className="w-2.5 h-2.5 rounded-sm bg-blue-500" /> Invoice Amount
+             <span className="flex items-center gap-1.5 text-indigo-400">
+               <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500" /> Invoice Amount
              </span>
-             <span className="flex items-center gap-1.5 text-red-400">
-               <span className="w-2.5 h-2.5 rounded-sm bg-red-500" /> Purchase Amount
+             <span className="flex items-center gap-1.5 text-rose-400">
+               <span className="w-2.5 h-2.5 rounded-sm bg-rose-500" /> Purchase Amount
              </span>
              <span className="flex items-center gap-1.5 text-emerald-400">
                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Net Profit/Loss
@@ -499,12 +386,12 @@ export default function DashboardPage() {
             <ComposedChart data={pnlMonthData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="invGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.9}/>
-                  <stop offset="95%" stopColor="#60a5fa" stopOpacity={0.5}/>
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.9}/>
+                  <stop offset="95%" stopColor="#818cf8" stopOpacity={0.5}/>
                 </linearGradient>
                 <linearGradient id="pbGrad2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ec4899" stopOpacity={0.9}/>
-                  <stop offset="95%" stopColor="#f472b6" stopOpacity={0.5}/>
+                  <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.9}/>
+                  <stop offset="95%" stopColor="#fb7185" stopOpacity={0.5}/>
                 </linearGradient>
               </defs>
               <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
@@ -523,6 +410,7 @@ export default function DashboardPage() {
       </div>
 
       
-</div>
+    </div>
+  </div>
   )
 }

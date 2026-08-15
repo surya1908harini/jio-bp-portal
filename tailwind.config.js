@@ -1,5 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
+
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,6 +9,17 @@ export default {
   theme: {
     extend: {
       colors: {
+        'brand': {
+          sidebar: '#f8f9fa', // Light gray background for sidebar like the template
+          sidebarHover: '#e9ecef',
+          bg: '#f3f4f6', // Light grayish background for the main wrapper
+          card: '#ffffff',
+          accent: '#fd7e14', // Bright orange primary color
+          accentDark: '#e8590c',
+          text: '#212529',
+          muted: '#6c757d',
+          border: '#e9ecef',
+        },
         'jio-blue': {
           50:  '#e6eef7',
           100: '#ccddef',
@@ -33,7 +46,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['"Inter"', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(0, 82, 165, 0.12)',

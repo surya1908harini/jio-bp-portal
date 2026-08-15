@@ -22,47 +22,34 @@ export default function ModuleHeader({
   }
 
   return (
-    <div className="rounded-2xl bg-gradient-to-r from-orange-700 via-orange-600 to-red-600 px-4 py-2.5 text-white shadow-lg relative overflow-hidden">
-      <div className="absolute -right-6 -bottom-6 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-
-      {/* Row 1: Title + FY badge + Action buttons */}
-      <div className="flex items-center justify-between gap-3 flex-wrap relative z-10">
+    <div className="mb-4">
+      {/* Row 1: Action buttons & Title override if needed (handled by Layout now) */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5 min-w-0">
-          <img src="/mmc_logo.jpg" alt="MMC" className="w-8 h-8 rounded-xl object-cover ring-1 ring-white/40 shadow shrink-0" />
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <h1 className="text-sm font-extrabold text-white tracking-tight leading-tight truncate">{title}</h1>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-white/20 text-white border border-white/30 shrink-0">
-                {isAdmin ? 'MMC Admin' : 'User'}
-              </span>
-            </div>
-            {subtitle && <p className="text-[10px] text-orange-100 font-medium truncate">{subtitle}</p>}
+            {subtitle && <p className="text-xs text-gray-500 dark:text-white dark:text-white font-medium truncate">{subtitle}</p>}
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 flex-wrap shrink-0">
-          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 text-white border border-white/30 text-[10px] font-semibold">
-            <Calendar size={11} />
-            <span>FY {CURRENT_FY}</span>
-          </div>
+        <div className="flex items-center gap-2 flex-wrap shrink-0 ml-auto">
           {actions}
         </div>
       </div>
 
       {/* Row 2: Stat chips (compact inline) */}
       {stats.length > 0 && (
-        <div className="flex items-center gap-1.5 mt-2 flex-wrap relative z-10">
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
           {stats.map((st, i) => {
             const Icon = st.icon
             return (
               <div
                 key={i}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[10px] font-semibold ${chipColors[st.color || 'orange']} bg-black/20 backdrop-blur-sm`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1e1e2d] shadow-sm text-[11px] font-semibold text-gray-700 dark:text-white"
               >
-                <Icon size={11} />
-                <span className="text-white/70">{st.label}:</span>
-                <span className="font-extrabold text-white">{st.value}</span>
-                {st.sub && <span className="text-white/50 hidden sm:inline">· {st.sub}</span>}
+                <Icon size={14} className="text-brand-accent" />
+                <span className="text-gray-500 dark:text-white dark:text-white">{st.label}:</span>
+                <span className="font-extrabold text-gray-900 dark:text-white">{st.value}</span>
+                {st.sub && <span className="text-gray-400 dark:text-white hidden sm:inline text-[10px]">· {st.sub}</span>}
               </div>
             )
           })}

@@ -7,10 +7,10 @@ import { useQuery } from '@tanstack/react-query';
 import { jmsDb, invoiceDb } from '../lib/db';
 import DataTable from './DataTable';
 
-function SummaryRow({ label, value, color = 'text-white' }) {
+function SummaryRow({ label, value, color = 'text-gray-900 dark:text-white' }) {
   return (
-    <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-800/50 transition-colors">
-      <span className="text-xs font-medium text-slate-400">{label}</span>
+    <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-white dark:bg-[#1e1e2d] transition-colors">
+      <span className="text-xs font-medium text-gray-500 dark:text-white dark:text-white">{label}</span>
       <span className={`text-sm font-semibold ${color}`}>{value || '—'}</span>
     </div>
   );
@@ -70,7 +70,7 @@ export default function SummaryModal({ row, onClose }) {
   const isOverdraft = (balance_available || 0) < 0;
 
   const jmsColumns = [
-    { key: 'jms_no', header: 'JMS No', render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
+    { key: 'jms_no', header: 'JMS No', render: r => <span className="font-semibold text-gray-900 dark:text-white">{r.jms_no}</span> },
     { key: 'jms_create_date', header: 'JMS Date', render: r => formatDate(r.jms_create_date || r.inv_date) },
     { key: 'net_amount', header: 'Net Amount', render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.net_amount)}</span> },
     { key: 'status', header: 'Status', render: r => {
@@ -81,14 +81,14 @@ export default function SummaryModal({ row, onClose }) {
   ];
 
   const invColumns = [
-    { key: 'inv_number', header: 'Inv No', render: r => <span className="font-semibold text-white">{r.inv_number}</span> },
+    { key: 'inv_number', header: 'Inv No', render: r => <span className="font-semibold text-gray-900 dark:text-white">{r.inv_number}</span> },
     { key: 'inv_date', header: 'Inv Date', render: r => formatDate(r.inv_date) },
     { key: 'jms_no', header: 'JMS No', render: r => <span className="font-semibold text-orange-300">{r.jms_no}</span> },
     { key: 'grand_total', header: 'Grand Total', render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.grand_total)}</span> },
     { key: 'payment_status', header: 'Payment Status', render: r => {
       const isCancelled = String(r.work_description || '').includes('[Cancelled:') || String(r.payment_status || r.status || '').toLowerCase().includes('cancel')
       if (isCancelled) return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-950 text-rose-300 border border-rose-800">INVOICE DELETE</span>
-      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700">{r.payment_status || 'Pending'}</span>
+      return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-white dark:bg-[#1e1e2d] text-gray-500 dark:text-white dark:text-white border border-gray-200 dark:border-gray-800">{r.payment_status || 'Pending'}</span>
     }},
   ];
 
@@ -98,34 +98,34 @@ export default function SummaryModal({ row, onClose }) {
         
         {/* ── Left Half (Summary Details) ────────────────────────────────── */}
         <div className="space-y-5 flex flex-col h-full">
-          <div className="rounded-xl border border-slate-700/50 bg-slate-800/30 p-4">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1e1e2d] p-4">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-xl bg-jio-blue-900/50 border border-jio-blue-700/40 flex items-center justify-center text-jio-blue-400 font-bold text-sm">
                 WO
               </div>
               <div>
-                <p className="text-white font-semibold text-sm">{work_order_number || '—'}</p>
+                <p className="text-gray-900 dark:text-white font-semibold text-sm">{work_order_number || '—'}</p>
                 <p className="text-[11px] text-slate-500">{operation || 'No operation'}</p>
               </div>
             </div>
             <SummaryRow label="ARC Number" value={arc_number} />
             <SummaryRow label="Validity" value={formatValidityRange(validity_of_contract)} />
             {row.pdf_url && (
-              <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-800/50 transition-colors border-t border-slate-700/40 mt-1">
-                <span className="text-xs font-medium text-slate-400">PDF Document</span>
+              <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-white dark:bg-[#1e1e2d] transition-colors border-t border-gray-200 dark:border-gray-800 mt-1">
+                <span className="text-xs font-medium text-gray-500 dark:text-white dark:text-white">PDF Document</span>
                 <div className="flex items-center gap-2">
                   <a
                     href={row.pdf_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-2.5 py-1 rounded-lg bg-red-950/80 text-red-400 border border-red-700/50 hover:bg-red-900 hover:text-white transition-colors text-xs font-semibold"
+                    className="px-2.5 py-1 rounded-lg bg-red-950/80 text-red-400 border border-red-700/50 hover:bg-red-900 hover:text-gray-900 dark:text-white transition-colors text-xs font-semibold"
                   >
                     View PDF
                   </a>
                   <a
                     href={row.pdf_url}
                     download
-                    className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors text-xs font-medium"
+                    className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#1e1e2d] text-gray-500 dark:text-white dark:text-white border border-gray-200 dark:border-gray-800 hover:bg-slate-700 hover:text-gray-900 dark:text-white transition-colors text-xs font-medium"
                   >
                     Download PDF
                   </a>
@@ -133,15 +133,15 @@ export default function SummaryModal({ row, onClose }) {
               </div>
             )}
             {description && (
-              <div className="mt-2 px-3 py-2 rounded-lg bg-slate-900/50 border border-slate-700/30">
+              <div className="mt-2 px-3 py-2 rounded-lg bg-white dark:bg-[#1e1e2d] border border-gray-200 dark:border-gray-800">
                 <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Description</p>
-                <p className="text-xs text-slate-300 leading-relaxed">{description}</p>
+                <p className="text-xs text-gray-500 dark:text-white dark:text-white leading-relaxed">{description}</p>
               </div>
             )}
           </div>
 
           <div>
-            <p className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">Financial Breakdown</p>
+            <p className="text-xs font-semibold text-gray-500 dark:text-white dark:text-white mb-3 uppercase tracking-wider">Financial Breakdown</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <AmountCard label="FO Total Budget" amount={fo_total_budget} color="blue" />
               <AmountCard label="Total Consumed" amount={total_consumed} color="red" />
@@ -152,8 +152,8 @@ export default function SummaryModal({ row, onClose }) {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-700/40 bg-slate-800/30 p-4">
-            <div className="flex justify-between text-xs text-slate-400 mb-2">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1e1e2d] p-4">
+            <div className="flex justify-between text-xs text-gray-500 dark:text-white dark:text-white mb-2">
               <span>Budget Utilization</span>
               <span className={`font-semibold ${utilPct > 85 ? 'text-jio-red-400' : utilPct > 60 ? 'text-amber-400' : 'text-emerald-400'}`}>
                 {utilPct}%
@@ -179,10 +179,10 @@ export default function SummaryModal({ row, onClose }) {
             )}
           </div>
 
-          <div className="flex justify-between items-center pt-4 mt-auto border-t border-slate-800">
+          <div className="flex justify-between items-center pt-4 mt-auto border-t border-gray-200 dark:border-gray-800">
             <button
               onClick={() => setShowRecords(!showRecords)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white font-medium text-xs transition-all"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-white dark:text-white hover:bg-white dark:bg-[#1e1e2d] hover:text-gray-900 dark:text-white font-medium text-xs transition-all"
             >
               {showRecords ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               {showRecords ? 'HIDE RECORDS' : 'SEE RECORDS ONSCREEN'}
@@ -193,7 +193,7 @@ export default function SummaryModal({ row, onClose }) {
                 onClose();
                 navigate(`/search?search=${encodeURIComponent(work_order_number)}`);
               }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs transition-all shadow-lg hover:shadow-orange-500/25"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-gray-900 dark:text-white font-bold text-xs transition-all shadow-lg hover:shadow-orange-500/25"
             >
               <Search size={14} /> FULL SEARCH
             </button>
@@ -202,9 +202,9 @@ export default function SummaryModal({ row, onClose }) {
 
         {/* ── Right Half (Onscreen Records) ────────────────────────────── */}
         {showRecords && (
-          <div className="space-y-6 lg:border-l lg:border-slate-700/50 lg:pl-6 animate-slide-in lg:h-[calc(90vh-140px)] lg:overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: 'thin' }}>
+          <div className="space-y-6 lg:border-l lg:border-gray-200 dark:border-gray-800 lg:pl-6 animate-slide-in lg:h-[calc(90vh-140px)] lg:overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: 'thin' }}>
             <div>
-              <h3 className="text-sm font-bold text-white mb-3">Related JMS Records</h3>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Related JMS Records</h3>
               <DataTable
                 columns={jmsColumns}
                 data={jmsList}
@@ -213,7 +213,7 @@ export default function SummaryModal({ row, onClose }) {
               />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white mb-3 mt-8 border-t border-slate-700/50 pt-6">Related Invoices</h3>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 mt-8 border-t border-gray-200 dark:border-gray-800 pt-6">Related Invoices</h3>
               <DataTable
                 columns={invColumns}
                 data={invoiceList}

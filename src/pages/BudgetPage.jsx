@@ -1,9 +1,10 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'react-router-dom'
 import {
   Plus, Download, Upload, Pencil, Trash2, PieChart, TrendingUp, Clock, AlertTriangle,
-  CheckCircle2, RefreshCw, LayoutGrid, List, Search, Eye, FileText, PieChart as PieChartIcon, ChevronLeft, ChevronRight
+  CheckCircle2, RefreshCw, LayoutGrid, List, Search, Eye, FileText, PieChart as PieChartIcon, ChevronLeft, ChevronRight, X
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
@@ -39,7 +40,7 @@ const BUDGET_IMPORT_COLUMNS = [
   'validity_of_contract','fo_total_budget',
 ]
 
-const ITEMS_PER_PAGE = 9
+const ITEMS_PER_PAGE = 12
 
 export default function BudgetPage() {
   const { user, isAdmin } = useAuth()
@@ -55,9 +56,11 @@ export default function BudgetPage() {
   const [form, setForm]             = useState(EMPTY_FORM)
   const [selectedRow, setSelectedRow] = useState(null)
   const [activeSlot, setActiveSlot]  = useState('all')
-  const [viewMode, setViewMode]      = useState('grid') // 'grid' or 'list'
+  const [viewMode, setViewMode]      = useState('grid')
   const [searchQuery, setSearchQuery] = useState(initialSearch)
+  const [isSearchOpen, setIsSearchOpen] = useState(!!initialSearch)
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedIds, setSelectedIds] = useState([])
   const gridContainerRef = useRef(null)
 
   const handlePageChange = (newPage) => {
@@ -228,6 +231,48 @@ export default function BudgetPage() {
       toast.success(`Deleted ${selectedRows.length} Budget Work Orders successfully ✓`)
     }
   }
+  const toggleSelection = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === paginatedRecords.length) {
+      setSelectedIds([])
+    } else {
+      setSelectedIds(paginatedRecords.map(r => r.id))
+    }
+  }
+
+  const handleBatchStatus = async (status) => {
+    if (selectedIds.length === 0) return
+    if (!window.confirm(`Mark ${selectedIds.length} work orders as ${status}?`)) return
+    
+    try {
+      for (const id of selectedIds) {
+        const record = allRecords.find(r => r.id === id)
+        if (record) {
+          await budgetDb.update(id, { ...record, status })
+        }
+      }
+      qc.invalidateQueries(['budget'])
+      setSelectedIds([])
+      toast.success(`Marked ${selectedIds.length} records as ${status}`)
+    } catch (error) {
+      toast.error('Failed to update status')
+    }
+  }
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.length === 0) return
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} work orders?`)) return
+    
+    for (const id of selectedIds) {
+      await deleteMutation.mutateAsync(id)
+    }
+    setSelectedIds([])
+    toast.success(`Deleted ${selectedIds.length} records`)
+  }
+
   const handleSubmit = (e) => { e.preventDefault(); saveMutation.mutate(form) }
   const handleExport = () => {
     const exportRows = sortedRecords.map(r => {
@@ -253,15 +298,15 @@ export default function BudgetPage() {
 
   const columns = [
     { key: 'operation',           header: 'Operation' },
-    { key: 'description',         header: 'Description' },
+    // { key: 'description',         header: 'Description' },
     { key: 'arc_number',          header: 'ARC Number' },
-    { key: 'work_order_number',   header: 'Work Order No',     render: r => <span className="font-semibold text-white">{r.work_order_number}</span> },
+    { key: 'work_order_number',   header: 'Work Order No',     render: r => <span className="font-semibold text-gray-900 dark:text-white">{r.work_order_number}</span> },
     {
       key: 'status', header: 'WO Status',
       render: r => (
         <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
           r.status === 'Closed'
-            ? 'bg-slate-800 text-slate-300 border border-slate-700'
+            ? 'bg-gray-50 dark:bg-[#151521] text-gray-500 dark:text-white dark:text-white border border-gray-200 dark:border-gray-800'
             : 'bg-emerald-950 text-emerald-400 border border-emerald-800'
         }`}>
           {r.status === 'Closed' ? 'WO Closed' : 'Active'}
@@ -294,14 +339,14 @@ export default function BudgetPage() {
 
         const badgeColor =
           isClosed
-            ? 'bg-slate-800 text-slate-400 border-slate-700'
+            ? 'bg-gray-50 dark:bg-[#151521] text-gray-500 dark:text-white dark:text-white border-gray-200 dark:border-gray-800'
             : status === 'active'
             ? 'bg-emerald-950/80 text-emerald-400 border-emerald-700/50'
             : status === 'expiring_soon'
             ? 'bg-amber-950/80 text-amber-400 border-amber-700/50'
             : status === 'critical'
             ? 'bg-rose-950/80 text-rose-400 border-rose-700/50'
-            : 'bg-slate-800 text-slate-400 border-slate-700'
+            : 'bg-gray-50 dark:bg-[#151521] text-gray-500 dark:text-white dark:text-white border-gray-200 dark:border-gray-800'
 
         const badgeText =
           isClosed
@@ -314,7 +359,7 @@ export default function BudgetPage() {
 
         return (
           <div className="space-y-1 min-w-[170px]">
-            <div className="text-white text-xs font-mono font-medium">{formattedValidity || '—'}</div>
+            <div className="text-gray-900 dark:text-white text-xs font-mono font-medium">{formattedValidity || '—'}</div>
             {daysRemaining !== null && daysRemaining !== undefined && (
               <div className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-md border ${badgeColor}`}>
                 <Clock size={11} />
@@ -326,7 +371,7 @@ export default function BudgetPage() {
       }
     },
     { key: 'fo_total_budget',     header: 'FO Total Budget',   render: r => <span className="text-blue-400 font-semibold">{formatINR(r.fo_total_budget)}</span> },
-    { key: 'total_consumed',      header: 'Budget Consumed',   render: r => <span className="text-jio-red-400 font-semibold">{formatINR(r.total_consumed)}</span> },
+    { key: 'total_consumed',      header: 'Budget Consumed',   render: r => <span className="text-red-500 font-semibold">{formatINR(r.total_consumed)}</span> },
     {
       key: 'balance_available', header: 'Remaining Budget',
       render: r => {
@@ -353,8 +398,8 @@ export default function BudgetPage() {
       key: '_actions', header: 'Actions', sortable: false,
       render: r => (
         <div className="flex gap-1">
-          <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-jio-blue-800/50 text-jio-blue-400 hover:text-white transition-colors"><Pencil size={14} /></button>
-          <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-white transition-colors"><Trash2 size={14} /></button>
+          <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-jio-blue-800/50 text-jio-blue-400 hover:text-gray-900 dark:text-white transition-colors"><Pencil size={14} /></button>
+          <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg hover:bg-jio-red-900/50 text-jio-red-400 hover:text-gray-900 dark:text-white transition-colors"><Trash2 size={14} /></button>
         </div>
       )
     }] : []),
@@ -365,181 +410,157 @@ export default function BudgetPage() {
   const totalRemainingBudget = totalFoBudget - totalConsumedBudget
 
   return (
-    <div className="space-y-5">
-      {/* Header Banner & Executive Stat Cards */}
-      <ModuleHeader
-        title="Contract Budget Status"
-        subtitle={`Browse, manage and track every work order in your budget library.`}
-        actions={
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending} title="Sync JMS Work Orders" className="btn-ghost !px-2 !py-1 !text-xs">
-              <RefreshCw size={13} className={syncMutation.isPending ? 'animate-spin' : ''} />
-            </button>
-            <button onClick={handleExport} title="Export" className="btn-ghost !px-2 !py-1 !text-xs"><Download size={13} /></button>
-            {isAdmin && (
-              <>
-                <button onClick={() => setImportOpen(true)} title="Import" className="btn-ghost !px-2 !py-1 !text-xs"><Upload size={13} /></button>
-                <button onClick={openAdd} title="Add Budget Work Order" className="btn-primary !px-2 !py-1 !text-xs"><Plus size={13} /></button>
-              </>
-            )}
-          </div>
-        }
-        stats={[
-          { icon: FileText, label: 'Work Orders', value: fyRecords.length, sub: activeFy === 'overall' ? 'All FY' : `FY ${activeFy}`, color: 'orange' },
-          { icon: TrendingUp, label: 'FO Total Budget', value: formatINR(totalFoBudget), sub: 'Total Allocation', color: 'blue' },
-          { icon: PieChartIcon, label: 'Budget Consumed', value: formatINR(totalConsumedBudget), sub: 'Total Spent', color: 'red' },
-          { icon: CheckCircle2, label: 'Remaining Budget', value: formatINR(totalRemainingBudget), sub: 'Available Balance', color: totalRemainingBudget >= 0 ? 'green' : 'red' },
-        ]}
-      />
-
-      {/* Filter & View Controls Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
-        <div className="flex items-center gap-2 flex-wrap">
-          <FyTabs basePath="/budget" />
+    <div className="space-y-0">
+      {document.getElementById('topbar-center') && createPortal(
+        <div className="flex items-center gap-2">
           <SlotTabs slots={VALIDITY_SLOTS} activeSlot={activeSlot} onChange={setActiveSlot} />
-        </div>
-
-        {/* Search & Mode Toggle */}
-        <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
-          <div className="relative w-full sm:w-64">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search work orders, operations, ARC..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="input-field pl-9 py-2 text-xs"
-            />
+        </div>,
+        document.getElementById('topbar-center')
+      )}
+      {document.getElementById('topbar-actions') && createPortal(
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {isSearchOpen ? (
+            <div className="relative w-full sm:w-48 animate-fade-in flex items-center">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white" />
+              <input
+                autoFocus
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-8 py-1.5 text-xs bg-white dark:bg-[#1e1e2d] border border-gray-200 dark:border-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all placeholder-gray-400 text-gray-900 dark:text-white shadow-sm"
+              />
+              <button 
+                onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} 
+                className="absolute right-2 text-gray-400 dark:text-white hover:text-gray-600 dark:text-white dark:text-white"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => setIsSearchOpen(true)} 
+              title="Search" 
+              className="btn-ghost !p-1.5 !rounded-full"
+            >
+              <Search size={14} className={searchQuery ? "text-orange-500" : ""} />
+            </button>
+          )}
+          {viewMode === 'grid' && isAdmin && (
+            <button 
+              onClick={handleSelectAll} 
+              className="px-3 py-1.5 text-xs font-semibold bg-white dark:bg-[#1e1e2d] border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-white dark:text-white rounded-full hover:bg-gray-50 dark:bg-[#151521] hover:text-orange-500 transition-all shrink-0"
+            >
+              {selectedIds.length === paginatedRecords.length && paginatedRecords.length > 0 ? 'Deselect' : 'Select All'}
+            </button>
+          )}
+          <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-800 shrink-0">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-full text-xs font-semibold transition-all ${
+                viewMode === 'grid' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 dark:text-white dark:text-white hover:text-orange-500'
+              }`}
+            >
+              <LayoutGrid size={13} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-full text-xs font-semibold transition-all ${
+                viewMode === 'list' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 dark:text-white dark:text-white hover:text-orange-500'
+              }`}
+            >
+              <List size={13} />
+            </button>
           </div>
-
-        {/* Grid / List View Mode Toggle Buttons */}
-        <div className="flex items-center gap-1 p-1 bg-slate-950 rounded-xl border border-slate-800 shrink-0">
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              viewMode === 'grid'
-                ? 'bg-orange-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <LayoutGrid size={14} /> Grid
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              viewMode === 'list'
-                ? 'bg-orange-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <List size={14} /> List
-          </button>
-        </div>
-      </div>
-    </div>
+          <button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending} title="Sync" className="btn-ghost !p-1.5 !rounded-full"><RefreshCw size={13} className={syncMutation.isPending ? 'animate-spin' : ''} /></button>
+          <button onClick={handleExport} title="Export" className="btn-ghost !p-1.5 !rounded-full"><Download size={13} /></button>
+          {isAdmin && (
+            <>
+              <button onClick={() => setImportOpen(true)} title="Import" className="btn-ghost !p-1.5 !rounded-full"><Upload size={13} /></button>
+              <button onClick={openAdd} title="Add" className="btn-primary !p-1.5 !rounded-full"><Plus size={13} /></button>
+            </>
+          )}
+          <FyTabs basePath="/budget" />
+        </div>,
+        document.getElementById('topbar-actions')
+      )}
 
       {/* ── Content View Rendering (Grid Cards vs List Table) ── */}
       {viewMode === 'grid' ? (
         <div className="space-y-6" ref={gridContainerRef}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 group">
             {sortedRecords.length === 0 ? (
-              <div className="col-span-full text-center py-12 glass-card text-slate-400">
+              <div className="col-span-full text-center py-12 bg-white dark:bg-[#1e1e2d] rounded-2xl border border-gray-200 dark:border-gray-800 text-gray-500 dark:text-white dark:text-white shadow-sm">
                 No budget work orders found for the selected filter criteria.
               </div>
             ) : (
               paginatedRecords.map(b => {
                 const total = b.fo_total_budget || 0
                 const consumed = b.total_consumed || 0
-                const remaining = total - consumed
-                const isPositive = remaining >= 0
-                const { daysRemaining, status } = parseValidity(b.validity_of_contract)
-                const isClosed = b.status === 'Closed'
-
-                const badgeColor =
-                  status === 'active'
-                    ? 'bg-emerald-950/90 text-emerald-400 border-emerald-700/60'
-                    : status === 'expiring_soon'
-                    ? 'bg-amber-950/90 text-amber-400 border-amber-700/60'
-                    : status === 'critical'
-                    ? 'bg-rose-950/90 text-rose-400 border-rose-700/60'
-                    : 'bg-slate-800 text-slate-400 border-slate-700'
-
-                const bannerGradient = isClosed
-                  ? 'bg-gradient-to-r from-slate-700 via-slate-600 to-slate-500'
-                  : 'bg-gradient-to-r from-orange-600 via-red-600 to-rose-500'
-
+                const bal = total - consumed
                 return (
-                  <div
-                    key={b.id}
-                    className="rounded-3xl border border-slate-800 bg-slate-900/70 backdrop-blur-xl shadow-xl overflow-hidden group hover-elevate interactive-card flex flex-col justify-between"
-                    onClick={() => setSelectedRow(b)}
-                  >
-                    {/* Top Cover Banner */}
-                    <div className={`${bannerGradient} p-4 text-white relative`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md ${
-                          isClosed ? 'bg-black/30 text-slate-200' : 'bg-white/20 text-white'
-                        }`}>
-                          {isClosed ? 'CLOSED WORK ORDER' : 'ACTIVE WORK ORDER'}
-                        </span>
-                        <span className="text-[10px] font-mono font-bold bg-black/20 px-2 py-0.5 rounded-md">
-                          {b.financial_year || activeFy}
-                        </span>
+                  <div key={b.id} className="min-h-[300px] bg-white dark:bg-[#1e1e2d] p-4 rounded-2xl relative group/card hover:-translate-y-1 transition-all duration-300 flex flex-col h-full border border-gray-200 dark:border-gray-800 hover:border-orange-500/50 shadow-sm hover:shadow-lg overflow-hidden" onClick={() => setSelectedRow(b)}>
+                    {isAdmin && (
+                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity bg-white dark:bg-[#1e1e2d]/90 backdrop-blur-md p-1 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm z-10">
+                        <button onClick={(e) => { e.stopPropagation(); openEdit(b) }} className="p-1 hover:text-orange-500 text-gray-500 dark:text-white dark:text-white"><Pencil size={14} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); handleDelete(b.id) }} className="p-1 hover:text-rose-500 text-gray-500 dark:text-white dark:text-white"><Trash2 size={14} /></button>
                       </div>
-                      <h3 className="text-lg font-extrabold text-white tracking-tight leading-snug">
-                        WO #{b.work_order_number || '—'}
-                      </h3>
-                      <p className="text-xs text-orange-100 opacity-90 truncate mt-0.5">
-                        {b.operation || 'No operation details'}
-                      </p>
+                    )}
+                    <div className="flex items-start justify-between mb-3 mt-1">
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          {isAdmin && (
+                            <input 
+                              type="checkbox" 
+                              checked={selectedIds.includes(b.id)}
+                              onChange={() => toggleSelection(b.id)}
+                              onClick={e => e.stopPropagation()}
+                              className="w-4 h-4 rounded border-gray-300 dark:border-gray-700 text-orange-500 focus:ring-orange-500 cursor-pointer"
+                            />
+                          )}
+                        </div>
+                        <h3 className="font-extrabold text-gray-900 dark:text-white text-sm truncate" title={b.work_order_number}>{b.work_order_number || '—'}</h3>
+                        <p className="text-[10px] font-semibold text-gray-400 dark:text-white truncate mt-0.5">ARC: <span className="text-gray-600 dark:text-white dark:text-white">{b.arc_number || '—'}</span></p>
+                        <p className="text-[10px] font-semibold text-blue-600 mt-0.5">{b.financial_year || activeFy} • {b.status === 'Closed' ? 'Closed' : 'Active'}</p>
+                      </div>
+
+                    </div>
+                    
+                    {/* Inner Black Card (Matching the Template) */}
+                    <div className="flex flex-col gap-2 mb-4 bg-white dark:bg-[#1e1e2d] p-3 rounded-xl border border-gray-800 shadow-inner">
+                      <div className="flex flex-col justify-center overflow-hidden border-b border-gray-700/50 pb-2 mb-1">
+                        <p className="text-[10px] font-medium text-gray-400 dark:text-white mb-0.5 uppercase tracking-wider shrink-0">Validity</p>
+                        <p className="text-[11px] font-bold text-gray-900 dark:text-white leading-snug whitespace-normal break-normal">{formatValidityRange(b.validity_of_contract) || b.validity_of_contract || '—'}</p>
+                      </div>
+                      <div className="flex flex-col justify-center overflow-hidden pt-1">
+                        <p className="text-[10px] font-medium text-gray-400 dark:text-white mb-0.5 uppercase tracking-wider shrink-0">Operation</p>
+                        <p className="text-[11px] font-black text-amber-400 leading-snug whitespace-normal break-normal">{b.operation || '—'}</p>
+                      </div>
                     </div>
 
-                    {/* Body Content */}
-                    <div className="p-4 space-y-3">
-                      <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
-                        <span className="text-slate-400 font-medium">ARC Number:</span>
-                        <span className="text-white font-mono font-semibold">{b.arc_number || '—'}</span>
+                    <div className="space-y-2 mt-auto border-t border-gray-100 dark:border-gray-800/50 pt-3">
+                      <div className="flex justify-between items-end">
+                        <span className="text-[10px] font-bold text-gray-500 dark:text-white dark:text-white uppercase tracking-widest">Total</span>
+                        <span className="text-sm font-black text-blue-600">{formatINR(total)}</span>
                       </div>
-
-                      <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-800">
-                        <span className="text-slate-400 font-medium">Validity Period:</span>
+                      <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner">
+                        <div className="h-full bg-gradient-to-r from-orange-500 to-orange-500Dark rounded-full relative" style={{ width: `${Math.min(100, total > 0 ? (consumed/total)*100 : 0)}%` }}>
+                          <div className="absolute inset-0 bg-white dark:bg-[#1e1e2d]/20 w-full animate-shimmer" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)', transform: 'skewX(-20deg)' }}></div>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-end pt-1">
+                        <div>
+                          <span className="text-[9px] font-bold text-gray-400 dark:text-white uppercase tracking-wider block mb-0.5">Consumed</span>
+                          <span className="text-xs font-bold text-red-500">{formatINR(consumed)}</span>
+                        </div>
                         <div className="text-right">
-                          <div className="text-white font-mono text-xs font-semibold">
-                            {formatValidityRange(b.validity_of_contract) || b.validity_of_contract || '—'}
-                          </div>
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border mt-0.5 inline-block ${badgeColor}`}>
-                            {daysRemaining !== null && daysRemaining !== undefined ? `${daysRemaining} days remaining` : 'No Expiry'}
-                          </span>
+                          <span className="text-[9px] font-bold text-gray-400 dark:text-white uppercase tracking-wider block mb-0.5">Remaining</span>
+                          <span className={`text-xs font-black ${bal < 0 ? 'text-rose-500' : 'text-emerald-500'}`}>{formatINR(bal)}</span>
                         </div>
                       </div>
-
-                      {/* Financial Metrics Box */}
-                      <div className="grid grid-cols-3 gap-2 bg-slate-950/70 p-3 rounded-2xl border border-slate-800/80 text-center">
-                        <div>
-                          <p className="text-[9px] text-slate-400 uppercase font-semibold">FO Budget</p>
-                          <p className="text-xs font-bold text-blue-400 mt-0.5">{formatINR(total)}</p>
-                        </div>
-                        <div>
-                          <p className="text-[9px] text-slate-400 uppercase font-semibold">Consumed</p>
-                          <p className="text-xs font-bold text-rose-400 mt-0.5">{formatINR(consumed)}</p>
-                        </div>
-                        <div>
-                          <p className="text-[9px] text-slate-400 uppercase font-semibold">Remaining</p>
-                          <p className={`text-xs font-bold mt-0.5 ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            {formatINR(remaining)}
-                          </p>
-                        </div>
-                      </div>
-
-                      {b.description && (
-                        <p className="text-[11px] text-slate-400 line-clamp-2 italic bg-slate-950/30 p-2 rounded-xl">
-                          "{b.description}"
-                        </p>
-                      )}
                     </div>
-
                     {/* Footer Actions */}
-                    <div className="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between" onClick={e => e.stopPropagation()}>
+                    <div className="pt-3 mt-3 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between" onClick={e => e.stopPropagation()}>
                       <PdfCell
                         pdfUrl={b.pdf_url}
                         folder="budget"
@@ -547,16 +568,6 @@ export default function BudgetPage() {
                         onSave={url => pdfMutation.mutateAsync({ id: b.id, pdf_url: url })}
                         onDelete={() => pdfMutation.mutateAsync({ id: b.id, pdf_url: null })}
                       />
-                      {isAdmin && (
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => openEdit(b)} className="p-1.5 rounded-lg hover:bg-slate-800 text-indigo-400 hover:text-white transition-colors">
-                            <Pencil size={14} />
-                          </button>
-                          <button onClick={() => handleDelete(b.id)} className="p-1.5 rounded-lg hover:bg-rose-950 text-rose-400 hover:text-white transition-colors">
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 )
@@ -566,44 +577,46 @@ export default function BudgetPage() {
 
           {/* Pagination Controls Bar (Exactly 10 items per page) */}
           {sortedRecords.length > 0 && (
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-              <span className="text-xs text-slate-400 font-medium">
-                Showing <strong className="text-white">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to{' '}
-                <strong className="text-white">{Math.min(currentPage * ITEMS_PER_PAGE, sortedRecords.length)}</strong> of{' '}
-                <strong className="text-white">{sortedRecords.length}</strong> work orders
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1e1e2d] p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+              <span className="text-xs text-gray-500 dark:text-white dark:text-white font-medium">
+                Showing <strong className="text-gray-900 dark:text-white">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</strong> to{' '}
+                <strong className="text-gray-900 dark:text-white">{Math.min(currentPage * ITEMS_PER_PAGE, sortedRecords.length)}</strong> of{' '}
+                <strong className="text-gray-900 dark:text-white">{sortedRecords.length}</strong> work orders
               </span>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 hover:bg-slate-700 transition-colors"
+                  className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-white dark:text-white hover:bg-gray-50 dark:bg-[#151521] hover:text-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  <ChevronLeft size={14} /> Previous
+                  <ChevronLeft size={16} />
                 </button>
-
                 <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
-                    <button
-                      key={pageNum}
-                      onClick={() => handlePageChange(pageNum)}
-                      className={`w-8 h-8 rounded-xl text-xs font-bold transition-all ${
-                        currentPage === pageNum
-                          ? 'bg-orange-600 text-white shadow-md shadow-orange-600/30'
-                          : 'bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-white hover:bg-slate-700'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  ))}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(p => p === 1 || p === totalPages || Math.abs(currentPage - p) <= 1)
+                    .map((p, i, arr) => (
+                      <React.Fragment key={p}>
+                        {i > 0 && arr[i - 1] !== p - 1 && <span className="px-2 text-gray-400 dark:text-white">...</span>}
+                        <button
+                          onClick={() => handlePageChange(p)}
+                          className={`w-7 h-7 rounded-lg text-xs font-bold transition-all border ${
+                            currentPage === p
+                              ? 'bg-orange-500 border-orange-500 text-white shadow-md'
+                              : 'bg-white dark:bg-[#1e1e2d] border-gray-200 dark:border-gray-800 text-gray-600 dark:text-white dark:text-white hover:bg-gray-50 dark:bg-[#151521] hover:border-orange-500 hover:text-orange-500'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </React.Fragment>
+                    ))}
                 </div>
-
                 <button
                   onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 hover:bg-slate-700 transition-colors"
+                  className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-800 text-gray-600 dark:text-white dark:text-white hover:bg-gray-50 dark:bg-[#151521] hover:text-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  Next <ChevronRight size={14} />
+                  <ChevronRight size={16} />
                 </button>
               </div>
             </div>
@@ -611,16 +624,18 @@ export default function BudgetPage() {
         </div>
       ) : (
         /* List Table View Mode */
-        <div className="glass-card p-4">
+        <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4">
           <DataTable
             columns={columns}
             data={sortedRecords}
             loading={isLoading}
             isAdmin={isAdmin}
             enableSelection={true}
-            onBulkDelete={handleBulkDelete}
+            selectedIds={selectedIds}
+            setSelectedIds={setSelectedIds}
             emptyMessage="No budget entries found for selected criteria"
             onRowClick={(row) => setSelectedRow(row)}
+            hideSearch={true}
           />
         </div>
       )}
@@ -637,7 +652,7 @@ export default function BudgetPage() {
             { name: 'payment_timeframe_days', label: 'Expected Payment Timeframe (Days)', type: 'number' },
           ].map(f => (
             <div key={f.name}>
-              <label className="block text-xs font-medium text-slate-400 mb-1">{f.label}{f.required && ' *'}</label>
+              <label className="block text-xs font-medium text-gray-500 dark:text-white dark:text-white mb-1">{f.label}{f.required && ' *'}</label>
               <input type={f.type || 'text'} name={f.name} value={form[f.name] || ''} onChange={handleChange}
                 required={f.required} className="input-field" step={f.type === 'number' ? '1' : undefined}
                 placeholder={f.name === 'payment_timeframe_days' ? 'e.g. 15 or 30' : ''} />
@@ -645,7 +660,7 @@ export default function BudgetPage() {
           ))}
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Work Order Status</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-white dark:text-white mb-1">Work Order Status</label>
             <select name="status" value={form.status || 'Active'} onChange={handleChange} className="input-field">
               <option value="Active">Active Work Order</option>
               <option value="Closed">WO Closed</option>
@@ -653,7 +668,7 @@ export default function BudgetPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Financial Year</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-white dark:text-white mb-1">Financial Year</label>
             <select name="financial_year" value={form.financial_year || CURRENT_FY} onChange={handleChange} className="input-field">
               <option value="2023-24">FY 2023-24</option>
               <option value="2024-25">FY 2024-25</option>
@@ -663,10 +678,10 @@ export default function BudgetPage() {
           </div>
 
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-slate-400 mb-1">Description</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-white dark:text-white mb-1">Description</label>
             <textarea name="description" value={form.description || ''} onChange={handleChange} rows={2} className="input-field resize-none" />
           </div>
-          <div className="col-span-2 flex justify-end gap-3 pt-2 border-t border-slate-700 mt-2">
+          <div className="col-span-2 flex justify-end gap-3 pt-2 border-t border-gray-200 dark:border-gray-800 mt-2">
             <button type="button" onClick={handleClose} className="btn-ghost">Cancel</button>
             <button type="submit" disabled={saveMutation.isPending} className="btn-primary">
               {saveMutation.isPending ? 'Saving…' : editRow ? 'Update Entry' : 'Create Work Order'}
@@ -680,6 +695,19 @@ export default function BudgetPage() {
 
       {/* Summary Modal - opens when a card/row is clicked */}
       <SummaryModal row={selectedRow} onClose={() => setSelectedRow(null)} />
+
+      {/* Batch Action Toolbar */}
+      {selectedIds.length > 0 && isAdmin && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white dark:bg-[#1e1e2d] backdrop-blur-md border border-orange-500/50 shadow-[0_0_40px_rgba(249,115,22,0.2)] p-3 rounded-2xl flex items-center gap-4 z-50 animate-fade-in">
+          <span className="text-sm font-bold text-gray-500 dark:text-white dark:text-white">{selectedIds.length} selected</span>
+          <div className="flex items-center gap-2">
+            <button onClick={() => handleBatchStatus('Active')} className="btn-primary !py-1.5 !px-3 !text-xs">Mark Active</button>
+            <button onClick={() => handleBatchStatus('Closed')} className="btn-ghost !py-1.5 !px-3 !text-xs border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:bg-[#151521]">Mark Closed</button>
+            <button onClick={handleBatchDelete} className="btn-danger !py-1.5 !px-3 !text-xs">Delete</button>
+            <button onClick={() => setSelectedIds([])} className="btn-ghost !py-1.5 !px-2 !text-xs ml-2 border-transparent hover:bg-gray-50 dark:bg-[#151521]"><X size={14} /></button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

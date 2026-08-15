@@ -47,18 +47,18 @@ export default function MultiSelectDropdown({ options, selected = [], onChange, 
       >
         <div className="flex items-center gap-1.5 flex-wrap overflow-hidden max-h-16">
           {selected.length === 0 ? (
-            <span className="text-slate-400 text-xs">{placeholder}</span>
+            <span className="text-gray-500 dark:text-white dark:text-white text-xs">{placeholder}</span>
           ) : (
-            <span className="text-xs font-bold text-white bg-orange-950 px-2 py-0.5 rounded-lg border border-orange-800 flex items-center gap-1">
+            <span className="text-xs font-bold text-gray-900 dark:text-white bg-orange-950 px-2 py-0.5 rounded-lg border border-orange-800 flex items-center gap-1">
               {selected.length} selected
             </span>
           )}
         </div>
-        <ChevronDown size={14} className="text-slate-400 shrink-0" />
+        <ChevronDown size={14} className="text-gray-500 dark:text-white dark:text-white shrink-0" />
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-11 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-[100] p-2.5 space-y-2 max-h-64 flex flex-col animate-fade-in backdrop-blur-xl">
+        <div className="absolute left-0 right-0 top-11 bg-white dark:bg-[#1e1e2d] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-[100] p-2.5 space-y-2 max-h-64 flex flex-col animate-fade-in backdrop-blur-xl">
           <div className="relative">
             <input
               type="text"
@@ -67,10 +67,10 @@ export default function MultiSelectDropdown({ options, selected = [], onChange, 
               onChange={e => setSearch(e.target.value)}
               className="input-field py-1.5 pl-8 text-xs"
             />
-            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 dark:text-white dark:text-white" />
           </div>
 
-          <div className="flex items-center justify-between px-2 py-1 text-[11px] font-semibold border-b border-slate-800">
+          <div className="flex items-center justify-between px-2 py-1 text-[11px] font-semibold border-b border-gray-200 dark:border-gray-800">
             <button type="button" onClick={toggleSelectAll} className="text-orange-400 hover:text-orange-300">
               {isAllSelected ? 'Deselect All' : 'Select All'}
             </button>
@@ -83,7 +83,7 @@ export default function MultiSelectDropdown({ options, selected = [], onChange, 
 
           <div className="overflow-y-auto flex-1 space-y-1 pr-1">
             {filteredOptions.length === 0 ? (
-              <p className="text-center py-4 text-xs text-slate-500">No options match search</p>
+              <p className="text-center py-4 text-xs text-gray-500 dark:text-white dark:text-white">No options match search</p>
             ) : (
               filteredOptions.map(opt => {
                 const val = opt.value !== undefined ? opt.value : opt
@@ -96,7 +96,7 @@ export default function MultiSelectDropdown({ options, selected = [], onChange, 
                     className={`flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs cursor-pointer transition-colors ${
                       isSelected
                         ? 'bg-orange-950/80 text-orange-300 border border-orange-800/60 font-semibold'
-                        : 'text-slate-300 hover:bg-slate-800'
+                        : 'text-gray-500 dark:text-white dark:text-white hover:bg-gray-50 dark:bg-[#151521]'
                     }`}
                   >
                     <span className="truncate">{label}</span>

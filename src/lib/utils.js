@@ -68,6 +68,26 @@ export async function uploadPdf(file, folder = 'general') {
 }
 
 // ──────────────────────────────────────────────
+// Upload Video to Supabase Storage
+// ──────────────────────────────────────────────
+export async function uploadVideo(file, folder = 'videos') {
+  const ext      = file.name.split('.').pop()
+  const filename = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+
+  const { data, error } = await supabase.storage
+    .from('portal-docs')
+    .upload(filename, file, { contentType: file.type, upsert: false })
+
+  if (error) throw error
+
+  const { data: urlData } = supabase.storage
+    .from('portal-docs')
+    .getPublicUrl(data.path)
+
+  return urlData.publicUrl
+}
+
+// ──────────────────────────────────────────────
 // Delete PDF from Supabase Storage
 // ──────────────────────────────────────────────
 export async function deletePdf(publicUrl) {

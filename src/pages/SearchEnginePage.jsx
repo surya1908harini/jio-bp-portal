@@ -218,10 +218,10 @@ export default function SearchEnginePage() {
   }
 
   const jmsColumns = [
-    { key: 'jms_no',           header: 'JMS No',        render: r => <span className="font-semibold text-white">{r.jms_no}</span> },
+    { key: 'jms_no',           header: 'JMS No',        render: r => <span className="font-semibold text-gray-900 dark:text-white">{r.jms_no}</span> },
     { key: 'jms_create_date',  header: 'JMS Date',       render: r => formatDate(r.jms_create_date || r.inv_date) },
     { key: 'period_of_work',   header: 'Period' },
-    { key: 'work_order_number',header: 'Work Order',    render: r => <span className="font-semibold text-slate-200">{r.work_order_number}</span> },
+    { key: 'work_order_number',header: 'Work Order',    render: r => <span className="font-semibold text-gray-900 dark:text-white">{r.work_order_number}</span> },
     { key: 'net_amount',       header: 'Net Amount',     render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.net_amount)}</span> },
     { key: 'site',             header: 'Site' },
     { key: 'work_description', header: 'Description' },
@@ -229,7 +229,7 @@ export default function SearchEnginePage() {
   ]
 
   const invColumns = [
-    { key: 'inv_number',               header: 'Invoice Number',     render: r => <span className="font-semibold text-white">{r.inv_number}</span> },
+    { key: 'inv_number',               header: 'Invoice Number',     render: r => <span className="font-semibold text-gray-900 dark:text-white">{r.inv_number}</span> },
     { key: 'inv_date',                 header: 'Inv Date',           render: r => formatDate(r.inv_date) },
     { key: 'jms_no',                   header: 'JMS No',             render: r => <span className="font-semibold text-orange-300">{r.jms_no}</span> },
     { key: 'site',                     header: 'Site' },
@@ -237,7 +237,7 @@ export default function SearchEnginePage() {
     { key: 'total',                    header: 'Net Amount',         render: r => <span className="text-blue-400 font-medium">{formatINR(r.total)}</span> },
     { key: 'grand_total',              header: 'Grand Total',        render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.grand_total)}</span> },
     { key: 'received_bill_amount',     header: 'Received Amount',    render: r => <span className="text-amber-400 font-semibold">{formatINR(r.received_bill_amount)}</span> },
-    { key: 'payment_status',           header: 'Payment Status',     render: r => <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700">{r.payment_status || 'Pending'}</span> },
+    { key: 'payment_status',           header: 'Payment Status',     render: r => <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-white dark:bg-[#1e1e2d] border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-800">{r.payment_status || 'Pending'}</span> },
   ]
 
   return (
@@ -250,13 +250,13 @@ export default function SearchEnginePage() {
 
       {/* Main Search Mode Tabs & Toggle */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 backdrop-blur-md w-fit">
+        <div className="flex  p-1.5 rounded-2xl border border-gray-200 dark:border-gray-800 backdrop-blur-md w-fit">
           <button
             onClick={() => setActiveTab('jms')}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'jms'
                 ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                : 'text-gray-500 dark:text-white dark:text-white hover:text-white hover:bg-white dark:bg-[#1e1e2d] border-gray-200 dark:border-gray-800/60'
             }`}
           >
             <FileText size={15} />
@@ -268,7 +268,7 @@ export default function SearchEnginePage() {
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'invoice'
                 ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                : 'text-gray-500 dark:text-white dark:text-white hover:text-white hover:bg-white dark:bg-[#1e1e2d] border-gray-200 dark:border-gray-800/60'
             }`}
           >
             <Receipt size={15} />
@@ -280,8 +280,8 @@ export default function SearchEnginePage() {
           onClick={() => setShowFilters(!showFilters)}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl border font-bold text-xs transition-all ${
             showFilters 
-              ? 'bg-slate-700 text-white border-slate-600 shadow-inner' 
-              : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800 hover:text-white'
+              ? ' text-white border-gray-200 dark:border-gray-800 shadow-inner' 
+              : ' text-gray-700 dark:text-white border-gray-200 dark:border-gray-800 hover:bg-white dark:bg-[#1e1e2d] border-gray-200 dark:border-gray-800 hover:text-white'
           }`}
         >
           <Filter size={15} /> {showFilters ? 'Hide Advanced Filters' : 'Show Advanced Filters'}
@@ -293,9 +293,9 @@ export default function SearchEnginePage() {
         <div className="space-y-6">
           {/* Query Filter Controls Panel */}
           {showFilters && (
-            <div className="glass-card p-5 space-y-4 border-l-4 border-l-orange-500 relative z-30 animate-slide-in">
+            <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 p-5 space-y-4 border-l-4 border-l-orange-500 relative z-30 animate-slide-in">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Search size={16} className="text-orange-400" /> JMS Multi-Select Query Controls
               </h2>
               <button onClick={resetJmsFilters} className="btn-ghost text-xs">
@@ -306,7 +306,7 @@ export default function SearchEnginePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* 1. Multi-Select JMS Numbers */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-white mb-1">
                   Multi-Select JMS Numbers:
                 </label>
                 <MultiSelectDropdown
@@ -319,7 +319,7 @@ export default function SearchEnginePage() {
 
               {/* 2. Multi-Select Work Orders */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-white mb-1">
                   Multi-Select Work Orders:
                 </label>
                 <MultiSelectDropdown
@@ -332,7 +332,7 @@ export default function SearchEnginePage() {
 
               {/* 3. Start Date */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-white mb-1">
                   Period From (Start Date):
                 </label>
                 <input
@@ -345,7 +345,7 @@ export default function SearchEnginePage() {
 
               {/* 4. End Date */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-white mb-1">
                   Period To (End Date):
                 </label>
                 <input
@@ -361,35 +361,35 @@ export default function SearchEnginePage() {
 
           {/* Aggregation Summary Cards Panel */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="rounded-2xl border border-orange-800/50 bg-orange-950/30 p-4 backdrop-blur-md">
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#151521] p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-orange-300 uppercase tracking-wider mb-1">Matching JMS Records</p>
-              <p className="text-xl font-extrabold text-white">{filteredJms.length}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Selected Multi-Query Results</p>
+              <p className="text-xl font-extrabold text-gray-900 dark:text-white">{filteredJms.length}</p>
+              <p className="text-[11px] text-gray-500 dark:text-white dark:text-white mt-0.5">Selected Multi-Query Results</p>
             </div>
 
-            <div className="rounded-2xl border border-emerald-800/50 bg-emerald-950/30 p-4 backdrop-blur-md">
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#151521] p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider mb-1">Total JMS Net Value</p>
               <p className="text-xl font-extrabold text-emerald-400">{formatINR(totalJmsNetValue)}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Aggregated Net Amount</p>
+              <p className="text-[11px] text-gray-500 dark:text-white dark:text-white mt-0.5">Aggregated Net Amount</p>
             </div>
 
-            <div className="rounded-2xl border border-blue-800/50 bg-blue-950/30 p-4 backdrop-blur-md">
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#151521] p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider mb-1">Released by A3</p>
-              <p className="text-xl font-extrabold text-white">{jmsReleasedCount}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Ready for Invoicing</p>
+              <p className="text-xl font-extrabold text-gray-900 dark:text-white">{jmsReleasedCount}</p>
+              <p className="text-[11px] text-gray-500 dark:text-white dark:text-white mt-0.5">Ready for Invoicing</p>
             </div>
 
-            <div className="rounded-2xl border border-amber-800/50 bg-amber-950/30 p-4 backdrop-blur-md">
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#151521] p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-amber-300 uppercase tracking-wider mb-1">Pending Approvals</p>
               <p className="text-xl font-extrabold text-amber-400">{filteredJms.length - jmsReleasedCount}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">In Approval Pipeline</p>
+              <p className="text-[11px] text-gray-500 dark:text-white dark:text-white mt-0.5">In Approval Pipeline</p>
             </div>
           </div>
 
           {/* Results Table */}
-          <div className="glass-card p-4 space-y-3">
+          <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
                 <FileText size={14} className="text-orange-400" /> JMS Multi-Select Query Results ({filteredJms.length} rows)
               </h3>
               <button onClick={handleExportJms} className="btn-ghost text-xs">
@@ -413,9 +413,9 @@ export default function SearchEnginePage() {
         <div className="space-y-6">
           {/* Query Filter Controls Panel */}
           {showFilters && (
-            <div className="glass-card p-5 space-y-4 border-l-4 border-l-cyan-500 relative z-30 animate-slide-in">
+            <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 p-5 space-y-4 border-l-4 border-l-cyan-500 relative z-30 animate-slide-in">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Search size={16} className="text-cyan-400" /> Invoice Multi-Select Query Controls
               </h2>
               <button onClick={resetInvFilters} className="btn-ghost text-xs">
@@ -426,7 +426,7 @@ export default function SearchEnginePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* 1. Multi-Select Invoices */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-white mb-1">
                   Multi-Select Invoices:
                 </label>
                 <MultiSelectDropdown
@@ -439,7 +439,7 @@ export default function SearchEnginePage() {
 
               {/* 2. Multi-Select Work Orders */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-white mb-1">
                   Multi-Select Work Orders:
                 </label>
                 <MultiSelectDropdown
@@ -452,7 +452,7 @@ export default function SearchEnginePage() {
 
               {/* 3. Multi-Select Months */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-white mb-1">
                   Multi-Select Months:
                 </label>
                 <MultiSelectDropdown
@@ -465,7 +465,7 @@ export default function SearchEnginePage() {
 
               {/* 4. Multi-Select Years */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-gray-700 dark:text-white mb-1">
                   Multi-Select Years:
                 </label>
                 <MultiSelectDropdown
@@ -481,37 +481,37 @@ export default function SearchEnginePage() {
 
           {/* Aggregation Summary Cards Panel */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="rounded-2xl border border-cyan-800/50 bg-cyan-950/30 p-4 backdrop-blur-md">
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#151521] p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-cyan-300 uppercase tracking-wider mb-1">Number of Invoices</p>
-              <p className="text-xl font-extrabold text-white">{filteredInvoices.length}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Matching Invoices Count</p>
+              <p className="text-xl font-extrabold text-gray-900 dark:text-white">{filteredInvoices.length}</p>
+              <p className="text-[11px] text-gray-500 dark:text-white dark:text-white mt-0.5">Matching Invoices Count</p>
             </div>
 
-            <div className="rounded-2xl border border-emerald-800/50 bg-emerald-950/30 p-4 backdrop-blur-md">
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#151521] p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider mb-1">Total Grand Total Value</p>
               <p className="text-xl font-extrabold text-emerald-400">{formatINR(totalInvGrandTotal)}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Inclusive of GST</p>
+              <p className="text-[11px] text-gray-500 dark:text-white dark:text-white mt-0.5">Inclusive of GST</p>
             </div>
 
-            <div className="rounded-2xl border border-amber-800/50 bg-amber-950/30 p-4 backdrop-blur-md">
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#151521] p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-amber-300 uppercase tracking-wider mb-1">Received Bill Amount</p>
               <p className="text-xl font-extrabold text-amber-400">{formatINR(totalInvReceived)}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Total Collections</p>
+              <p className="text-[11px] text-gray-500 dark:text-white dark:text-white mt-0.5">Total Collections</p>
             </div>
 
-            <div className="rounded-2xl border border-orange-800/50 bg-orange-950/30 p-4 backdrop-blur-md">
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#151521] p-4 backdrop-blur-md">
               <p className="text-[10px] font-semibold text-orange-300 uppercase tracking-wider mb-1">Fully Paid Invoices</p>
-              <p className="text-xl font-extrabold text-white">
+              <p className="text-xl font-extrabold text-gray-900 dark:text-white">
                 {filteredInvoices.filter(i => i.payment_status === 'Full Payment Received').length}
               </p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Full Amount Settled</p>
+              <p className="text-[11px] text-gray-500 dark:text-white dark:text-white mt-0.5">Full Amount Settled</p>
             </div>
           </div>
 
           {/* Results Table */}
-          <div className="glass-card p-4 space-y-3">
+          <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
                 <Receipt size={14} className="text-cyan-400" /> Multi-Select Invoice Query Results ({filteredInvoices.length} invoices)
               </h3>
               <button onClick={handleExportInvoices} className="btn-ghost text-xs">

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Download, Upload, Pencil, Trash2, TrendingUp, Globe, Filter, Calendar, Calculator, Receipt, DollarSign, CheckCircle2, FileCheck } from 'lucide-react'
@@ -72,17 +73,17 @@ function PaymentBadge({ status }) {
 
 function StatCard({ label, value, sub, color = 'blue' }) {
   const cls = {
-    blue: 'border-jio-blue-800/40 bg-jio-blue-900/30 text-jio-blue-400',
-    green: 'border-emerald-800/40 bg-emerald-900/20 text-emerald-400',
-    amber: 'border-amber-800/40 bg-amber-900/20 text-amber-400',
-    orange: 'border-orange-800/40 bg-orange-900/20 text-orange-400',
-    cyan: 'border-cyan-800/40 bg-cyan-900/20 text-cyan-400',
+    blue: 'border-blue-200 bg-blue-50 text-blue-700',
+    green: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    amber: 'border-amber-200 bg-amber-50 text-amber-700',
+    orange: 'border-orange-200 bg-orange-50 text-orange-700',
+    cyan: 'border-cyan-200 bg-cyan-50 text-cyan-700',
   }
   return (
     <div className={`rounded-2xl border p-3.5 sm:p-4 backdrop-blur-sm transition-all hover:scale-[1.02] ${cls[color]}`}>
-      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1 whitespace-nowrap">{label}</p>
-      <p className="text-base sm:text-lg font-bold text-white tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{value}</p>
-      {sub && <p className="text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">{sub}</p>}
+      <p className="text-[10px] font-semibold text-gray-500 dark:text-white dark:text-white uppercase tracking-wider mb-1 whitespace-nowrap">{label}</p>
+      <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{value}</p>
+      {sub && <p className="text-[11px] text-gray-500 dark:text-white dark:text-white mt-0.5 whitespace-nowrap">{sub}</p>}
     </div>
   )
 }
@@ -528,16 +529,16 @@ export default function InvoicePage() {
   ]
 
   const columns = [
-    { key: 'inv_number',               header: 'Invoice Number',     render: r => <span className="font-semibold text-white">{r.inv_number}</span> },
+    { key: 'inv_number',               header: 'Invoice Number',     render: r => <span className="font-semibold text-gray-900 dark:text-white">{r.inv_number}</span> },
     { key: 'inv_date',                 header: 'Inv Date',           render: r => formatDate(r.inv_date) },
-    { key: 'jms_no',                   header: 'JMS No',             render: r => <span className="font-semibold text-orange-300">{r.jms_no}</span> },
     { key: 'site',                     header: 'Site' },
-    { key: 'work_description',         header: 'Description' },
-    { key: 'total',                    header: 'Net Amount',         render: r => <span className="text-blue-400 font-medium">{formatINR(r.total)}</span> },
+    { key: 'work_description',         header: 'Description',        className: 'min-w-[150px] max-w-[180px] whitespace-normal leading-relaxed', render: r => <div className="text-[11px]">{r.work_description}</div> },
+    { key: 'total',                    header: 'Net Amount',         className: 'w-[90px]', render: r => <span className="text-blue-400 font-medium whitespace-nowrap">{formatINR(r.total)}</span> },
     { key: 'igst',                     header: 'IGST',               render: r => formatINR(r.igst) },
     { key: 'cgst',                     header: 'CGST',               render: r => formatINR(r.cgst) },
     { key: 'sgst',                     header: 'SGST',               render: r => formatINR(r.sgst) },
     { key: 'grand_total',              header: 'Grand Total',        render: r => <span className="text-emerald-400 font-semibold">{formatINR(r.grand_total)}</span> },
+    { key: 'jms_no',                   header: 'JMS No',             render: r => <span className="font-semibold text-orange-400 font-mono text-xs">{r.jms_no}</span> },
     {
       key: 'expected_payment_date',    header: 'Expected Payment Date',
       render: r => (
@@ -571,76 +572,32 @@ export default function InvoicePage() {
   ]
 
   return (
-    <div className="space-y-5">
-      {/* Header Banner & Executive Stat Cards */}
-      <ModuleHeader
-        title="Invoice & Billing Details"
-        subtitle={`Billing & payment records · ${activeFy === 'overall' ? 'All Financial Years' : `FY ${activeFy}`} · ${records.length} invoices`}
-        actions={
-          <div className="flex gap-2 flex-wrap">
-            <button onClick={handleExport} title="Export" className="btn-ghost !px-2 !py-1 !text-xs"><Download size={13} /></button>
-            {isAdmin && (
-              <>
-                <button onClick={() => setImportOpen(true)} title="Import" className="btn-ghost !px-2 !py-1 !text-xs"><Upload size={13} /></button>
-                <button onClick={openAdd} title="Add Invoice" className="btn-primary !px-2 !py-1 !text-xs"><Plus size={13} /></button>
-              </>
-            )}
-          </div>
-        }
-        stats={[
-          { icon: Receipt, label: 'Total Invoices', value: monthRecords.length, sub: `Grand Total: ${formatINR(totalGT)}`, color: 'orange' },
-          { icon: CheckCircle2, label: 'Full Payment Received', value: fullPaidCnt, sub: `Received: ${formatINR(totalRec)}`, color: 'green' },
-          { icon: DollarSign, label: 'Pending Invoice Amount', value: formatINR(pendingAmount), sub: 'Total Pending ₹ Amount', color: 'rose' },
-          { icon: Calculator, label: 'Pending Invoices Count', value: pendingCount, sub: 'Invoices Pending Payment', color: 'amber' },
-        ]}
-      />
-
-      {/* Filters Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
-        <div className="flex items-center gap-2 flex-wrap">
-          <FyTabs basePath="/invoices" activeFy={activeFy} stats={fyStats} />
+    <div className="space-y-0">
+      {document.getElementById('topbar-center') && createPortal(
+        <div className="flex items-center gap-2">
           <MonthTabs activeMonth={activeMonth} onChange={setActiveMonth} />
           <SlotTabs slots={PAYMENT_SLOTS} activeSlot={activeSlot} onChange={setActiveSlot} />
-        </div>
-        <div className="relative w-full sm:w-64 shrink-0">
-          <input
-            type="text"
-            placeholder="Search invoices..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="input-field pl-9 py-2 text-xs"
-          />
-          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        </div>
-      </div>
-
-      {/* Table & Overview Summary */}
-      {activeFy !== 'overall' && (
-        <details className="glass-card group mb-2">
-          <summary className="p-3 text-xs font-bold text-white cursor-pointer select-none flex items-center justify-between hover:bg-white/5 transition-colors">
-            <span className="flex items-center gap-2">
-              <TrendingUp size={14} className="text-jio-blue-400" /> {(() => { if (activeMonth === 'all') return `FY ${activeFy} Summary`; const mn = MONTHS.find(m => m.value === String(activeMonth))?.label || ''; const fyStart = parseInt((activeFy || '').split('-')[0]) || new Date().getFullYear(); const yr = Number(activeMonth) >= 4 ? fyStart : fyStart + 1; return `${mn} ${yr} Summary`; })()}
-            </span>
-            <span className="text-slate-400 text-[10px] group-open:rotate-180 transition-transform">▼ Click to Expand</span>
-          </summary>
-          <div className="p-4 border-t border-slate-700/50">
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3.5">
-              <StatCard label="Total Invoices"  value={monthRecords.length}      color="blue"   />
-              <StatCard label="Grand Total"     value={formatINR(totalGT)}      color="green"  />
-              <StatCard label="TDS"             value={formatINR(totalTDS)}     color="amber"  />
-              <StatCard label="SD/Retention"    value={formatINR(totalSD)}      color="orange" />
-              <StatCard label="Amt Received"    value={formatINR(totalRec)}     color="cyan"   />
-              <StatCard label="Full Paid"        value={fullPaidCnt}             color="green"  />
-              <StatCard label="Net Received"     value={netAmtCnt}               color="blue"   />
-              <StatCard label="GST Only"         value={gstOnlyCnt}              color="amber"  />
-            </div>
-          </div>
-        </details>
+        </div>,
+        document.getElementById('topbar-center')
+      )}
+      {document.getElementById('topbar-actions') && createPortal(
+        <div className="flex items-center gap-2">
+          <button onClick={handleExport} title="Export" className="btn-ghost !px-2 !py-1 !text-xs"><Download size={13} /></button>
+          {isAdmin && (
+            <>
+              <button onClick={() => setImportOpen(true)} title="Import" className="btn-ghost !px-2 !py-1 !text-xs"><Upload size={13} /></button>
+              <button onClick={openAdd} title="Add Invoice" className="btn-primary !px-2 !py-1 !text-xs"><Plus size={13} /></button>
+            </>
+          )}
+          <FyTabs basePath="/invoices" activeFy={activeFy} stats={fyStats} />
+        </div>,
+        document.getElementById('topbar-actions')
       )}
 
-      <div className="glass-card p-4">
+      <div className="bg-white dark:bg-[#1e1e2d] rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 p-4">
         <DataTable columns={columns} data={sortedRecords} loading={isLoading}
           enableSelection={isAdmin} onBulkDelete={handleBulkDelete}
+          initialSearch={searchQuery}
           emptyMessage={activeFy === 'overall' ? 'No invoices found' : `No invoices for FY ${activeFy}`}
           onRowClick={(row) => setSelectedRowModal(row)} />
       </div>
@@ -662,8 +619,8 @@ export default function InvoicePage() {
       <Modal open={formOpen} onClose={handleClose} title={editRow ? 'Edit Invoice' : 'Add Invoice'}>
         <form onSubmit={handleSubmit} className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {/* Tax Calculation Selection Box */}
-          <div className="col-span-2 md:col-span-3 bg-slate-900/80 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between flex-wrap gap-2">
-            <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+          <div className="col-span-2 md:col-span-3  p-3 rounded-xl border border-gray-200 dark:border-gray-800/60 flex items-center justify-between flex-wrap gap-2">
+            <span className="text-xs font-semibold text-gray-700 dark:text-white flex items-center gap-1.5">
               <Calculator size={14} className="text-jio-blue-400" /> Tax Calculation Mode (Auto-Calculates GST & Grand Total from Total Value):
             </span>
             <div className="flex gap-2">
@@ -673,7 +630,7 @@ export default function InvoicePage() {
                 className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                   taxMode === 'CGST_SGST'
                     ? 'bg-jio-blue-600 text-white shadow-md'
-                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                    : 'bg-white dark:bg-[#1e1e2d] border-gray-200 dark:border-gray-800 text-gray-500 dark:text-white dark:text-white hover: hover:text-gray-900 dark:text-white'
                 }`}
               >
                 CGST + SGST (9% + 9%)
@@ -684,7 +641,7 @@ export default function InvoicePage() {
                 className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                   taxMode === 'IGST'
                     ? 'bg-jio-blue-600 text-white shadow-md'
-                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                    : 'bg-white dark:bg-[#1e1e2d] border-gray-200 dark:border-gray-800 text-gray-500 dark:text-white dark:text-white hover: hover:text-gray-900 dark:text-white'
                 }`}
               >
                 IGST (18%)
@@ -694,22 +651,22 @@ export default function InvoicePage() {
 
           {FORM_FIELDS.map(f => (
             <div key={f.name}>
-              <label className="block text-xs font-medium text-slate-400 mb-1">{f.label}</label>
+              <label className="block text-xs font-medium text-gray-500 dark:text-white dark:text-white mb-1">{f.label}</label>
               <input type={f.type || 'text'} name={f.name} value={form[f.name] || ''} list={f.list}
                 onChange={handleFieldChange} className="input-field" step={f.type === 'number' ? '0.01' : undefined} />
             </div>
           ))}
           <div className="col-span-2 md:col-span-3">
-            <label className="block text-xs font-medium text-slate-400 mb-1">Work Description</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-white dark:text-white mb-1">Work Description</label>
             <textarea name="work_description" value={form.work_description || ''} onChange={handleFieldChange} rows={2} className="input-field resize-none" />
           </div>
           <div className="col-span-2 md:col-span-3">
-            <label className="block text-xs font-medium text-slate-400 mb-1">Payment Status</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-white dark:text-white mb-1">Payment Status</label>
             <select name="payment_status" value={form.payment_status} onChange={handleFieldChange} className="select-field w-auto">
               {PAYMENT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
-          <div className="col-span-2 md:col-span-3 flex justify-end gap-3 pt-2 border-t border-slate-700 mt-2">
+          <div className="col-span-2 md:col-span-3 flex justify-end gap-3 pt-2 border-t border-gray-200 dark:border-gray-800 mt-2">
             <button type="button" onClick={handleClose} className="btn-ghost">Cancel</button>
             <button type="submit" disabled={saveMutation.isPending} className="btn-primary">
               {saveMutation.isPending ? 'Saving…' : editRow ? 'Update Invoice' : 'Create Invoice'}

@@ -15,7 +15,7 @@ export default function FyTabs({ basePath }) {
     <select
       value={activeFy}
       onChange={handleSelect}
-      className="input-field py-1.5 px-3 text-xs font-semibold bg-slate-900 border border-slate-700 w-auto rounded-xl"
+      className="input-field py-1.5 px-3 text-xs font-semibold bg-white dark:bg-[#1e1e2d] border border-gray-200 dark:border-gray-800 w-auto rounded-xl"
     >
       <option value="overall">Overall FY</option>
       {FINANCIAL_YEARS.map(f => (

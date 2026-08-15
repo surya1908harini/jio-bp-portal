@@ -8,53 +8,46 @@ import { formatINR, formatDate, parseValidity, applyInvoiceDateAndStatusRules } 
 import NotificationDetailModal from './NotificationDetailModal'
 import useScrollReveal from '../hooks/useScrollReveal'
 import {
-  LayoutDashboard, FileText, Receipt, PieChart, Settings, Database, ShoppingBag,
-  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2, CheckCircle2, Edit2, Home
+  LayoutDashboard, FileText, Receipt, PieChart, Settings, Database, ShoppingBag, Layers, ClipboardCheck,
+  ChevronRight, ChevronDown, LogOut, Menu, X, Shield, User, Search, Bell, AlertTriangle, Clock, DollarSign, ArrowRight, CheckCheck, Trash2, CheckCircle2, Edit2, Home, Banknote, Sun, Moon
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-const NAV = [
-  { label: 'Home Page', icon: Home, path: '/home' },
+const PRIMARY_NAV = [
+  { label: 'Home', icon: Home, path: '/home' },
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'JMS', icon: FileText, path: '/jms' },
   { label: 'Invoices', icon: Receipt, path: '/invoices' },
+  { label: 'Payments', icon: Banknote, path: '/payments' },
   { label: 'Purchase Bill', icon: ShoppingBag, path: '/purchase-bills' },
   { label: 'Budget', icon: PieChart, path: '/budget' },
-  { label: 'Master Data', icon: Database, path: '/masters', adminOnly: true },
-  { label: 'SEARCH', icon: Search, path: '/search' },
-  { label: 'Notifications', icon: Bell, path: '/notifications', badgeKey: 'notif' },
+  { label: 'Bulk Ops', icon: Layers, path: '/bulk-operations', adminOnly: true },
+  { label: 'PF Clearance', icon: ClipboardCheck, path: '/pf-clearance' },
 ]
 
-function NavItem({ item, collapsed, unreadCount }) {
-  const location = useLocation()
-  const isActive = location.pathname.startsWith(item.path)
-
-  return (
-    <Link
-      to={item.path}
-      className={`sidebar-link flex items-center ${collapsed ? 'justify-center px-0' : 'justify-between px-3.5'} ${isActive ? 'active' : ''}`}
-      title={item.label}
-    >
-      <div className="flex items-center gap-2.5 min-w-0">
-        <item.icon size={18} className="flex-shrink-0" />
-        {!collapsed && <span className="truncate">{item.label}</span>}
-      </div>
-      {!collapsed && item.badgeKey === 'notif' && unreadCount > 0 && (
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-slate-950 shadow-sm animate-pulse">
-          {unreadCount}
-        </span>
-      )}
-    </Link>
-  )
-}
+const SECONDARY_NAV = [
+  { label: 'Master Data', icon: Database, path: '/masters', adminOnly: true },
+  { label: 'Admin Panel', icon: Settings, path: '/admin', adminOnly: true },
+]
 
 export default function Layout() {
   const { user, role, isAdmin, signOut, updateProfileName } = useAuth()
   const qc = useQueryClient()
 
-  const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [globalSearch, setGlobalSearch] = useState('')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+  
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light')
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+    localStorage.setItem('theme', theme)
+  }, [theme])
+  
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifTab, setNotifTab] = useState('unread') // 'unread' or 'read'
   const [selectedNotif, setSelectedNotif] = useState(null)
@@ -70,6 +63,7 @@ export default function Layout() {
     }
   })
   const notifRef = useRef(null)
+  const profileRef = useRef(null)
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -153,48 +147,43 @@ export default function Layout() {
       }
     })
 
-    // 2. Budget Contracts Expiring Soon (≤ 90 days or Expired) — AUTOMATICALLY EXCLUDED/DEACTIVATED when Work Order is Marked as 'Closed'
+    // 2. Expiring Budgets (< 30 days) — NO EXCLUSION needed (Budgets always expire unless extended)
     budgetList.forEach(b => {
-      const isClosed = b.status === 'Closed'
-      if (isClosed) return // Automatically deactivate/remove notification when work order is Closed
-
-      const { daysRemaining, status } = parseValidity(b.validity_of_contract)
-      if (daysRemaining !== null && daysRemaining <= 90) {
-        const isExpired = daysRemaining <= 0
-        const woNo = b.work_order_number || String(b.id)
-        list.push({
-          id: `bud-${b.id}`,
-          category: 'budget',
-          title: isExpired ? `Contract Expired: WO #${woNo}` : `Budget Expiring: WO #${woNo}`,
-          sub: `${b.operation || 'Contract'} · ${isExpired ? 'Validity Ended' : `${daysRemaining} days remaining`}`,
-          days: daysRemaining,
-          severity: isExpired ? 'high' : daysRemaining <= 30 ? 'medium' : 'low',
-          link: `/budget?search=${encodeURIComponent(woNo)}`,
-          record: b,
-          icon: AlertTriangle,
-          color: isExpired ? 'text-rose-400 bg-rose-950/80 border-rose-800/60' : 'text-amber-400 bg-amber-950/80 border-amber-800/60'
-        })
+      if (b.validity) {
+        const endDate = parseValidity(b.validity)?.end
+        if (endDate) {
+          const daysLeft = Math.floor((endDate - now) / (1000 * 60 * 60 * 24))
+          if (daysLeft >= 0 && daysLeft <= 30) {
+            list.push({
+              id: `budget-${b.id}`,
+              category: 'budget',
+              title: `Budget Expiring: ${b.site}`,
+              sub: `Valid till: ${formatDate(endDate)} (${daysLeft} days left)`,
+              days: daysLeft,
+              severity: daysLeft <= 7 ? 'high' : 'medium',
+              link: `/budget?search=${encodeURIComponent(b.site)}`,
+              record: b,
+              icon: AlertTriangle,
+              color: 'text-amber-400 bg-amber-950/80 border-amber-800/60'
+            })
+          }
+        }
       }
     })
 
-    // 3. Stage-by-Stage JMS Pending Calculation — EXCLUDED automatically when status === 'Released by A3' or 'Invoiced'
+    // 3. Stalled JMS Records (> 10 days) — EXCLUDED automatically when status is 'Released by A3' or 'Cancelled / Deleted'
     jmsList.forEach(j => {
-      const isFinished = j.status === 'Released by A3' || j.status === 'Invoiced'
-      if (isFinished) return
-
-      const st = String(j.status || '').trim().toLowerCase()
+      if (j.status === 'Released by A3' || j.status === 'Cancelled / Deleted' || j.status === 'Released A3') return 
+      
+      let stageName = ''
       let prevReleaseDate = null
-      let stageName = 'Pending A1'
-
-      if (st.includes('a3')) {
-        stageName = 'Pending A3'
-        prevReleaseDate = j.qsd_release_date || j.a2_release_date || j.a1_release_date || j.jms_create_date || j.created_at
-      } else if (st.includes('qsd')) {
+      
+      if (j.status === 'Pending QSD') {
         stageName = 'Pending QSD'
-        prevReleaseDate = j.a2_release_date || j.a1_release_date || j.jms_create_date || j.created_at
-      } else if (st.includes('a2')) {
-        stageName = 'Pending A2'
-        prevReleaseDate = j.a1_release_date || j.jms_create_date || j.created_at
+        prevReleaseDate = j.a1_date || j.jms_create_date || j.created_at
+      } else if (j.status === 'Pending A3') {
+        stageName = 'Pending A3'
+        prevReleaseDate = j.qsd_date || j.a1_date || j.jms_create_date || j.created_at
       } else {
         stageName = 'Pending A1'
         prevReleaseDate = j.jms_create_date || j.created_at
@@ -218,6 +207,7 @@ export default function Layout() {
           link: `/jms?search=${encodeURIComponent(jmsNo)}`,
           record: j,
           icon: Clock,
+          color: 'text-blue-400 bg-blue-950/80 border-blue-800/60'
         })
       }
     })
@@ -239,9 +229,7 @@ export default function Layout() {
           color: 'text-rose-400 bg-rose-950/80 border-rose-800/60'
         })
       })
-    } catch (e) {
-      // ignore parse error
-    }
+    } catch (e) {}
 
     return list.sort((a, b) => {
       if (a.severity === 'high' && b.severity !== 'high') return -1
@@ -272,11 +260,14 @@ export default function Layout() {
     return allNotifications.filter(n => readNotifIds.includes(n.id))
   }, [allNotifications, readNotifIds])
 
-  // Close notification menu on outside click
+  // Close menus on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (notifRef.current && !notifRef.current.contains(event.target)) {
         setNotifOpen(false)
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfileDropdownOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -286,19 +277,14 @@ export default function Layout() {
   // Automatically handle scroll reveal animations on route changes
   useScrollReveal()
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault()
-    if (!globalSearch.trim()) return
-    navigate(`/jms?search=${encodeURIComponent(globalSearch)}`)
-  }
-
   const handleNotificationClick = (item) => {
     markAsRead(item.id)
     setNotifOpen(false)
     setSelectedNotif(item)
   }
 
-  const handleNameEdit = async () => {
+  const handleNameEdit = async (e) => {
+    e.stopPropagation()
     const currentName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
     const newName = window.prompt("Edit your display name:", currentName)
     if (newName && newName.trim() !== currentName) {
@@ -311,161 +297,292 @@ export default function Layout() {
     }
   }
 
-  const sidebar = (
-    <aside className={`flex flex-col bg-slate-900 border-r border-slate-800 transition-all duration-300 ${collapsed ? 'w-16' : 'w-60'} min-h-screen shadow-xl z-20`}>
-      {/* Brand Top Header */}
-      <div className="flex items-center justify-between px-4 h-16 border-b border-slate-800 shrink-0">
-        {!collapsed && (
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-r from-orange-600 to-red-500 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-orange-600/30">
-              M
-            </div>
-            <div>
-              <p className="text-sm font-extrabold text-white leading-tight tracking-tight">MM</p>
-              <p className="text-[10px] font-semibold text-orange-400 uppercase tracking-wider leading-tight">Contractor</p>
-            </div>
-          </div>
-        )}
-        <button
-          onClick={() => setCollapsed(c => !c)}
-          className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
-        >
-          {collapsed ? <Menu size={18} /> : <X size={18} />}
-        </button>
-      </div>
-
-      {/* Nav Items */}
-      <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
-        {NAV.filter(item => !item.adminOnly || isAdmin).map(item => (
-          <NavItem key={item.label} item={item} collapsed={collapsed} unreadCount={unreadNotifications.length} />
-        ))}
-        {isAdmin && (
-          <Link
-            to="/admin"
-            className={`sidebar-link flex items-center ${collapsed ? 'justify-center px-0' : 'justify-between px-3.5'} ${location.pathname === '/admin' ? 'active' : ''}`}
-            title="Admin Panel"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <Settings size={18} className="flex-shrink-0" />
-              {!collapsed && <span className="truncate">Admin Panel</span>}
-            </div>
-          </Link>
-        )}
-      </nav>
-
-      {/* User Footer */}
-      <div className="p-3 border-t border-slate-800 shrink-0">
-        {!collapsed && (
-          <div className="flex items-center gap-2.5 mb-2 px-2">
-            <img src="/mmc_logo.jpg" alt="MMC Logo" className={`w-8 h-8 rounded-xl object-cover ring-2 ${isAdmin ? 'ring-orange-500' : 'ring-red-500'}`} />
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 group cursor-pointer" onClick={handleNameEdit} title="Click to edit name">
-                <p className="text-xs font-bold text-white truncate group-hover:text-orange-300 transition-colors">
-                  {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
-                </p>
-                <Edit2 size={10} className="text-slate-500 group-hover:text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-950 text-orange-300 border border-orange-800 inline-block mt-0.5">
-                {isAdmin ? 'MMC Admin' : (role ?? 'user')}
-              </span>
-            </div>
-          </div>
-        )}
-        <button
-          onClick={signOut}
-          className={`sidebar-link w-full text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 ${collapsed ? 'justify-center px-0' : 'px-3.5'}`}
-        >
-          <LogOut size={18} className="flex-shrink-0" />
-          {!collapsed && <span>Sign Out</span>}
-        </button>
-      </div>
-    </aside>
-  )
-
   const activeList = notifTab === 'unread' ? unreadNotifications : readNotifications
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'MMC User'
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-100 antialiased">
-      {/* Desktop sidebar */}
-      <div className="hidden md:flex">{sidebar}</div>
+    <div className="flex h-screen overflow-hidden bg-brand-bg dark:bg-[#151521] text-brand-text antialiased font-sans">
+      
+      {/* ── Left Sidebar (Desktop) ── */}
+      <aside className={`hidden lg:flex flex-col bg-brand-sidebar dark:bg-[#1e1e2d] border-r border-brand-border dark:border-gray-800 shrink-0 z-20 transition-all duration-300 ${sidebarCollapsed ? 'w-[80px]' : 'w-[260px]'}`}>
+        
+        {/* Brand Header */}
+        <div className="p-4 border-b border-brand-border dark:border-gray-800 flex items-center justify-between">
+          {!sidebarCollapsed && (
+            <div className="flex items-center gap-2 cursor-pointer h-10" onClick={() => navigate('/home')}>
+               <div className="w-8 h-8 rounded bg-orange-500 flex items-center justify-center font-black text-white">MM</div>
+               <span className="font-bold tracking-widest text-xs uppercase">AirFlow</span>
+            </div>
+          )}
+          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-2 text-gray-500 dark:text-white dark:text-white hover:text-orange-500 rounded-lg hover:bg-gray-200 mx-auto transition-colors">
+            <Menu size={20} />
+          </button>
+        </div>
 
-      {/* Mobile overlay */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
+          
+          {/* User Profile Area */}
+          {!sidebarCollapsed && (
+            <div className="p-4 pb-2">
+              <div className="flex items-center gap-3 mb-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={handleNameEdit}>
+                <img src="/mmc_logo.jpg" alt="User" className="w-10 h-10 rounded-xl object-cover shadow-sm border border-gray-200 dark:border-gray-800" />
+                <div>
+                  <h3 className="mb-0 text-sm font-bold text-gray-900 dark:text-white">{userName}</h3>
+                  <span className="text-xs text-gray-500 dark:text-white dark:text-white">{isAdmin ? 'Administrator' : role || 'User'}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* List Menu Navigation */}
+          <div className="px-3 flex-1 flex flex-col gap-1 mt-4">
+            {[...PRIMARY_NAV, ...SECONDARY_NAV].filter(i => !i.adminOnly || isAdmin).map(item => {
+              const isActive = location.pathname.startsWith(item.path)
+              return (
+                <Link
+                  key={item.label}
+                  to={item.path}
+                  className={`flex items-center rounded-xl transition-all duration-200 ${
+                    sidebarCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'
+                  } ${
+                    isActive 
+                      ? 'bg-orange-50 text-orange-600 font-bold' 
+                      : 'text-gray-600 dark:text-white dark:text-white hover:bg-gray-100 dark:bg-gray-800 hover:text-orange-500 font-semibold'
+                  }`}
+                  title={sidebarCollapsed ? item.label : undefined}
+                >
+                  <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                  {!sidebarCollapsed && (
+                    <span className="text-sm">{item.label}</span>
+                  )}
+                </Link>
+              )
+            })}
+          </div>
+
+          {/* Bottom Actions */}
+          <div className="p-4 mt-auto border-t border-gray-200 dark:border-gray-800">
+            <button onClick={() => { setProfileDropdownOpen(false); signOut() }} className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-gray-500 dark:text-white dark:text-white hover:text-rose-600 hover:bg-rose-50 transition-all ${sidebarCollapsed ? 'px-0' : 'px-4'}`} title="Sign Out">
+              <LogOut size={18} /> 
+              {!sidebarCollapsed && <span>Sign Out</span>}
+            </button>
+          </div>
+
+        </div>
+      </aside>
+
+      {/* ── Mobile Sidebar Drawer ── */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 md:hidden flex">
-          <div className="flex-shrink-0">{sidebar}</div>
-          <div className="flex-1 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+        <div className="fixed inset-0 z-[100] lg:hidden flex">
+          <aside className="w-[280px] bg-brand-sidebar dark:bg-[#1e1e2d] text-gray-800 dark:text-white h-full flex flex-col shadow-2xl animate-slide-right">
+            <div className="p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded bg-orange-500 flex items-center justify-center font-black text-white">MM</div>
+                <span className="font-bold tracking-widest text-xs uppercase">AirFlow</span>
+              </div>
+              <button onClick={() => setMobileOpen(false)} className="text-gray-400 dark:text-white hover:text-gray-900 dark:text-white p-1 rounded hover:bg-gray-100 dark:bg-gray-800">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto px-4 py-6">
+              <div className="grid grid-cols-2 gap-3">
+                {[...PRIMARY_NAV, ...SECONDARY_NAV].filter(i => !i.adminOnly || isAdmin).map(item => {
+                  const isActive = location.pathname.startsWith(item.path)
+                  return (
+                    <Link
+                      key={item.label}
+                      to={item.path}
+                      onClick={() => setMobileOpen(false)}
+                      className="flex flex-col items-center justify-center text-center group"
+                    >
+                      <div className={`w-full aspect-square flex flex-col items-center justify-center rounded-2xl mb-1 transition-all border ${
+                        isActive ? 'bg-orange-500 text-white border-orange-500 shadow-md' : 'bg-white dark:bg-[#1e1e2d] text-gray-600 dark:text-white dark:text-white border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:bg-[#151521] hover:text-orange-500'
+                      }`}>
+                        <item.icon size={24} className="mb-2" />
+                        <span className="text-[11px] font-semibold">{item.label}</span>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+               <button onClick={() => signOut()} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-500 bg-rose-50 hover:bg-rose-100 transition-colors">
+                <LogOut size={14} /> Sign Out
+              </button>
+            </div>
+          </aside>
+          <div className="flex-1 bg-gray-900/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
         </div>
       )}
 
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header Bar */}
-        <header className="hidden md:flex items-center justify-between px-6 h-16 bg-slate-900/90 border-b border-slate-800 shrink-0 backdrop-blur-md z-10 shadow-sm relative">
-          {/* Left Brand Title */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-base font-extrabold text-orange-400 tracking-tight">MM CONTRACTOR</span>
-            <span className="text-xs font-bold uppercase tracking-widest text-slate-400">PORTAL</span>
+      {/* ── Main Content Area ── */}
+      <div className="flex-1 flex flex-col min-w-0 bg-brand-bg dark:bg-[#151521] relative">
+        
+        {/* ── Top Header ── */}
+        <header className="py-2 px-4 md:px-6 flex flex-wrap items-center justify-between shrink-0 bg-transparent z-10 min-h-[60px]">
+          <div className="flex items-center gap-3 w-1/4">
+            <button onClick={() => setMobileOpen(true)} className="lg:hidden text-gray-500 dark:text-white dark:text-white hover:text-orange-500 p-1.5 rounded-lg hover:bg-white dark:bg-[#1e1e2d] shadow-sm border border-transparent hover:border-gray-200 dark:border-gray-800">
+              <Menu size={20} />
+            </button>
+            
+            <h1 className="text-lg md:text-xl font-extrabold text-gray-900 dark:text-white mb-0 hidden sm:block">
+              {location.pathname === '/home' ? 'Home' : 
+               location.pathname.includes('/dashboard') ? 'Dashboard' :
+               location.pathname.includes('/jms') ? 'JMS Management' :
+               location.pathname.includes('/invoices') ? 'Invoices Management' :
+               location.pathname.includes('/pf-clearance') ? 'PF Clearance' :
+               location.pathname.includes('/purchase-bills') ? 'Purchase Bills' :
+               location.pathname.includes('/budget') ? 'Budget Analysis' :
+               location.pathname.includes('/payments') ? 'Payments' : 'Portal'}
+            </h1>
           </div>
 
-          {/* Center Pill Search Input */}
-          <form onSubmit={handleSearchSubmit} className="relative w-96">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search work orders, invoices, JMS..."
-              value={globalSearch}
-              onChange={e => setGlobalSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-full bg-slate-800 border border-slate-700/60 text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </form>
+          {/* Portal Target for Centered Tabs */}
+          <div id="topbar-center" className="flex-1 flex justify-center items-center overflow-hidden px-2"></div>
 
-          {/* Right Profile Avatar Pill */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2.5 pl-3">
-              <img src="/mmc_logo.jpg" alt="Avatar" className="w-9 h-9 rounded-full object-cover ring-2 ring-orange-500 shadow-sm" />
-              <div className="text-left hidden lg:block">
-                <div className="flex items-center gap-1.5 group cursor-pointer" onClick={handleNameEdit} title="Click to edit name">
-                  <p className="text-xs font-bold text-white leading-tight group-hover:text-orange-300 transition-colors">
-                    {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'MMC User'}
-                  </p>
-                  <Edit2 size={10} className="text-slate-500 group-hover:text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex items-center justify-end gap-2 md:gap-4 w-1/4 ml-auto">
+            
+
+            
+            {/* Portal Target for Page-Specific Actions (Filters) */}
+            <div id="topbar-actions" className="flex items-center gap-2"></div>
+
+            {/* Theme Toggle */}
+            <button
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              className="p-2 text-gray-500 dark:text-white dark:text-white hover:text-orange-500 hover:bg-white dark:bg-[#1e1e2d] rounded-full transition-colors"
+              title="Toggle Theme"
+            >
+              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
+
+            {location.pathname === '/home' && (
+              <>
+                <div className="w-px h-6 bg-gray-300 hidden md:block mx-1"></div>
+
+                {/* Notifications */}
+                <div className="relative" ref={notifRef}>
+              <button
+                onClick={() => setNotifOpen(!notifOpen)}
+                className={`p-2 rounded-full transition-all relative ${
+                  notifOpen 
+                    ? 'bg-orange-500 text-white shadow-md' 
+                    : 'text-gray-500 dark:text-white dark:text-white hover:text-orange-500 hover:bg-white dark:bg-[#1e1e2d]'
+                }`}
+              >
+                <Bell size={18} />
+                {unreadNotifications.length > 0 && (
+                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-brand-bg animate-pulse" />
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              {notifOpen && (
+                <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white dark:bg-[#1e1e2d] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl overflow-hidden animate-fade-in z-50">
+                  <div className="p-4 border-b border-gray-100 dark:border-gray-800/50 bg-white dark:bg-[#1e1e2d] flex items-center justify-between">
+                    <h3 className="font-extrabold text-gray-900 dark:text-white text-base">Notifications</h3>
+                    {unreadNotifications.length > 0 && (
+                      <button onClick={() => markAllAsRead()} className="text-[11px] font-bold text-orange-500 hover:text-orange-500Dark bg-orange-500/10 px-2 py-1 rounded-md transition-colors">
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="flex border-b border-gray-100 dark:border-gray-800/50 bg-gray-50 dark:bg-[#151521]/50">
+                    <button
+                      onClick={() => setNotifTab('unread')}
+                      className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors ${notifTab === 'unread' ? 'text-orange-500 border-b-2 border-orange-500 bg-white dark:bg-[#1e1e2d]' : 'text-gray-400 dark:text-white hover:text-gray-600 dark:text-white dark:text-white hover:bg-gray-100 dark:bg-gray-800'}`}
+                    >
+                      Unread ({unreadNotifications.length})
+                    </button>
+                    <button
+                      onClick={() => setNotifTab('read')}
+                      className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors ${notifTab === 'read' ? 'text-orange-500 border-b-2 border-orange-500 bg-white dark:bg-[#1e1e2d]' : 'text-gray-400 dark:text-white hover:text-gray-600 dark:text-white dark:text-white hover:bg-gray-100 dark:bg-gray-800'}`}
+                    >
+                      Read ({readNotifications.length})
+                    </button>
+                  </div>
+
+                  <div className="max-h-96 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                    {activeList.length === 0 ? (
+                      <div className="text-center py-10 text-gray-400 dark:text-white text-xs italic">
+                        No {notifTab} notifications.
+                      </div>
+                    ) : (
+                      activeList.map(item => {
+                        const Icon = item.icon
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={() => handleNotificationClick(item)}
+                            className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all border border-transparent ${
+                              notifTab === 'unread' ? 'bg-blue-50/30 hover:bg-blue-50 hover:border-blue-100' : 'hover:bg-gray-50 dark:bg-[#151521] hover:border-gray-100 dark:border-gray-800/50'
+                            }`}
+                          >
+                            <div className={`p-2 rounded-lg shrink-0 ${item.color ? item.color.replace('bg-', 'bg-opacity-10 text-opacity-100 ') : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-white dark:text-white'}`}>
+                              <Icon size={16} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                               <h4 className="text-xs font-bold text-gray-900 dark:text-white line-clamp-1">{item.title}</h4>
+                              <p className="text-[10px] text-gray-500 dark:text-white dark:text-white mt-1 line-clamp-2 leading-relaxed">{item.sub}</p>
+                              <span className="text-[9px] font-bold uppercase text-orange-500 mt-2 block">
+                                {item.severity === 'high' ? 'CRITICAL' : 'NOTICE'}
+                              </span>
+                            </div>
+                            {notifTab === 'unread' && (
+                              <button onClick={(e) => { e.stopPropagation(); markAsRead(item.id) }} className="p-1.5 text-gray-400 dark:text-white hover:text-orange-500 rounded-md hover:bg-white dark:bg-[#1e1e2d] border border-transparent hover:border-gray-200 dark:border-gray-800 transition-colors shadow-sm" title="Mark as read">
+                                <CheckCheck size={14} />
+                              </button>
+                            )}
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+
+                  {notifTab === 'read' && readNotifications.length > 0 && (
+                    <div className="p-2 border-t border-gray-100 dark:border-gray-800/50 bg-gray-50 dark:bg-[#151521]/50">
+                      <button onClick={clearReadHistory} className="w-full py-2 text-[11px] font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                        <Trash2 size={12} /> Clear History
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <p className="text-[10px] font-semibold text-orange-400 leading-tight">
-                  {isAdmin ? 'MMC Director' : 'Contractor User'}
-                </p>
-              </div>
+              )}
             </div>
+
+            {/* Top Right Profile Toggle (if desired, or search) */}
+            <div className="hidden md:flex relative w-48 xl:w-64 ml-2">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <Search size={14} className="text-gray-400 dark:text-white" />
+              </div>
+              <input type="text" placeholder="Search..." className="w-full pl-9 pr-4 py-2 bg-white dark:bg-[#1e1e2d] border border-gray-200 dark:border-gray-800 rounded-full text-xs font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all shadow-sm placeholder-gray-400" />
+            </div>
+            </>
+            )}
+
           </div>
         </header>
 
-        {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between px-4 h-14 bg-slate-900 border-b border-slate-800">
-          <button onClick={() => setMobileOpen(true)} className="text-slate-300">
-            <Menu size={20} />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-orange-600 text-white font-extrabold text-xs flex items-center justify-center">M</div>
-            <p className="text-sm font-extrabold text-white">MMC</p>
+        {/* ── Main Outlet ── */}
+        <main key={location.pathname} className="flex-1 overflow-y-auto p-4 md:p-8 animate-page-enter scroll-smooth">
+          <div className="w-full max-w-screen-2xl mx-auto">
+            <Outlet context={{
+              allNotifications,
+              unreadNotifications,
+              readNotifications,
+              markAsRead,
+              markAllAsRead,
+              clearReadHistory,
+              setSelectedNotif,
+              notifCount: unreadNotifications.length
+            }} />
           </div>
-          <div className="w-5" />
-        </header>
-
-        {/* Main Outlet */}
-        <main key={location.pathname} className="flex-1 overflow-y-auto p-4 md:p-6 animate-page-enter scroll-smooth">
-          <Outlet context={{
-            allNotifications,
-            unreadNotifications,
-            readNotifications,
-            markAsRead,
-            markAllAsRead,
-            clearReadHistory,
-            setSelectedNotif,
-            notifCount: unreadNotifications.length
-          }} />
         </main>
       </div>
 
-      {/* On-screen Notification Record Summary Modal */}
       <NotificationDetailModal
         notif={selectedNotif}
         onClose={() => setSelectedNotif(null)}

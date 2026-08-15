@@ -3,9 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Trash2, Link as LinkIcon, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { homeDb } from '../lib/db'
+import { uploadVideo } from '../lib/utils'
 
 export default function HomeSettings() {
   const qc = useQueryClient()
+  const [uploadingVideo, setUploadingVideo] = useState(false)
   
   const { data: settings, isLoading } = useQuery({
     queryKey: ['home-settings'],
@@ -18,7 +20,8 @@ export default function HomeSettings() {
     notification_title: '',
     notification_desc: '',
     notifications_list: [],
-    links: []
+    links: [],
+    login_video_url: ''
   })
 
   useEffect(() => {
@@ -29,7 +32,8 @@ export default function HomeSettings() {
         notification_title: settings.notification_title || '',
         notification_desc: settings.notification_desc || '',
         notifications_list: Array.isArray(settings.notifications_list) ? settings.notifications_list : [],
-        links: Array.isArray(settings.links) ? settings.links : []
+        links: Array.isArray(settings.links) ? settings.links : [],
+        login_video_url: settings.login_video_url || 'https://cdn.pixabay.com/video/2021/08/18/85429-590001095_large.mp4'
       })
     }
   }, [settings])
@@ -87,99 +91,156 @@ export default function HomeSettings() {
     setForm(prev => ({ ...prev, notifications_list: newList }))
   }
 
-  if (isLoading) return <div className="p-8 text-center text-slate-400">Loading settings...</div>
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    
+    if (!file.type.startsWith('video/')) {
+      toast.error('Please select a valid video file')
+      return
+    }
+
+    try {
+      setUploadingVideo(true)
+      const url = await uploadVideo(file)
+      const newForm = { ...form, login_video_url: url }
+      setForm(newForm)
+      
+      // Auto-save to DB
+      mutation.mutate(newForm)
+      toast.success('Video uploaded and saved successfully!')
+    } catch (err) {
+      toast.error('Failed to upload video: ' + err.message)
+    } finally {
+      setUploadingVideo(false)
+    }
+  }
+
+  if (isLoading) return <div className="p-8 text-center text-gray-500 dark:text-white dark:text-white">Loading settings...</div>
 
   return (
     <div className="space-y-8 animate-fade-in">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
-        {/* Pending Works Section */}
-        <div className="glass-card p-6 border-orange-500/20">
-          <h3 className="text-lg font-bold text-orange-400 mb-4 flex items-center gap-2">
-            Pending Works Block
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Title</label>
-              <input
-                type="text"
-                value={form.pending_title}
-                onChange={e => setForm(p => ({ ...p, pending_title: e.target.value }))}
-                className="input-field border-slate-700/50 focus:border-orange-500"
-                placeholder="e.g. PENDING WORKS IN TYPE MANUAL"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Description</label>
-              <textarea
-                value={form.pending_desc}
-                onChange={e => setForm(p => ({ ...p, pending_desc: e.target.value }))}
-                className="input-field min-h-[80px] border-slate-700/50 focus:border-orange-500"
-                placeholder="Description below the title"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Notifications Section */}
-        <div className="glass-card p-6 border-red-500/20">
+        {/* Due Dates Management Section */}
+        <div className="glass-card p-6 border-orange-500/20 col-span-1 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-red-400 flex items-center gap-2">
-              Notifications Block
+            <h3 className="text-lg font-bold text-orange-400 flex items-center gap-2">
+              Due Dates & Reminders
             </h3>
-            <button onClick={addNotification} className="btn-ghost py-1 px-2 text-xs">
-              <Plus size={14} /> Add Notification
+            <button onClick={() => setForm(p => ({ ...p, due_dates: [...(p.due_dates || []), { id: Date.now(), title: '', date: '', color: 'blue' }] }))} className="btn-ghost py-1 px-2 text-xs">
+              <Plus size={14} /> Add Reminder
             </button>
           </div>
           <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Title</label>
-              <input
-                type="text"
-                value={form.notification_title}
-                onChange={e => setForm(p => ({ ...p, notification_title: e.target.value }))}
-                className="input-field border-slate-700/50 focus:border-red-500"
-                placeholder="e.g. NOTIFICATION FOR OFFICE WORK"
-              />
-            </div>
-            
-            <div className="pt-2 border-t border-slate-700/50 mt-4">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Notification Items</label>
-              {form.notifications_list.length === 0 ? (
-                <div className="text-center py-4 text-slate-500 text-xs border border-dashed border-slate-700 rounded-lg">
-                  No notifications. Click "Add Notification"
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {form.notifications_list.map((notif, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
+            {(!form.due_dates || form.due_dates.length === 0) ? (
+              <div className="text-center py-4 text-slate-500 text-xs border border-dashed border-gray-200 dark:border-gray-800 rounded-lg">
+                No due dates configured. Click "Add Reminder"
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {form.due_dates.map((due, idx) => (
+                  <div key={due.id || idx} className={`flex flex-col gap-2 p-3 rounded-xl border bg-${due.color}-50 dark:bg-${due.color}-500/10 border-${due.color}-100 dark:border-${due.color}-500/20 relative group`}>
+                    <input
+                      type="text"
+                      value={due.title}
+                      onChange={e => {
+                        const newDates = [...form.due_dates];
+                        newDates[idx].title = e.target.value;
+                        setForm(p => ({ ...p, due_dates: newDates }));
+                      }}
+                      placeholder="e.g. WiFi Bill"
+                      className="input-field py-1 px-2 text-sm bg-white/50 dark:bg-[#1e1e2d]/50 font-semibold"
+                    />
+                    <div className="flex gap-2">
                       <input
                         type="text"
-                        value={notif.text}
-                        onChange={e => updateNotification(idx, e.target.value)}
-                        placeholder="e.g. WIFI DUE DATE 29/MM/YYYY"
-                        className="input-field py-1.5 text-sm"
+                        value={due.date}
+                        onChange={e => {
+                          const newDates = [...form.due_dates];
+                          newDates[idx].date = e.target.value;
+                          setForm(p => ({ ...p, due_dates: newDates }));
+                        }}
+                        placeholder="e.g. 29th"
+                        className="input-field py-1 px-2 text-xs bg-white/50 dark:bg-[#1e1e2d]/50 flex-1 font-bold"
                       />
-                      <button
-                        onClick={() => removeNotification(idx)}
-                        className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                      <select
+                        value={due.color}
+                        onChange={e => {
+                          const newDates = [...form.due_dates];
+                          newDates[idx].color = e.target.value;
+                          setForm(p => ({ ...p, due_dates: newDates }));
+                        }}
+                        className="select-field py-1 px-2 text-xs bg-white/50 dark:bg-[#1e1e2d]/50 w-24"
                       >
-                        <Trash2 size={14} />
-                      </button>
+                        <option value="red">Red</option>
+                        <option value="orange">Orange</option>
+                        <option value="blue">Blue</option>
+                        <option value="green">Green</option>
+                        <option value="purple">Purple</option>
+                        <option value="cyan">Cyan</option>
+                      </select>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    <button
+                      onClick={() => {
+                        const newDates = [...form.due_dates];
+                        newDates.splice(idx, 1);
+                        setForm(p => ({ ...p, due_dates: newDates }));
+                      }}
+                      className="absolute -top-2 -right-2 p-1 bg-red-100 text-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm border border-red-200"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
+      {/* Global Settings Section */}
+      <div className="glass-card p-6 border-slate-500/20">
+        <h3 className="text-lg font-bold text-gray-500 dark:text-white dark:text-white mb-4 flex items-center gap-2">
+          Global App Settings
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 dark:text-white dark:text-white uppercase tracking-wider mb-1">Login Page Background Video URL</label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                value={form.login_video_url}
+                onChange={e => setForm(p => ({ ...p, login_video_url: e.target.value }))}
+                className="input-field border-gray-200 dark:border-gray-800/50 focus:border-slate-400 flex-1"
+                placeholder="e.g. https://cdn.pixabay.com/video/.../video.mp4"
+              />
+              <div className="relative">
+                <input 
+                  type="file" 
+                  accept="video/*"
+                  onChange={handleVideoUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                  disabled={uploadingVideo}
+                />
+                <button 
+                  type="button" 
+                  className="w-full sm:w-auto px-4 py-2 bg-gray-50 dark:bg-[#151521] hover:bg-slate-700 text-gray-500 dark:text-white dark:text-white text-sm font-semibold rounded-lg transition-colors border border-gray-200 dark:border-gray-800"
+                  disabled={uploadingVideo}
+                >
+                  {uploadingVideo ? 'Uploading...' : 'Upload Video File'}
+                </button>
+              </div>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-1">Provide a direct link or click "Upload Video File" to host it here (max 50MB typically).</p>
+          </div>
+        </div>
       </div>
 
       {/* External Links Section */}
       <div className="glass-card p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <LinkIcon size={18} className="text-orange-400" /> External Portal Links
           </h3>
           <button onClick={addLink} className="btn-ghost py-1.5 px-3 text-xs">
@@ -188,13 +249,13 @@ export default function HomeSettings() {
         </div>
 
         {form.links.length === 0 ? (
-          <div className="text-center py-8 text-slate-500 text-sm border border-dashed border-slate-700 rounded-xl">
+          <div className="text-center py-8 text-slate-500 text-sm border border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
             No links added yet. Click "Add Link" to create one.
           </div>
         ) : (
           <div className="space-y-3">
             {form.links.map((link, idx) => (
-              <div key={idx} className="flex flex-col sm:flex-row items-center gap-3 bg-slate-900/50 p-3 rounded-xl border border-slate-700/50">
+              <div key={idx} className="flex flex-col sm:flex-row items-center gap-3 bg-white dark:bg-[#1e1e2d] p-3 rounded-xl border border-gray-200 dark:border-gray-800/50">
                 <input
                   type="text"
                   value={link.name}

@@ -1,0 +1,199 @@
+[data-bs-theme="light"] {
+    .tab-home-tab{
+        background: linear-gradient(135deg, #eeedea, #f9faff, #f7fff9);
+    }
+    .tab-search-tab{
+        background: linear-gradient(135deg, #eef5f1, #f3f0ff, #f7fbff);
+    }
+    .tab-apps-tab{
+        background: linear-gradient(135deg, #fffaf2, #f6fbff, #fff7fc);
+    }
+    .tab-docs-tab{
+        background: linear-gradient(135deg, #fffdf8, #f9faff, #f7fff9);
+    }
+    .tab-notifications-tab{
+        background: linear-gradient(135deg, #f5eeef, #f3f8ff, #f6fff4);
+    }
+    .tab-setting-tab{
+        background: linear-gradient(135deg, #ecf1f4, #faf7ff, #f9fff6);
+    }
+    .layout-main main {
+        background-color: var(--bs-gray-100);
+    }
+}
+[data-bs-theme="dark"] {
+    .layout-main{
+        background: linear-gradient(135deg, #251f19, #141c26, #271921);
+    }
+    .layout-main main {
+        background-color: var(--bs-black);
+    }
+}
+
+/* =============== grid layout css */
+.layout-main .app-wrapper {
+    display: grid;
+    grid-template-columns: 100%;
+    grid-template-rows: auto auto 1fr auto;
+    padding: 0;
+    gap: 0;
+    grid-template-areas:
+        "header"
+        "rightbar"
+        "main"
+        "footer";
+}
+
+.layout-main aside {
+    grid-area: aside;
+}
+
+.layout-main .rightbar {
+    grid-area: rightbar;
+}
+
+.layout-main main {
+    grid-area: main;
+}
+
+.layout-main footer {
+    grid-area: footer;
+}
+
+/* ============================= */
+.layout-main aside .main-menu{
+    height: calc(100vh - 32px);
+}
+.layout-main aside .main-menu .tab-content{
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.tab-menu{
+    position: fixed;
+    bottom: 10px;
+    width: 300px;
+    background: var(--app-border);
+    transform: translateX(-50%);
+    left: 50%;
+    z-index: 999;
+}
+.tab-menu #themeToggle:hover{
+    background: rgba(var(--bs-primary-rgb), .2) !important;
+}
+.tab-menu #themeToggle,
+.tab-menu .nav-link{
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sidebar-link{
+    color: inherit;
+    text-decoration: none;
+}
+
+/* =============== App menu   */
+.app-menu .app-card {
+    letter-spacing: 0.05em;
+    overflow: hidden;
+    display: flex;
+    width: 80px;
+    height: 80px;
+    align-items: center;
+    justify-content: center;
+}
+.app-menu a.active .app-card,
+.app-menu a:hover .app-card {
+    box-shadow: inset 0px -3px 0 1px var(--bs-primary);
+    color: var(--bs-primary) !important;
+    transition: var(--transition-3s);
+}
+
+
+/* ============= */
+.vendor-list .sidebar-link{
+    background-color: var(--app-border);
+    border: 1px solid var(--bs-border-color);
+}
+.vendor-list .sidebar-link.active,
+.vendor-list .sidebar-link:hover{
+    background: var(--bs-primary);
+    color: var(--bs-white);
+    border-color: var(--bs-primary);
+}
+
+@media (min-width: 992px) {
+    .layout-main .app-wrapper {
+        grid-template-columns: 1fr 60px;
+        grid-template-rows: auto 1fr;
+        grid-template-areas:
+            "header rightbar"
+            "main rightbar"
+            "footer rightbar";
+    }
+    .layout-main main {
+        height: calc(100vh - 88px);
+        overflow-y: auto;
+        border-radius: 28px;
+        border: 5px solid var(--app-border);
+        box-shadow: var(--bs-box-shadow-sm);
+    }
+    .layout-main .rightbar {
+        padding-block: 60px;
+    }
+}
+
+@media (min-width: 1200px) {
+
+    .layout-main .app-wrapper {
+        grid-template-columns: 380px 1fr 60px;
+        grid-template-rows: auto 1fr;
+        grid-template-areas:
+        "aside header rightbar"
+        "aside main rightbar"
+        "aside footer rightbar";
+    }
+
+    .tab-menu{
+        position: absolute;
+        bottom: 30px;
+        width: calc(100% - 60px);
+    }
+
+    .layout-main aside {
+        padding-inline: 20px;
+        padding-block: 12px;
+    }
+    
+    .layout-main aside .main-menu{
+        width: 340px;
+    }
+
+    .layout-main aside .main-menu .tab-content{
+        margin-bottom: 90px;
+    }
+
+}
+
+@media (min-width: 1471px) {
+    .layout-main .app-wrapper {
+        grid-template-columns: 460px 1fr 60px;
+    }
+    .layout-main aside {
+        padding-inline: 66px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .layout-main footer {
+        margin-bottom: 60px;
+    }
+}
+@media (max-width: 1199.98px) {
+    .layout-main aside{
+        position: absolute;
+    }
+}

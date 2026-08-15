@@ -11,8 +11,31 @@ const NUMERIC_KEYS = new Set([
   'gst_amount_deduction', 'gst_tds_2pct_iocl', 'sd_retention',
   'tcs_credit_note', 'received_bill_amount', 'net_amount',
   'fo_total_budget', 'total_consumed', 'a3_released_amount',
-  'pending_amount', 'invoiced_amount', 'balance_available'
+  'pending_amount', 'invoiced_amount', 'balance_available', 'received_gst_amount'
 ])
+
+// PDF Fallback Helper
+const PDF_FALLBACK_KEY = 'portal_pdf_fallback_map'
+function getPdfFallbackMap() {
+  try { return JSON.parse(localStorage.getItem(PDF_FALLBACK_KEY)) || {} } catch (e) { return {} }
+}
+function setPdfFallback(id, url) {
+  const map = getPdfFallbackMap()
+  if (url === null) delete map[id]
+  else map[id] = url
+  localStorage.setItem(PDF_FALLBACK_KEY, JSON.stringify(map))
+}
+function applyPdfFallback(rows) {
+  const map = getPdfFallbackMap()
+  return rows.map(r => {
+    // If the column exists in Supabase, it will be either a string or null.
+    // If it is completely missing, it will be undefined.
+    // We only fallback if it's undefined (missing column) to avoid zombie PDFs
+    // reappearing after a successful delete (which sets it to null).
+    const finalUrl = r.pdf_url !== undefined ? r.pdf_url : map[r.id]
+    return { ...r, pdf_url: finalUrl }
+  })
+}
 
 // ── helper: clean budget record fields to remove view-computed fields before DB insert/update ──
 const BUDGET_ALLOWED_KEYS = new Set([
@@ -22,8 +45,6 @@ const BUDGET_ALLOWED_KEYS = new Set([
   'work_order_number',
   'validity_of_contract',
   'fo_total_budget',
-  'payment_timeframe_days',
-  'status',
   'pdf_url',
   'created_by',
   'financial_year'
@@ -74,7 +95,7 @@ function cleanBudgetRecord(obj) {
   const result = {}
   for (const [k, v] of Object.entries(obj)) {
     if (!BUDGET_ALLOWED_KEYS.has(k)) continue
-    if (v === '' || v === null || v === undefined) continue
+    if (v === '' || (v === null && k !== 'pdf_url') || v === undefined) continue
 
     if (NUMERIC_KEYS.has(k)) {
       if (typeof v === 'string') {
@@ -116,7 +137,7 @@ function clean(obj) {
   const result = {}
   for (const [k, v] of Object.entries(synced)) {
     if (k === 'fy') continue // ignore invalid 'fy' property not present in schema
-    if (v === '' || v === null || v === undefined) continue
+    if (v === '' || (v === null && k !== 'pdf_url') || v === undefined) continue
 
     if (NUMERIC_KEYS.has(k)) {
       if (typeof v === 'string') {
@@ -232,12 +253,13 @@ export const jmsDb = {
   },
 
   listAll: async () => {
-    return fetchPagedData(() =>
+    const data = await fetchPagedData(() =>
       supabase
         .from('jms_records')
         .select('*')
         .order('created_at', { ascending: false })
     )
+    return applyPdfFallback(data)
   },
 
   create: async (payload, userId) => {
@@ -251,12 +273,29 @@ export const jmsDb = {
   },
 
   update: async (id, payload) => {
-    const { data, error } = await supabase
+    let cleaned = cleanJms(payload)
+    let { data, error } = await supabase
       .from('jms_records')
-      .update(cleanJms(payload))
+      .update(cleaned)
       .eq('id', id)
       .select()
       .single()
+
+    if (error && (error.message?.includes('schema cache') || error.message?.includes('does not exist') || error.message?.includes('pdf_url'))) {
+      if ('pdf_url' in cleaned) {
+        setPdfFallback(id, cleaned.pdf_url)
+        delete cleaned.pdf_url
+        if (Object.keys(cleaned).length > 0) {
+          const retry = await supabase.from('jms_records').update(cleaned).eq('id', id).select().single()
+          data = retry.data
+          error = retry.error
+        } else {
+          error = null
+          data = payload
+        }
+      }
+    }
+
     if (error) throw error
     return data
   },
@@ -267,10 +306,32 @@ export const jmsDb = {
   },
 
   bulkInsert: async (rows, userId) => {
-    const cleaned = rows.map(r => cleanJms({ ...r, created_by: userId }))
-    const { error } = await supabase.from('jms_records').insert(cleaned)
-    if (error) throw error
-    return cleaned.length
+    const existing = await jmsDb.listAll()
+    const existingMap = new Map(existing.map(r => [r.jms_no, r.id]))
+
+    const toUpdate = []
+    const toInsert = []
+
+    rows.forEach(r => {
+      const c = cleanJms({ ...r, created_by: userId })
+      if (c.jms_no && existingMap.has(c.jms_no)) {
+        c.id = existingMap.get(c.jms_no)
+        toUpdate.push(c)
+      } else {
+        delete c.id
+        toInsert.push(c)
+      }
+    })
+
+    if (toUpdate.length > 0) {
+      const { error } = await supabase.from('jms_records').upsert(toUpdate)
+      if (error) throw error
+    }
+    if (toInsert.length > 0) {
+      const { error } = await supabase.from('jms_records').insert(toInsert)
+      if (error) throw error
+    }
+    return toUpdate.length + toInsert.length
   },
 }
 
@@ -279,22 +340,24 @@ export const jmsDb = {
 // ═══════════════════════════════════════════════════════════
 export const invoiceDb = {
   list: async (fy) => {
-    return fetchPagedData(() =>
+    const data = await fetchPagedData(() =>
       supabase
         .from('invoice_records')
         .select('*')
         .eq('financial_year', fy)
         .order('created_at', { ascending: false })
     )
+    return applyPdfFallback(data)
   },
 
   listAll: async () => {
-    return fetchPagedData(() =>
+    const data = await fetchPagedData(() =>
       supabase
         .from('invoice_records')
         .select('*')
         .order('created_at', { ascending: false })
     )
+    return applyPdfFallback(data)
   },
 
   create: async (payload, userId) => {
@@ -327,17 +390,30 @@ export const invoiceDb = {
       .eq('id', id)
       .select()
       .single()
-    if (error && error.message?.includes('schema cache')) {
+    
+    if (error && (error.message?.includes('schema cache') || error.message?.includes('does not exist') || error.message?.includes('pdf_url'))) {
+      if ('pdf_url' in cleaned) {
+        setPdfFallback(id, cleaned.pdf_url)
+        delete cleaned.pdf_url
+      }
       delete cleaned.arc_number
       delete cleaned.status
-      const retry = await supabase
-        .from('invoice_records')
-        .update(cleaned)
-        .eq('id', id)
-        .select()
-        .single()
-      data = retry.data
-      error = retry.error
+      delete cleaned.received_gst_amount
+      delete cleaned.retention_received_date
+      
+      if (Object.keys(cleaned).length > 0) {
+        const retry = await supabase
+          .from('invoice_records')
+          .update(cleaned)
+          .eq('id', id)
+          .select()
+          .single()
+        data = retry.data
+        error = retry.error
+      } else {
+        error = null
+        data = payload
+      }
     }
     if (error) throw error
     return data
@@ -349,10 +425,32 @@ export const invoiceDb = {
   },
 
   bulkInsert: async (rows, userId) => {
-    const cleaned = rows.map(r => cleanInvoice({ ...r, created_by: userId }))
-    const { error } = await supabase.from('invoice_records').insert(cleaned)
-    if (error) throw error
-    return cleaned.length
+    const existing = await invoiceDb.listAll()
+    const existingMap = new Map(existing.map(r => [r.inv_number, r.id]))
+
+    const toUpdate = []
+    const toInsert = []
+
+    rows.forEach(r => {
+      const c = cleanInvoice({ ...r, created_by: userId })
+      if (c.inv_number && existingMap.has(c.inv_number)) {
+        c.id = existingMap.get(c.inv_number)
+        toUpdate.push(c)
+      } else {
+        delete c.id
+        toInsert.push(c)
+      }
+    })
+
+    if (toUpdate.length > 0) {
+      const { error } = await supabase.from('invoice_records').upsert(toUpdate)
+      if (error) throw error
+    }
+    if (toInsert.length > 0) {
+      const { error } = await supabase.from('invoice_records').insert(toInsert)
+      if (error) throw error
+    }
+    return toUpdate.length + toInsert.length
   },
 }
 
@@ -361,11 +459,19 @@ export const invoiceDb = {
 // ═══════════════════════════════════════════════════════════
 
 async function fetchAndPatchBudgetRecords(baseQueryFn) {
-  const [budgetRecords, jmsRecords] = await Promise.all([
+  const rawRecordsPromise = supabase.from('budget_records').select('id, pdf_url').then(res => res.data).catch(() => null)
+
+  const [budgetRecords, jmsRecords, rawRecords] = await Promise.all([
     fetchPagedData(baseQueryFn),
-    jmsDb.listAll()
+    jmsDb.listAll(),
+    rawRecordsPromise
   ])
   
+  const rawPdfMap = {}
+  if (rawRecords) {
+    rawRecords.forEach(r => { rawPdfMap[r.id] = r.pdf_url })
+  }
+
   const cancelledMap = {}
   jmsRecords.forEach(j => {
     const desc = String(j.work_description || '')
@@ -381,7 +487,11 @@ async function fetchAndPatchBudgetRecords(baseQueryFn) {
     const deduction = cancelledMap[woKey] || 0
     const total_consumed = Math.max(0, (b.total_consumed || 0) - deduction)
     const balance_available = (b.fo_total_budget || 0) - total_consumed
-    return { ...b, total_consumed, balance_available }
+    
+    // Patch pdf_url from raw table since budget_summary view might be outdated
+    const pdf_url = rawPdfMap[b.id] !== undefined ? rawPdfMap[b.id] : b.pdf_url
+
+    return { ...b, total_consumed, balance_available, pdf_url }
   })
 }
 
@@ -404,7 +514,7 @@ export const budgetDb = {
         .select('*')
         .order('financial_year')
     )
-    return records.map(parseBudgetMetadata)
+    return applyPdfFallback(records).map(parseBudgetMetadata)
   },
 
   create: async (payload, userId) => {
@@ -427,7 +537,12 @@ export const budgetDb = {
       data = retry.data
       error = retry.error
     }
-    if (error) throw error
+    if (error) {
+      if (error.code === '23505' || error.message?.includes('budget_records_work_order_number_key')) {
+        throw new Error(`Work Order '${cleaned.work_order_number}' already exists!`)
+      }
+      throw error
+    }
     return parseBudgetMetadata(data)
   },
 
@@ -441,17 +556,29 @@ export const budgetDb = {
       .select()
       .single()
 
-    if (error && (error.message?.includes('payment_timeframe_days') || error.message?.includes('schema cache'))) {
-      delete cleaned.payment_timeframe_days
+    if (error && (error.message?.includes('payment_timeframe_days') || error.message?.includes('schema cache') || error.message?.includes('does not exist') || error.message?.includes('pdf_url'))) {
+      if ('pdf_url' in cleaned && error.message?.includes('pdf_url')) {
+        setPdfFallback(id, cleaned.pdf_url)
+        delete cleaned.pdf_url
+      }
+      if (error.message?.includes('payment_timeframe_days') || error.message?.includes('schema cache')) {
+        delete cleaned.payment_timeframe_days
+      }
       delete cleaned.status
-      const retry = await supabase
-        .from('budget_records')
-        .update(cleaned)
-        .eq('id', id)
-        .select()
-        .single()
-      data = retry.data
-      error = retry.error
+      
+      if (Object.keys(cleaned).length > 0) {
+        const retry = await supabase
+          .from('budget_records')
+          .update(cleaned)
+          .eq('id', id)
+          .select()
+          .single()
+        data = retry.data
+        error = retry.error
+      } else {
+        error = null
+        data = payload
+      }
     }
     if (error) throw error
     return parseBudgetMetadata(data)
@@ -462,11 +589,76 @@ export const budgetDb = {
     if (error) throw error
   },
 
+  syncMissingFromJms: async (userId) => {
+    const [budgetList, jmsList] = await Promise.all([
+      budgetDb.listAll(),
+      jmsDb.listAll()
+    ])
+    
+    const existingWorkOrders = new Set(
+      budgetList.map(b => String(b.work_order_number || '').trim().toLowerCase())
+    )
+    
+    const missingJms = jmsList.filter(j => {
+      const wo = String(j.work_order_number || '').trim().toLowerCase()
+      return wo && !existingWorkOrders.has(wo)
+    })
+    
+    let count = 0
+    for (const j of missingJms) {
+      const payload = {
+        operation: 'Auto-Sync',
+        work_order_number: j.work_order_number,
+        description: j.work_description || 'Synced from JMS',
+        fo_total_budget: j.net_amount || 0,
+        financial_year: j.financial_year,
+      }
+      try {
+        await budgetDb.create(payload, userId)
+        count++
+      } catch (e) {
+        console.error('Failed to sync JMS record:', j.work_order_number, e)
+      }
+    }
+    return count
+  },
+
   bulkInsert: async (rows, userId) => {
-    const cleaned = rows.map(r => cleanBudgetRecord({ ...r, created_by: userId }))
-    const { error } = await supabase.from('budget_records').insert(cleaned)
-    if (error) throw error
-    return cleaned.length
+    const existing = await budgetDb.listAll()
+    const getBudgetKey = (r) => String(r.work_order_number || '').toLowerCase().trim()
+    const existingMap = new Map(existing.map(r => [getBudgetKey(r), r.id]))
+
+    const toUpdate = []
+    const toInsert = []
+
+    rows.forEach(r => {
+      // Ensure financial_year is never empty/undefined to prevent PostgREST mixed-column null constraint errors
+      r.financial_year = r.financial_year || '2024-25'
+      const encoded = encodeBudgetMetadata({ ...r, created_by: userId })
+      const c = cleanBudgetRecord(encoded)
+      
+      delete c.payment_timeframe_days
+      delete c.status
+
+      const bKey = getBudgetKey(c)
+      if (c.work_order_number && existingMap.has(bKey)) {
+        c.id = existingMap.get(bKey)
+        toUpdate.push(c)
+      } else {
+        delete c.id
+        toInsert.push(c)
+      }
+    })
+
+    if (toUpdate.length > 0) {
+      const { error } = await supabase.from('budget_records').upsert(toUpdate)
+      if (error) throw error
+    }
+    if (toInsert.length > 0) {
+      const { error } = await supabase.from('budget_records').insert(toInsert)
+      if (error) throw error
+    }
+    return toUpdate.length + toInsert.length
   },
 }
 
@@ -515,6 +707,7 @@ export const purchaseBillDb = {
       inv_number: payload.inv_number || '',
       inv_date: payload.inv_date || '',
       taxable_value: Number(payload.taxable_value || 0),
+      igst: Number(payload.igst || 0),
       cgst: Number(payload.cgst || 0),
       sgst: Number(payload.sgst || 0),
       invoice_value: Number(payload.invoice_value || 0),
@@ -530,13 +723,30 @@ export const purchaseBillDb = {
         .insert(cleaned)
         .select()
         .single()
-      if (!error && data) {
+      if (error) {
+        if (error.message && error.message.includes('igst')) {
+          console.warn('IGST column missing in Supabase. Attempting fallback insert without IGST...')
+          const fallbackCleaned = { ...cleaned }
+          delete fallbackCleaned.igst
+          const { data: fbData, error: fbError } = await supabase.from('purchase_bills').insert(fallbackCleaned).select().single()
+          if (!fbError && fbData) {
+            const local = getLocalPurchaseBills()
+            saveLocalPurchaseBills([fbData, ...local])
+            return fbData
+          }
+        }
+        throw error
+      }
+      if (data) {
         const local = getLocalPurchaseBills()
         saveLocalPurchaseBills([data, ...local])
         return data
       }
     } catch (e) {
       console.warn('Supabase purchase_bills insert fallback:', e)
+      if (e.message && e.message.includes('igst')) {
+        alert("CRITICAL: The 'igst' column is missing in your Supabase 'purchase_bills' table! Please add it as a numeric column.")
+      }
     }
 
     const localRecord = { id: `pb-${Date.now()}`, ...cleaned, created_at: new Date().toISOString() }
@@ -553,6 +763,7 @@ export const purchaseBillDb = {
       inv_number: payload.inv_number || '',
       inv_date: payload.inv_date || '',
       taxable_value: Number(payload.taxable_value || 0),
+      igst: Number(payload.igst || 0),
       cgst: Number(payload.cgst || 0),
       sgst: Number(payload.sgst || 0),
       invoice_value: Number(payload.invoice_value || 0),
@@ -568,13 +779,30 @@ export const purchaseBillDb = {
         .eq('id', id)
         .select()
         .single()
-      if (!error && data) {
+      if (error) {
+        if (error.message && error.message.includes('igst')) {
+          console.warn('IGST column missing in Supabase. Attempting fallback update without IGST...')
+          const fallbackCleaned = { ...cleaned }
+          delete fallbackCleaned.igst
+          const { data: fbData, error: fbError } = await supabase.from('purchase_bills').update(fallbackCleaned).eq('id', id).select().single()
+          if (!fbError && fbData) {
+            const local = getLocalPurchaseBills().map(r => r.id === id ? fbData : r)
+            saveLocalPurchaseBills(local)
+            return fbData
+          }
+        }
+        throw error
+      }
+      if (data) {
         const local = getLocalPurchaseBills().map(r => r.id === id ? data : r)
         saveLocalPurchaseBills(local)
         return data
       }
     } catch (e) {
       console.warn('Supabase purchase_bills update fallback:', e)
+      if (e.message && e.message.includes('igst')) {
+        alert("CRITICAL: The 'igst' column is missing in your Supabase 'purchase_bills' table! Please add it as a numeric column.")
+      }
     }
 
     const local = getLocalPurchaseBills().map(r => r.id === id ? { ...r, ...cleaned } : r)
@@ -591,9 +819,18 @@ export const purchaseBillDb = {
   },
 
   bulkInsert: async (rows, userId) => {
+    const existing = await purchaseBillDb.listAll()
+    const getPBKey = (r) => `${r.inv_number}_${r.trade_name}`.toLowerCase().trim()
+    const existingMap = new Map(existing.map(r => [getPBKey(r), r.id]))
+
     let count = 0
     for (const r of rows) {
-      await purchaseBillDb.create(r, userId)
+      const pbKey = getPBKey(r)
+      if (r.inv_number && existingMap.has(pbKey)) {
+        await purchaseBillDb.update(existingMap.get(pbKey), { ...r, created_by: userId })
+      } else {
+        await purchaseBillDb.create(r, userId)
+      }
       count++
     }
     return count
@@ -605,35 +842,125 @@ export const purchaseBillDb = {
 // ============================================================
 export const homeDb = {
   getSettings: async () => {
-    const { data, error } = await supabase
-      .from('home_settings')
-      .select('*')
-      .limit(1)
-      .single()
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error fetching home settings:', error)
+    let dbData = null
+    try {
+      const { data, error } = await supabase
+        .from('home_settings')
+        .select('*')
+        .limit(1)
+        .single()
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching home settings:', error)
+      }
+      dbData = data
+    } catch (e) {
+      console.warn('Supabase fetch failed for home_settings, using fallback')
     }
-    return data || {
-      pending_title: 'PENDING WORKS IN TYPE MANUAL',
-      pending_desc: 'Review and update pending manual assignments effortlessly through the integrated task flow.',
-      notification_title: 'NOTIFICATION FOR OFFICE WORK',
-      notification_desc: 'EX (WIFI DUE DATE 29/MM/YYYY)',
-      pending_works_list: [],
-      notifications_list: [],
-      links: []
+
+    // Try to load fallback from local storage
+    let localDates = null
+    let localLinks = null
+    try {
+      localDates = JSON.parse(localStorage.getItem('portal_fallback_due_dates'))
+      localLinks = JSON.parse(localStorage.getItem('portal_fallback_links'))
+    } catch (e) {}
+
+    return {
+      ...(dbData || {}),
+      due_dates: dbData?.due_dates || localDates || [
+        { id: 1, title: 'WiFi Bill', date: '29th', color: 'red' },
+        { id: 2, title: 'GSTR-1 Filing', date: '11th', color: 'orange' },
+        { id: 3, title: 'GSTR-3B Filing', date: '20th', color: 'blue' },
+        { id: 4, title: 'PF Challan', date: '15th', color: 'green' }
+      ],
+      links: dbData?.links || localLinks || [],
+      login_video_url: dbData?.login_video_url || 'https://cdn.pixabay.com/video/2021/08/18/85429-590001095_large.mp4'
     }
   },
 
   updateSettings: async (payload) => {
-    // We assume there's always one row with ID '00000000-0000-0000-0000-000000000001'
     const id = '00000000-0000-0000-0000-000000000001'
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('home_settings')
-      .upsert({ id, ...payload, updated_at: new Date() })
+      .update(payload)
+      .eq('id', id)
       .select()
       .single()
-    if (error) throw error
-    return data
+
+    // Fallback if schema doesn't match
+    if (error && (error.message?.includes('schema cache') || error.message?.includes('does not exist') || error.message?.includes('due_dates') || error.message?.includes('links'))) {
+      const fallbackPayload = { ...payload }
+      
+      if (fallbackPayload.due_dates) {
+        localStorage.setItem('portal_fallback_due_dates', JSON.stringify(fallbackPayload.due_dates))
+        delete fallbackPayload.due_dates
+      }
+      if (fallbackPayload.links) {
+        localStorage.setItem('portal_fallback_links', JSON.stringify(fallbackPayload.links))
+        delete fallbackPayload.links
+      }
+
+      if (Object.keys(fallbackPayload).length > 0) {
+        const retry = await supabase
+          .from('home_settings')
+          .update(fallbackPayload)
+          .eq('id', id)
+          .select()
+          .single()
+        data = retry.data
+        error = retry.error
+      } else {
+        error = null
+        data = payload
+      }
+    }
+
+    if (error && error.code !== 'PGRST116') throw error
+    return data || payload
   }
 }
 
+// ── PF Clearance DB (Local Storage Fallback for now) ──
+const LOCAL_PF_CLEARANCE_KEY = 'portal_pf_clearance_v1'
+
+function getLocalPfClearance() {
+  try {
+    const data = localStorage.getItem(LOCAL_PF_CLEARANCE_KEY)
+    return data ? JSON.parse(data) : []
+  } catch (e) {
+    return []
+  }
+}
+
+export const pfDb = {
+  listAll: async () => {
+    // In future, you can try fetching from Supabase 'pf_records' here
+    return getLocalPfClearance()
+  },
+
+  insert: async (payload, userId) => {
+    const localRecord = { 
+      id: `pf-${Date.now()}`, 
+      ...payload, 
+      created_by: userId, 
+      created_at: new Date().toISOString() 
+    }
+    const local = getLocalPfClearance()
+    localStorage.setItem(LOCAL_PF_CLEARANCE_KEY, JSON.stringify([localRecord, ...local]))
+    return localRecord
+  },
+
+  update: async (id, payload) => {
+    const local = getLocalPfClearance()
+    const updated = local.map(r => String(r.id) === String(id) ? { ...r, ...payload } : r)
+    localStorage.setItem(LOCAL_PF_CLEARANCE_KEY, JSON.stringify(updated))
+    return payload
+  },
+
+  delete: async (id) => {
+    const local = getLocalPfClearance()
+    const updated = local.filter(r => String(r.id) !== String(id))
+    localStorage.setItem(LOCAL_PF_CLEARANCE_KEY, JSON.stringify(updated))
+    return true
+  }
+}

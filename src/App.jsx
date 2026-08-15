@@ -10,8 +10,11 @@ import BudgetPage from './pages/BudgetPage'
 import NotificationPage from './pages/NotificationPage'
 import SearchEnginePage from './pages/SearchEnginePage'
 import PurchaseBillPage from './pages/PurchaseBillPage'
+import PaymentPage from './pages/PaymentPage'
 import AdminPage from './pages/AdminPage'
 import MasterPage from './pages/MasterPage'
+import BulkOperationsPage from './pages/BulkOperationsPage'
+import PfClearancePage from './pages/PfClearancePage'
 import ErrorBoundary from './components/ErrorBoundary'
 
 function PrivateRoute({ children }) {
@@ -36,9 +39,9 @@ export default function App() {
         <Route path="/login" element={user ? <Navigate to="/home" replace /> : <LoginPage />} />
 
         {/* Protected Fullscreen Pages */}
-        <Route path="/home" element={<PrivateRoute><HomePage /></PrivateRoute>} />
 
         <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
+          <Route path="home" element={<HomePage />} />
           <Route path="dashboard" element={<DashboardPage />} />
 
           {/* JMS */}
@@ -48,6 +51,9 @@ export default function App() {
           {/* Invoices */}
           <Route path="invoices"     element={<InvoicePage />} />
           <Route path="invoices/:fy" element={<InvoicePage />} />
+          
+          {/* Payments */}
+          <Route path="payments" element={<PaymentPage />} />
 
           {/* Purchase Bills */}
           <Route path="purchase-bills"     element={<PurchaseBillPage />} />
@@ -56,8 +62,14 @@ export default function App() {
           {/* Budget */}
           <Route path="budget"       element={<BudgetPage />} />
           <Route path="budget/:fy"   element={<BudgetPage />} />
+          
+          {/* Bulk Operations */}
+          <Route path="bulk-operations" element={<AdminRoute><BulkOperationsPage /></AdminRoute>} />
 
-          {/* Notifications */}
+          {/* PF Clearance */}
+          <Route path="pf-clearance" element={<PfClearancePage />} />
+
+          {/* Tools & Search */}
           <Route path="notifications" element={<NotificationPage />} />
 
           {/* Search Engine */}

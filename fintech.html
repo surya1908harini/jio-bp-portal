@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light" data-theme="theme-orange">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="EdggeUI">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="keywords" content="Bootstrap Admin Template, CRM Dashboard, Admin Panel, Bootstrap 5 Dashboard, Project Management, Analytics Template, Responsive Admin">
+    <meta name="description" content="AirFlow is a Bootstrap Admin & SaaS dashboard template with smart customization, multiple dashboards, ready-to-use apps, and developer-friendly code.">
+    <!-- end::AirFlow Meta Basic -->
+
+    <!-- begin::AirFlow Website Page Title -->
+    <title>AirFlow - Bootstrap Admin Dashboard Template</title>
+
+    <!-- begin::AirFlow Mobile Specific -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- begin::AirFlow Favicon Tags -->
+    <link rel="icon" type="image/png" href="assets/images/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/apple-icon-180x180.png">
+
+    <!-- begin::Bootstrap css and icon -->
+    <link rel="stylesheet" href="assets/vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/vendor/bootstrap/bootstrap-icons.css">
+    <!-- begin::Vendor css -->
+    <link rel="stylesheet" href="assets/vendor/daterangepicker/daterangepicker.css">
+
+    <!-- begin::AirFlow CSS Stylesheet -->
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/layout-main.css">
+</head>
+
+<body class="layout-main tab-home-tab">
+
+    <div class="app-wrapper">
+
+        <!-- begin::Page header -->
+        <header class="page-header py-2 px-lg-3">
+            <div class="container-fluid">
+                <div class="d-flex flex-wrap justify-content-between align-items-center">
+                    <h1 class="fs-5 section-title mb-0">Cards Management</h1>
+                    <div class="d-flex gap-1 align-items-center flex-fill flex-sm-grow-0 my-2 my-sm-0">
+                        <input class="form-control fs-14 border-0 bg-transparent rounded-pill js-daterange focus-ring-none ps-0" type="text" name="daterange" aria-label="Date Range Filter">
+                        <div class="vr my-2"></div>
+                        <div class="d-flex gap-1">
+                            <button class="btn fs-14 btn-link px-2 btn-ripple" aria-label="Share with"><i class="bi bi-share"></i></button>
+                            <button class="btn fs-14 btn-link px-2 btn-ripple" aria-label="PDF Download"><i class="bi bi-filetype-pdf"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- begin::Sidebar menu -->
+        <aside class="navbar navbar-expand-xl flex-column">
+            <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasSidebar">
+                <div class="offcanvas-body">
+                    <div class="main-menu d-flex flex-column align-items-lg-center">
+                        <div class="brand d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom w-100 px-3 pt-3 pt-xl-0">
+                            <a class="text-decoration-none d-flex gap-2 align-items-center" href="index.html" aria-label="Dashboard">
+                                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path fill="var(--bs-primary)" d="M0 12C0 5.37258 5.37258 0 12 0C18.6274 0 24 5.37258 24 12C24 18.6274 18.6274 24 12 24C5.37258 24 0 18.6274 0 12Z"/>
+                                    <path stroke="var(--bs-white)" d="M8.02391 8.99973H13.4096C13.7039 9.00506 13.9939 8.93265 14.2471 8.79062C14.5003 8.64859 14.7068 8.44255 14.8433 8.19562C14.9798 7.9487 15.0409 7.67064 15.0199 7.39264C14.9988 7.11465 14.8963 6.84771 14.724 6.62176C14.5517 6.39582 14.3163 6.21981 14.0443 6.11347C13.7722 6.00713 13.4742 5.97467 13.1838 6.01974C12.8933 6.0648 12.6219 6.1856 12.3999 6.36859C12.1779 6.55158 12.0141 6.78952 11.9269 7.05573"/>
+                                    <path stroke="var(--bs-white)" d="M6.02391 12.0003H16.3299C16.6387 11.9949 16.943 12.0674 17.2087 12.2094C17.4745 12.3514 17.6911 12.5574 17.8344 12.8044C17.9776 13.0513 18.0418 13.3294 18.0197 13.6074C17.9975 13.8854 17.89 14.1523 17.7092 14.3782C17.5284 14.6042 17.2814 14.7802 16.9959 14.8865C16.7104 14.9929 16.3977 15.0253 16.0929 14.9803C15.7881 14.9352 15.5033 14.8144 15.2703 14.6314C15.0373 14.4484 14.8655 14.2105 14.774 13.9443"/>
+                                    <path stroke="var(--bs-white)" d="M7.02391 15.0003H10.441C10.7295 14.9949 11.0139 15.0674 11.2622 15.2094C11.5105 15.3514 11.713 15.5574 11.8468 15.8044C11.9806 16.0513 12.0406 16.3294 12.0199 16.6074C11.9993 16.8854 11.8988 17.1523 11.7299 17.3782C11.5609 17.6042 11.3301 17.7802 11.0633 17.8865C10.7965 17.9929 10.5044 18.0253 10.2196 17.9803C9.93477 17.9352 9.6686 17.8144 9.45092 17.6314C9.23324 17.4484 9.07265 17.2105 8.98718 16.9443"/>
+                                </svg>
+                                <h2 class="fs-4 fw-bold mb-0">AirFlow <span class="opacity-0 visually-hidden">AirFlow Admin Dashboard Tenplatew</span></h2>
+                            </a>
+                            <button type="button" class="btn-close d-xl-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        </div>
+                        <div class="tab-content w-100 px-3">
+                            <!-- begin:: Home -->
+                            <div class="tab-pane fade show active" id="home-tab" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
+                                <div class="w-100 px-2">
+                                    <a href="my-profile.html" class="d-flex align-items-center gap-3 user-profile text-decoration-none color-inherit mb-4" aria-label="my profile">
+                                        <img class="avatar avatar-md rounded-3" src="assets/images/avatar/avatar-1.png" loading="lazy" alt="User">
+                                        <div>
+                                            <h3 class="mb-0 h6">Daniel Scott</h3>
+                                            <span class="small">daniel.scottr@gmail.com</span>
+                                        </div>
+                                    </a>
+                                    <div class="mb-4 pe-1">
+                                        <!-- Balance -->
+                                        <small class="text-muted">Total Balance</small>
+                                        <h3 class="fw-bold mb-3">$21,328.00</h3>
+                                        <!-- Expenses Header -->
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h3 class="h6 fw-semibold mb-0">Expenses Analysis</h3>
+                                            <label for="expensesMonth" class="visually-hidden">Expenses Month</label>
+                                            <select id="expensesMonth" class="form-select form-select-sm w-auto rounded-pill" name="expenses_month">
+                                                <option selected="">Select Month</option>
+                                                <option value="01">January</option>
+                                                <option value="02">February</option>
+                                                <option value="03">March</option>
+                                                <option value="04">April</option>
+                                                <option value="05">May</option>
+                                                <option value="06">June</option>
+                                                <option value="07">July</option>
+                                                <option value="08">August</option>
+                                                <option value="09">September</option>
+                                                <option value="10">October</option>
+                                                <option value="11">November</option>
+                                                <option value="12">December</option>
+                                            </select>
+                                        </div>
+                                        <!-- Progress Indicator -->
+                                        <div class="progress rounded-pill" style="height: 6px;">
+                                            <div class="progress-bar bg-primary" style="width: 35%"></div>
+                                            <div class="progress-bar bg-info" style="width: 30%"></div>
+                                            <div class="progress-bar bg-warning" style="width: 35%"></div>
+                                        </div>
+                                        <!-- Expense Categories -->
+                                        <div class="row g-0 mt-3">
+                                            <div class="col">
+                                                <small class="text-muted d-block">Invest</small>
+                                                <span class="fw-semibold">$1,222.00</span>
+                                            </div>
+                                            <div class="col">
+                                                <small class="text-muted d-block">Top up</small>
+                                                <span class="fw-semibold">$829.00</span>
+                                            </div>
+                                            <div class="col">
+                                                <small class="text-muted d-block">Food &amp; Drink</small>
+                                                <span class="fw-semibold">$213.00</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- <div class="mb-4">
+                                        <div class="rounded-pill border border-dashed p-1 mb-2">
+                                            <div class="progress rounded-pill" role="progressbar" aria-label="Example 8px high" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="height: 8px"><div class="progress-bar bg-primary-gradient" style="width:45%"></div></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between small">
+                                            <span class="text-muted">Credit limit:</span>
+                                            <h3 class="fw-bold mb-0 fs-6">$1000</h3>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-3">
+                                            <h3 class="fw-bold mb-0">$598,00</h3>
+                                            <span class="text-muted small">$404</span>
+                                        </div>
+                                        <div class="border rounded-4 p-3 d-flex justify-content-between align-items-center">
+                                            <span class="small text-muted">Min. credit payment in July: <strong>$119</strong></span>
+                                            <i class="bi bi-info-circle text-muted"></i>
+                                        </div>
+                                    </div> -->
+                                </div>
+                                <ul class="grid-menu d-flex align-items-start justify-content-around gap-3 list-unstyled mb-4 app-menu flex-wrap">
+                                    <li>
+                                        <a href="index.html" class="text-decoration-none color-inherit text-center">
+                                            <div class="app-card card fw-bold rounded-4 mt-0 mb-1">
+                                                <span class="fs-5 fw-light"><i class="bi bi-speedometer"></i></span>
+                                            </div>
+                                            <div class="app-label fs-12">Dashboard</div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="fintech-accounts.html" class="text-decoration-none color-inherit text-center">
+                                            <div class="app-card card fw-bold rounded-4 mt-0 mb-1">
+                                                <span class="fs-5 fw-light"><i class="bi bi-people"></i></span>
+                                            </div>
+                                            <div class="app-label fs-12">Accounts</div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="fintech-cards.html" class="text-decoration-none color-inherit text-center active">
+                                            <div class="app-card card fw-bold rounded-4 mt-0 mb-1">
+                                                <span class="fs-5 fw-light"><i class="bi bi-credit-card"></i></span>
+                                            </div>
+                                            <div class="app-label fs-12">Cards</div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="fintech-payments.html" class="text-decoration-none color-inherit text-center">
+                                            <div class="app-card card fw-bold rounded-4 mt-0 mb-1">
+                                                <span class="fs-5 fw-light"><i class="bi bi-wallet2"></i></span>
+                                            </div>
+                                            <div class="app-label fs-12">Payments</div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="fintech-transactions.html" class="text-decoration-none color-inherit text-center">
+                                            <div class="app-card card fw-bold rounded-4 mt-0 mb-1">
+                                                <span class="fs-5 fw-light"><i class="bi bi-shuffle"></i></span>
+                                            </div>
+                                            <div class="app-label fs-12">Transactions</div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="fintech-investments.html" class="text-decoration-none color-inherit text-center">
+                                            <div class="app-card card fw-bold rounded-4 mt-0 mb-1">
+                                                <span class="fs-5 fw-light"><i class="bi bi-piggy-bank"></i></span>
+                                            </div>
+                                            <div class="app-label fs-12">Investments</div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="fintech-loans.html" class="text-decoration-none color-inherit text-center">
+                                            <div class="app-card card fw-bold rounded-4 mt-0 mb-1">
+                                                <span class="fs-5 fw-light"><i class="bi bi-cash-coin"></i></span>
+                                            </div>
+                                            <div class="app-label fs-12">Loans</div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="fintech-settings.html" class="text-decoration-none color-inherit text-center">
+                                            <div class="app-card card fw-bold rounded-4 mt-0 mb-1">
+                                                <span class="fs-5 fw-light"><i class="bi bi-gear"></i></span>
+                                            </div>
+                                            <div class="app-label fs-12">Settings</div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="text-decoration-none color-inherit text-center" data-bs-toggle="modal" data-bs-target="#QuickAccessModal">
+                                            <div class="app-card card fw-bold rounded-4 mt-0 mb-1">
+                                                <span class="fs-5 fw-light"><i class="bi bi-plus-lg"></i></span>
+                                            </div>
+                                            <div class="app-label fs-12">Add New</div>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <!-- begin:: Search -->
+                            <div class="tab-pane fade" id="search-tab" role="tabpanel" aria-labelledby="search-tab" tabindex="0">
+                                <input type="search" id="Main_searchInput" class="form-control rounded-3 mb-4" placeholder="Search here...">
+                                <!-- Recently Searched Pages -->
+                                <p class="small text-uppercase mb-2">Recently Searched Pages</p>
+                                <ul class="list-unstyled d-flex flex-wrap gap-1 fs-12">
+                                    <li><a class="d-flex text-decoration-none text-muted px-2 py-1 rounded bg-primary-subtle" href="#" aria-label="My Profile">My Profile</a></li>
+                                    <li><a class="d-flex text-decoration-none text-muted px-2 py-1 rounded bg-warning-subtle" href="#" aria-label="Accounts">Accounts</a></li>
+                                    <li><a class="d-flex text-decoration-none text-muted px-2 py-1 rounded bg-danger-subtle" href="#" aria-label="Loans & Credits">Loans & Credits</a></li>
+                                    <li><a class="d-flex text-decoration-none text-muted px-2 py-1 rounded bg-dark-subtle" href="#" aria-label="Cards">Cards</a></li>
+                                    <li><a class="d-flex text-decoration-none text-muted px-2 py-1 rounded bg-info-subtle" href="#" aria-label="Transactions">Transactions</a></li>
+                                    <li><a class="d-flex text-decoration-none text-muted px-2 py-1 rounded bg-dark-subtle" href="#" aria-label="Accounts & Wallets">Accounts & Wallets</a></li>
+                                </ul>
+                                <!-- People -->
+                                <p class="small text-uppercase mb-2">People</p>
+                                <ul class="list-unstyled small list d-flex flex-column gap-1">
+                                    <li>
+                                        <a href="#" class="list-group-item d-flex align-items-center gap-2 p-2 rounded-3 bg-body-tertiary">
+                                            <img class="avatar avatar-sm" src="assets/images/avatar/avatar-1.png" loading="lazy" alt="avatar">
+                                            <div class="flex-grow-1">
+                                                <div>Emma Watson</div>
+                                            </div>
+                                            <span class="text-success small">Active now</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="list-group-item d-flex align-items-center gap-2 p-2 rounded-3 bg-body-tertiary">
+                                            <img class="avatar avatar-sm" src="assets/images/avatar/avatar-2.png" loading="lazy" alt="avatar">
+                                            <div class="flex-grow-1">
+                                                <div>Daniel Cooper</div>
+                                            </div>
+                                            <span class="text-muted small">Last seen 3d ago</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                                <!-- Files -->
+                                <p class="small text-uppercase mb-2">Files</p>
+                                <ul class="list-unstyled small list d-flex flex-column gap-1 mb-0">
+                                    <li>
+                                        <a href="#" class="list-group-item d-flex align-items-center gap-2 p-2 rounded-3 bg-body-tertiary">
+                                            <i class="fs-5 bi bi-file-earmark-ppt text-danger"></i>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold">Marketing Strategy.ppt</div>
+                                            </div>
+                                            <span class="text-muted small">Sep 05, 2023</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="list-group-item d-flex align-items-center gap-2 p-2 rounded-3 bg-body-tertiary">
+                                            <i class="fs-5 bi bi-file-earmark-excel text-success"></i>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold">Revenue Sheet.xlsx</div>
+                                            </div>
+                                            <span class="text-muted small">Yesterday</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <!-- begin:: Apps -->
+                            <div class="tab-pane fade" id="apps-tab" role="tabpanel" aria-labelledby="apps-tab" tabindex="0">
+                                <ul class="grid-menu d-flex flex-column align-items-start gap-4 list-unstyled">
+                                    <!-- AI Chat App -->
+                                    <li>
+                                        <a class="d-flex align-items-center gap-3 text-decoration-none color-inherit" href="apps/app-ai-chat.html" aria-label="AI Chat">
+                                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="var(--bs-secondary)" fill="var(--bs-primary)" d="M5 6.25C5 5.65326 5.22827 5.08097 5.6346 4.65901C6.04093 4.23705 6.59203 4 7.16667 4H15.8333C16.408 4 16.9591 4.23705 17.3654 4.65901C17.7717 5.08097 18 5.65326 18 6.25V10.75C18 11.3467 17.7717 11.919 17.3654 12.341C16.9591 12.7629 16.408 13 15.8333 13H7.16667C6.59203 13 6.04093 12.7629 5.6346 12.341C5.22827 11.919 5 11.3467 5 10.75V6.25Z"/>
+                                                <path stroke="var(--bs-secondary)" d="M12 2V4"/>
+                                                <path stroke="var(--bs-secondary)" d="M8.28571 13V22M14.7143 13V22M4 17L8.28571 15M14.7143 15L19 17M8.28571 19H14.7143"/>
+                                                <circle fill="var(--bs-white)" cx="10" cy="8" r="1"/>
+                                                <circle fill="var(--bs-white)" cx="14" cy="8" r="1"/>
+                                            </svg>
+                                            <div>
+                                                <p class="mb-0">AI Chat</p>
+                                                <span class="small text-muted">Your intelligent workspace assistant.</span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <!-- Video Call -->
+                                    <li>
+                                        <a class="d-flex align-items-center gap-3 text-decoration-none color-inherit" href="apps/app-video-call.html" aria-label="AI Chat">
+                                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">
+                                                <path fill="var(--bs-primary)" stroke="var(--bs-secondary)" d="M16 9.98943L21.3118 7.13239C21.4897 7.03678 21.6872 6.99165 21.8858 7.00127C22.0844 7.0109 22.2774 7.07496 22.4465 7.18738C22.6157 7.2998 22.7553 7.45685 22.8521 7.64363C22.949 7.83041 22.9999 8.04073 23 8.25462V16.7454C22.9999 16.9593 22.949 17.1696 22.8521 17.3564C22.7553 17.5431 22.6157 17.7002 22.4465 17.8126C22.2774 17.925 22.0844 17.9891 21.8858 17.9987C21.6872 18.0084 21.4897 17.9632 21.3118 17.8676L16 15.0106V9.98943Z"/>
+                                                <path stroke="var(--bs-secondary)" d="M1 7.5C1 6.83696 1.26339 6.20107 1.73223 5.73223C2.20107 5.26339 2.83696 5 3.5 5H13.5C14.163 5 14.7989 5.26339 15.2678 5.73223C15.7366 6.20107 16 6.83696 16 7.5V17.5C16 18.163 15.7366 18.7989 15.2678 19.2678C14.7989 19.7366 14.163 20 13.5 20H3.5C2.83696 20 2.20107 19.7366 1.73223 19.2678C1.26339 18.7989 1 18.163 1 17.5V7.5Z"/>
+                                                <path stroke="var(--bs-secondary)" d="M7 10C7 10.5304 7.21071 11.0391 7.58579 11.4142C7.96086 11.7893 8.46957 12 9 12C9.53043 12 10.0391 11.7893 10.4142 11.4142C10.7893 11.0391 11 10.5304 11 10C11 9.46957 10.7893 8.96086 10.4142 8.58579C10.0391 8.21071 9.53043 8 9 8C8.46957 8 7.96086 8.21071 7.58579 8.58579C7.21071 8.96086 7 9.46957 7 10Z"/>
+                                                <path stroke="var(--bs-secondary)" d="M12 16C12 15.4696 11.7893 14.9609 11.4142 14.5858C11.0391 14.2107 10.5304 14 10 14H8C7.46957 14 6.96086 14.2107 6.58579 14.5858C6.21071 14.9609 6 15.4696 6 16"/>
+                                            </svg>
+                                            <div>
+                                                <p class="mb-0">Video Call</p>
+                                                <span class="small text-muted">HD meetings & real-time collaboration.</span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <!-- Calendar -->
+                                    <li>
+                                        <a class="d-flex align-items-center gap-3 text-decoration-none color-inherit" href="apps/app-calendar.html" aria-label="Calendar">
+                                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">
+                                                <path fill="var(--bs-primary)" d="M14 18C14 19.0609 14.4214 20.0783 15.1716 20.8284C15.9217 21.5786 16.9391 22 18 22C19.0609 22 20.0783 21.5786 20.8284 20.8284C21.5786 20.0783 22 19.0609 22 18C22 16.9391 21.5786 15.9217 20.8284 15.1716C20.0783 14.4214 19.0609 14 18 14C16.9391 14 15.9217 14.4214 15.1716 15.1716C14.4214 15.9217 14 16.9391 14 18Z"/>
+                                                <path stroke="var(--bs-secondary)" d="M11.795 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V7C3 6.46957 3.21071 5.96086 3.58579 5.58579C3.96086 5.21071 4.46957 5 5 5H17C17.5304 5 18.0391 5.21071 18.4142 5.58579C18.7893 5.96086 19 6.46957 19 7V11H3M15 3V7M7 3V7"/>
+                                                <path stroke="var(--bs-white)" d="M18 16.4961V18.0001L19 19.0001"/>
+                                                <path stroke="var(--bs-secondary)" d="M8 15H10V17H8V15Z"/>
+                                            </svg>
+                                            <div>
+                                                <p class="mb-0">Calendar</p>
+                                                <span class="small text-muted">Schedule and manage events easily.</span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <!-- Contacts -->
+                                    <li>
+                                        <a class="d-flex align-items-center gap-3 text-decoration-none color-inherit" href="apps/app-contact.html" aria-label="My Contacts">
+                                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="var(--bs-secondary)" d="M3 8H6M3 12H6M3 17H6M21 5.25V18.75C21 19.3467 20.7592 19.919 20.3305 20.341C19.9019 20.7629 19.3205 21 18.7143 21H7.28571C6.6795 21 6.09812 20.7629 5.66947 20.341C5.24082 19.919 5 19.3467 5 18.75V5.25C5 4.65326 5.24082 4.08097 5.66947 3.65901C6.09812 3.23705 6.6795 3 7.28571 3H18.7143C19.3205 3 19.9019 3.23705 20.3305 3.65901C20.7592 4.08097 21 4.65326 21 5.25Z"/>
+                                                <path fill="var(--bs-primary)" d="M10 8.5C10 9.16304 10.2634 9.79893 10.7322 10.2678C11.2011 10.7366 11.837 11 12.5 11C13.163 11 13.7989 10.7366 14.2678 10.2678C14.7366 9.79893 15 9.16304 15 8.5C15 7.83696 14.7366 7.20107 14.2678 6.73223C13.7989 6.26339 13.163 6 12.5 6C11.837 6 11.2011 6.26339 10.7322 6.73223C10.2634 7.20107 10 7.83696 10 8.5Z"/>
+                                                <path stroke="var(--bs-gray-400)" d="M9 17V15.6667C9 14.9594 9.26339 14.2811 9.73223 13.781C10.2011 13.281 10.837 13 11.5 13H14"/>
+                                                <path stroke="var(--bs-gray-400)" d="M14 16L15.3333 17L18 15"/>
+                                            </svg>
+                                            <div>
+                                                <p class="mb-0">My Contacts</p>
+                                                <span class="small text-muted">Manage your professional network.</span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <!-- File Manager -->
+                                    <li>
+                                        <a class="d-flex align-items-center gap-3 text-decoration-none color-inherit" href="apps/app-filemanager.html" aria-label="File Manager">
+                                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">
+                                                <path fill="var(--bs-primary)" d="M4.5 7H7V14.5L7.5 15.5L8.5 16L17 16.5V18.5L16 19.5L15 20H5L3.5 19V18V8L4.5 7Z"/>
+                                                <path stroke="var(--bs-secondary)" d="M9 3H12L14 5H19C19.5304 5 20.0391 5.21071 20.4142 5.58579C20.7893 5.96086 21 6.46957 21 7V14C21 14.5304 20.7893 15.0391 20.4142 15.4142C20.0391 15.7893 19.5304 16 19 16H9C8.46957 16 7.96086 15.7893 7.58579 15.4142C7.21071 15.0391 7 14.5304 7 14V5C7 4.46957 7.21071 3.96086 7.58579 3.58579C7.96086 3.21071 8.46957 3 9 3Z"/>
+                                                <path stroke="var(--bs-secondary)" d="M17 16V18C17 18.5304 16.7893 19.0391 16.4142 19.4142C16.0391 19.7893 15.5304 20 15 20H5C4.46957 20 3.96086 19.7893 3.58579 19.4142C3.21071 19.0391 3 18.5304 3 18V9C3 8.46957 3.21071 7.96086 3.58579 7.58579C3.96086 7.21071 4.46957 7 5 7H7"/>
+                                            </svg>
+                                            <div>
+                                                <p class="mb-0">File Manager</p>
+                                                <span class="small text-muted">Secure file storage and sharing.</span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <!-- Kanban Board -->
+                                    <li>
+                                        <a class="d-flex align-items-center gap-3 text-decoration-none color-inherit" href="apps/app-kanban.html" aria-label="Kanban Board">
+                                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="var(--bs-secondary)" d="M13 5H21"/>
+                                                <path stroke="var(--bs-secondary)" d="M13 9H18"/>
+                                                <path stroke="var(--bs-secondary)" d="M13 15H21"/>
+                                                <path stroke="var(--bs-secondary)" d="M13 19H18"/>
+                                                <path stroke="var(--bs-secondary)" fill="var(--bs-primary)" d="M3 5C3 4.73478 3.10536 4.48043 3.29289 4.29289C3.48043 4.10536 3.73478 4 4 4H8C8.26522 4 8.51957 4.10536 8.70711 4.29289C8.89464 4.48043 9 4.73478 9 5V9C9 9.26522 8.89464 9.51957 8.70711 9.70711C8.51957 9.89464 8.26522 10 8 10H4C3.73478 10 3.48043 9.89464 3.29289 9.70711C3.10536 9.51957 3 9.26522 3 9V5Z"/>
+                                                <path stroke="var(--bs-secondary)" d="M3 15C3 14.7348 3.10536 14.4804 3.29289 14.2929C3.48043 14.1054 3.73478 14 4 14H8C8.26522 14 8.51957 14.1054 8.70711 14.2929C8.89464 14.4804 9 14.7348 9 15V19C9 19.2652 8.89464 19.5196 8.70711 19.7071C8.51957 19.8946 8.26522 20 8 20H4C3.73478 20 3.48043 19.8946 3.29289 19.7071C3.10536 19.5196 3 19.2652 3 19V15Z"/>
+                                            </svg>
+                                            <div>
+                                                <p class="mb-0">Kanban Board</p>
+                                                <span class="small text-muted">Visual task and workflow management.</span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <!-- begin:: Documentation -->
+                            <div class="tab-pane fade" id="docs-tab" role="tabpanel" aria-labelledby="docs-tab" tabindex="0">
+                                <div class="w-100">
+                                    <p class="fs-6 fw-semibold text-uppercase mb-0">Documentation</p>
+                                    <small>Last Update: 15 March, 2026</small>
+                                    <ul class="ps-3 mb-4 mt-3">
+                                        <!-- Getting Started -->
+                                        <li class="px-2 mb-3">
+                                            <p class="mb-0">Getting Started</p>
+                                            <small class="text-muted">Introduction, Requirements, Folder Structure, Installation, Template Structure</small>
+                                            <ul class="list-unstyled mb-0 d-flex flex-wrap gap-1 small vendor-list mt-2">
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/documentation.html" aria-label="AirFlow Documentation">Documentation</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/cheatsheet.html" aria-label="AirFlow Cheatsheet">Cheatsheet</a></li>
+                                            </ul>
+                                        </li>
+                                        <!-- Widget Collection -->
+                                        <li class="px-2 mb-3">
+                                            <p class="mb-0">Widget Collection</p>
+                                            <small class="text-muted">A collection of ready-to-use cards, charts, and tables.</small>
+                                            <ul class="list-unstyled mb-0 d-flex flex-wrap gap-1 small vendor-list mt-2">
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/widgets.html" aria-label="AirFlow Widgets">Widgets</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/widgets-card-option.html" aria-label="AirFlow Widgets Cards">Widgets Cards</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/widgets-chart.html" aria-label="AirFlow Widgets charts">Charts</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/widgets-table.html" aria-label="AirFlow Widgets tabes">Tables</a></li>
+                                            </ul>
+                                        </li>
+                                        <!-- Vendor Library -->
+                                        <li class="px-2 mb-3">
+                                            <p class="mb-2">Vendor Library</p>
+                                            <ul class="list-unstyled mb-0 d-flex flex-wrap gap-1 small vendor-list">
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/apexchart.html">ApexCharts</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/chartjs.html">Chart.js</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/select2-bootstrap.html">Select2</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/datatable.html">DataTables</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/date-rangpicker.html">Date Range Picker</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/dropify.html">Dropify</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/inputmask.html">Inputmask</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/jkanban.html">jKanban</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/swiper.html">Swiper</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/owl-carousel.html">Owl Carousel</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/sweetalert.html">Sweetalert</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/tagsinput.html">Tagsinput</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/sortablejs.html">SortableJS</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/quill-editor.html">Quill Editor</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/jsvectormap.html">jsVectormap</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/leaflet.html">Leaflet</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/step-wizard.html">Step Wizard</a></li>
+                                            </ul>
+                                        </li>
+                                        <!-- Template Examples -->
+                                        <li class="px-2">
+                                            <p class="mb-2">Template Examples</p>
+                                            <ul class="list-unstyled mb-0 d-flex flex-wrap gap-1 small vendor-list">
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/snippets-album.html">Album</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/snippets-badges.html">Badges</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/snippets-checkout.html">Checkout</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/snippets-dropdowns.html">Dropdowns</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/snippets-features.html">Features</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/snippets-headers.html">Headers</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/snippets-heroes.html">Heroes</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/snippets-jumbotron.html">Jumbotron</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/snippets-list-groups.html">List groups</a></li>
+                                                <li><a class="d-flex px-2 py-1 rounded sidebar-link" href="documentation/snippets-pricing.html">Pricing</a></li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <!-- begin:: Notifications -->
+                            <div class="tab-pane fade" id="notifications-tab" role="tabpanel" aria-labelledby="notifications-tab" tabindex="0">
+                                <div class="d-flex justify-content-between align-items-center mb-2 pb-3 border-bottom border-2">
+                                    <p class="fs-6 fw-semibold text-uppercase mb-0">Notifications</p>
+                                    <button class="btn btn-sm btn-ripple bg-primary-subtle rounded-pill fs-12 px-3">Mark all as read</button>
+                                </div>
+                                <!-- Item 1 -->
+                                <div class="notif-item py-3">
+                                    <div class="d-flex gap-3">
+                                        <img class="avatar border border-2 border-white shadow-sm" src="assets/images/avatar/avatar-7.png" loading="lazy" alt="avatar-7">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between">
+                                                <p class="mb-0 small">
+                                                    <span class="fw-semibold">Mark Collins</span>
+                                                    <span class="text-body-secondary"> commented on </span>
+                                                    <a href="#" class="link-primary text-decoration-none">Design System v3</a>
+                                                </p>
+                                            </div>
+                                            <div class="mb-2 fs-12">12 mins ago • UI Guild</div>
+                                            <div class="border rounded-3 p-2 bg-body-tertiary small">
+                                                “Can we try a slightly softer shadow on the cards for light mode?”
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Item 2 -->
+                                <div class="notif-item py-3">
+                                    <div class="d-flex gap-3">
+                                        <img class="avatar border border-2 border-white shadow-sm" src="assets/images/avatar/avatar-8.png" loading="lazy" alt="avatar-8">
+                                        <div class="flex-grow-1">
+                                            <p class="mb-0 small">
+                                                <span class="fw-semibold">Emily Carter</span>
+                                                <span class="text-body-secondary"> added you to </span>
+                                                <a href="#" class="link-primary text-decoration-none">Sprint Planning</a>
+                                            </p>
+                                            <div class="mb-2 fs-12">45 mins ago • Product</div>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <span class="badge bg-light text-secondary border tag-pill">Planning</span>
+                                                <span class="badge bg-warning-subtle text-warning-emphasis tag-pill">High priority</span>
+                                                <span class="badge bg-primary-subtle text-primary-emphasis tag-pill">Sprint Q2</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Item 3 -->
+                                <div class="notif-item py-3">
+                                    <div class="d-flex gap-3">
+                                        <img class="avatar border border-2 border-white shadow-sm" src="assets/images/avatar/avatar-9.png" loading="lazy" alt="avatar-9">
+                                        <div class="flex-grow-1">
+                                            <p class="mb-0 small">
+                                                <span class="fw-semibold">Liam Brown</span>
+                                                <span class="text-body-secondary"> requested access to </span>
+                                                <a href="#" class="link-primary text-decoration-none">Revenue Dashboard</a>
+                                            </p>
+                                            <div class="mb-2 fs-12">3 hours ago • Analytics</div>
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-ripple btn-outline-secondary btn-sm rounded-pill px-3">Deny</button>
+                                                <button class="btn btn-ripple btn-dark btn-sm rounded-pill px-3">Approve</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Item 4 -->
+                                <div class="notif-item py-3">
+                                    <div class="d-flex gap-3">
+                                        <img class="avatar border border-2 border-white shadow-sm" src="assets/images/avatar/avatar-10.png" loading="lazy" alt="avatar-10">
+                                        <div class="flex-grow-1">
+                                            <p class="mb-0 small">
+                                                <span class="fw-semibold">Sara Lee</span>
+                                                <span class="text-body-secondary"> shared a file with you</span>
+                                            </p>
+                                            <div class="mb-2 fs-12">5 hours ago • 1.4 MB</div>
+                                            <div class="border rounded-3 p-2 bg-body-tertiary small d-flex align-items-center gap-2 justify-content-between">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="badge bg-danger-subtle text-danger fw-semibold rounded-3">PDF</span>
+                                                    <div>
+                                                        <div class="small fw-semibold text-body">Q3_report.pdf</div>
+                                                        <div class="small text-body-secondary">Updated 20 mins ago</div>
+                                                    </div>
+                                                </div>
+                                                <button class="btn btn-sm btn-outline-secondary rounded-circle"><i class="bi bi-download"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- begin:: Template Settings -->
+                            <div class="tab-pane fade" id="setting-tab" role="tabpanel" aria-labelledby="setting-tab" tabindex="0">
+                                <p class="small text-uppercase mb-2">Theme presets</p>
+                                <ul class="theme-swatches list-unstyled d-flex gap-1 align-items-center">
+                                    <li class="theme-swatch rounded-circle" data-theme="theme-purple" style="background:#7c3aed;"></li>
+                                    <li class="theme-swatch rounded-circle" data-theme="theme-indigo" style="background:#4f46e5;"></li>
+                                    <li class="theme-swatch rounded-circle" data-theme="theme-sky" style="background:#378aff;"></li>
+                                    <li class="theme-swatch rounded-circle" data-theme="theme-emerald" style="background:#4dcf7d;"></li>
+                                    <li class="theme-swatch rounded-circle" data-theme="theme-rose" style="background:#f43f5e;"></li>
+                                    <li class="theme-swatch rounded-circle" data-theme="theme-orange" style="background:#fa8738;"></li>
+                                    <li class="theme-swatch rounded-circle" data-theme="theme-slate" style="background:#475569;"></li>
+                                    <li class="theme-swatch rounded-circle" data-theme="theme-mocha" style="background:#7b4a2e;"></li>
+                                    <li class="theme-swatch rounded-circle" data-theme="theme-mustard" style="background:#ca8a04;"></li>
+                                </ul>
+                                <p class="small text-uppercase mb-2 mt-4">Custom color</p>
+                                <div class="d-flex align-items-center justify-content-between gap-2 custom-color-row mb-2 border rounded-pill bg-body-tertiary px-1">
+                                    <input type="color" id="customThemeColor" class="form-control border-0 form-control-color bg-transparent avatar avatar-sm p-0" value="#4f46e5">
+                                    <input type="text" id="customThemeHex" class="form-control focus-ring-none border-0 form-control-sm hex-input bg-transparent ps-0" value="#4f46e5">
+                                </div>
+                                <ul class="list-unstyled mt-3 mb-4">
+                                    <li class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="Background_Image">
+                                        <label class="form-check-label" for="Background_Image">Background Image</label>
+                                    <li class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="Retro_Border_Style">
+                                        <label class="form-check-label" for="Retro_Border_Style">Retro Style Black Border</label>
+                                    </li>
+                                </ul>
+                                <hr class="border-dashed my-3">
+                                <p class="small text-uppercase mb-2 mt-4">Font family</p>
+                                <div class="font-setting d-flex flex-wrap gap-1">
+                                    <button type="button" class="btn btn-sm px-3 btn-outline-secondary rounded-pill font-pill border" data-font="inter" style="font-family:'Inter', system-ui;">Inter</button>
+                                    <button type="button" class="btn btn-sm px-3 btn-outline-secondary rounded-pill font-pill border" data-font="dm" style="font-family:'DM Sans', system-ui;">DM Sans</button>
+                                    <button type="button" class="btn btn-sm px-3 btn-outline-secondary rounded-pill font-pill border" data-font="poppins" style="font-family:'Poppins', system-ui;">Poppins</button>
+                                    <button type="button" class="btn btn-sm px-3 btn-outline-secondary rounded-pill font-pill border" data-font="space" style="font-family:'Space Grotesk', system-ui;">Space Grotesk</button>
+                                </div>
+                                <p class="small text-uppercase mb-2 mt-4">Font size</p>
+                                <div class="font-size-setting d-flex flex-wrap gap-1">
+                                    <button type="button" class="btn btn-sm px-3 btn-outline-secondary rounded-pill size-pill border" data-size="small">Small</button>
+                                    <button type="button" class="btn btn-sm px-3 btn-outline-secondary rounded-pill size-pill border" data-size="medium">Medium</button>
+                                    <button type="button" class="btn btn-sm px-3 btn-outline-secondary rounded-pill size-pill border" data-size="large">Big</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- begin:: Main tab menu icon -->
+            <div class="tab-menu p-2 rounded-pill border shadow-sm">
+                <ul class="nav nav-tabs justify-content-around border-0 mb-0" role="tablist">
+                    <!-- Tab Icon: home -->
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-circle active" data-bs-toggle="tab" data-bs-target="#home-tab" type="button" role="tab" aria-controls="home-tab" aria-selected="true">
+                            <i class="bi bi-house-fill"></i>
+                        </button>
+                    </li>
+                    <!-- Tab Icon: search -->
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-circle" data-bs-toggle="tab" data-bs-target="#search-tab" type="button" role="tab" aria-controls="search-tab" aria-selected="true">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </li>
+                    <!-- Tab Icon: apps -->
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-circle" data-bs-toggle="tab" data-bs-target="#apps-tab" type="button" role="tab" aria-controls="apps-tab" aria-selected="true">
+                            <i class="bi bi-grid-fill"></i>
+                        </button>
+                    </li>
+                    <!-- Tab Icon: docs -->
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-circle" data-bs-toggle="tab" data-bs-target="#docs-tab" type="button" role="tab" aria-controls="docs-tab" aria-selected="true">
+                            <i class="bi bi-patch-question-fill"></i>
+                        </button>
+                    </li>
+                    <!-- Tab Icon: notiications -->
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-circle" data-bs-toggle="tab" data-bs-target="#notifications-tab" type="button" role="tab" aria-controls="notifications-tab" aria-selected="true">
+                            <i class="bi bi-bell-fill"></i>
+                        </button>
+                    </li>
+                    <!-- Tab Icon: settngs -->
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-circle" data-bs-toggle="tab" data-bs-target="#setting-tab" type="button" role="tab" aria-controls="setting-tab" aria-selected="true">
+                            <i class="bi bi-gear-fill"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="rounded-circle border-0 bg-transparent" id="themeToggle" aria-label="Light/Dark toggle theme"><i class="bi bi-sun"></i></button>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- begin::Quik Action right bar -->
+        <div class="rightbar text-center d-flex flex-lg-column justify-content-between px-3 px-lg-0">
+            <ul class="list-unstyled d-flex flex-lg-column gap-2 gap-lg-3 align-items-center mb-0 overflow-x-auto pt-lg-1 pb-2 li_animate">
+                <li data-bs-title="Alex Carter" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-custom-class="custom-tooltip"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#chat_drawer" aria-controls="chat_drawer"><img class="avatar avatar-sm border" src="assets/images/avatar/avatar-1.png" loading="lazy" alt="avatar 1"></a></li>
+                <li data-bs-title="James Walker" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-custom-class="custom-tooltip"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#chat_drawer" aria-controls="chat_drawer"><img class="avatar avatar-sm border" src="assets/images/avatar/avatar-2.png" loading="lazy" alt="avatar 2"></a></li>
+                <li data-bs-title="Yuna Kim" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-custom-class="custom-tooltip"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#chat_drawer" aria-controls="chat_drawer"><img class="avatar avatar-sm border" src="assets/images/avatar/avatar-3.png" loading="lazy" alt="avatar 3"></a></li>
+                <li data-bs-title="Ethan Brooks" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-custom-class="custom-tooltip"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#chat_drawer" aria-controls="chat_drawer"><img class="avatar avatar-sm border" src="assets/images/avatar/avatar-4.png" loading="lazy" alt="avatar 4"></a></li>
+                <li data-bs-title="Omar Al-Hassan" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-custom-class="custom-tooltip"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#chat_drawer" aria-controls="chat_drawer"><img class="avatar avatar-sm border" src="assets/images/avatar/avatar-5.png" loading="lazy" alt="avatar 5"></a></li>
+                <li data-bs-title="Nur Aisyah" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-custom-class="custom-tooltip"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#chat_drawer" aria-controls="chat_drawer"><img class="avatar avatar-sm border" src="assets/images/avatar/avatar-6.png" loading="lazy" alt="avatar 6"></a></li>
+                <li data-bs-title="Emma Laurent" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-custom-class="custom-tooltip"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#chat_drawer" aria-controls="chat_drawer"><img class="avatar avatar-sm border" src="assets/images/avatar/avatar-7.png" loading="lazy" alt="avatar 7"></a></li>
+                <li data-bs-title="Aarav Sharma" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-custom-class="custom-tooltip"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#chat_drawer" aria-controls="chat_drawer"><img class="avatar avatar-sm border" src="assets/images/avatar/avatar-8.png" loading="lazy" alt="avatar 8"></a></li>
+                <li data-bs-title="Amina Diallo" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-custom-class="custom-tooltip"><a href="#" data-bs-toggle="offcanvas" data-bs-target="#chat_drawer" aria-controls="chat_drawer"><img class="avatar avatar-sm border" src="assets/images/avatar/avatar-9.png" loading="lazy" alt="avatar 9"></a></li>
+            </ul>
+        </div>
+
+        <!-- begin::Content -->
+        <main class="app-body py-2 px-lg-2 py-lg-3">
+            <div class="container-fluid">
+                <ul class="nav nav-pills gap-2 mb-3 small" role="tablist">
+                    <li class="nav-item"><button class="rounded-pill nav-link active" data-bs-toggle="pill" data-bs-target="#virtual">Virtual Cards</button></li>
+                    <li class="nav-item"><button class="rounded-pill nav-link" data-bs-toggle="pill" data-bs-target="#physical">Physical Cards</button></li>
+                    <li class="nav-item ms-sm-auto">
+                        <button class="btn btn-link" data-bs-toggle="modal" data-bs-target="#addCardModal"><i class="bi bi-plus-lg"></i> New Card</button>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <!-- VIRTUAL CARDS -->
+                    <div class="tab-pane fade show active" id="virtual">
+                        <div class="row g-3">
+                            <div class="col-lg-6">
+                                <div class="card rounded-4">
+                                    <div class="card-body p-lg-4">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-primary-subtle text-primary">Virtual</span>
+                                            <a href="#" aria-label="Block Card" class="text-danger" data-bs-toggle="modal" data-bs-target="#blockModal"><i class="bi bi-ban"></i></a>
+                                        </div>
+                                        <h6 class="mt-3 mb-1">Virtual Shopping Card</h6>
+                                        <div class="text-body-secondary small">**** **** **** 4321</div>
+                                        <div class="my-3 py-2 px-3 rounded-3 bg-primary-subtle">
+                                            <small class="text-body-secondary">Available Limit</small>
+                                            <h4 class="mb-0 mt-1">₹45,000</h4>
+                                        </div>
+                                        <div>
+                                            <a class="btn btn-sm btn-ripple px-3 btn-secondary rounded-pill" data-bs-toggle="modal" data-bs-target="#detailsModal">View Details</a>
+                                            <a class="btn btn-sm btn-ripple px-3 btn-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#limitsModal">Set Limits</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="card rounded-4">
+                                    <div class="card-body p-lg-4">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-warning-subtle text-warning">Virtual</span>
+                                            <a href="#" aria-label="Block Card" class="text-danger" data-bs-toggle="modal" data-bs-target="#blockModal"><i class="bi bi-ban"></i></a>
+                                        </div>
+                                        <h6 class="mt-3 mb-1">Online Payment Card</h6>
+                                        <div class="text-body-secondary small">**** **** **** 2124</div>
+                                        <div class="my-3 py-2 px-3 rounded-3 bg-warning-subtle">
+                                            <small class="text-body-secondary">Available Limit</small>
+                                            <h4 class="mb-0 mt-1">₹2,00,000</h4>
+                                        </div>
+                                        <div>
+                                            <a class="btn btn-sm btn-ripple px-3 btn-secondary rounded-pill" data-bs-toggle="modal" data-bs-target="#detailsModal">View Details</a>
+                                            <a class="btn btn-sm btn-ripple px-3 btn-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#limitsModal">Set Limits</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- PHYSICAL CARDS -->
+                    <div class="tab-pane fade" id="physical">
+                        <div class="row g-3">
+                            <div class="col-lg-6">
+                                <div class="card rounded-4 bg-primary-gradient text-white">
+                                    <div class="card-body p-lg-4">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-dark">Physical</span>
+                                            <a href="#" aria-label="Block Card" class="text-white" data-bs-toggle="modal" data-bs-target="#blockModal"><i class="bi bi-ban"></i></a>
+                                        </div>
+                                        <h6 class="mt-3 mb-1">Primary Debit Card</h6>
+                                        <div class="small">**** **** **** 9087</div>
+                                        <div class="my-3">
+                                            <small>Available Limit</small>
+                                            <h4 class="mb-0 mt-1">₹1,20,000</h4>
+                                        </div>
+                                        <div>
+                                            <a class="btn btn-sm btn-ripple px-3 btn-light rounded-pill" data-bs-toggle="modal" data-bs-target="#detailsModal">View Details</a>
+                                            <a class="btn btn-sm btn-ripple px-3 btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#limitsModal">Set Limits</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Card History & Limits -->
+                <div class="card rounded-4 mt-4">
+                    <div class="card-body d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                        <h6 class="mb-0">Card History & Limits</h6>
+                        <div class="d-flex gap-2">
+                            <select class="form-select form-select-sm rounded-pill" id="Select_Card_option">
+                                <option>All Cards</option>
+                                <option>Virtual Shopping Card</option>
+                                <option>Primary Debit Card</option>
+                            </select>
+                            <button class="btn btn-sm"><i class="bi bi-download"></i></button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table small border-bottom-none align-middle text-nowrap mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Card Name</th>
+                                    <th>Expiry Date</th>
+                                    <th>Limit Changes</th>
+                                    <th>Monthly Spend</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">Virtual Shopping Card</div>
+                                        <div class="small text-body-secondary">**** 4321 • Virtual</div>
+                                    </td>
+                                    <td>08 / 27</td>
+                                    <td>
+                                        <div class="small">₹50,000 → ₹75,000</div>
+                                        <div class="text-body-secondary small">Updated 12 Sep</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">₹18,450</div>
+                                        <div class="progress" style="height:6px;">
+                                        <div class="progress-bar" style="width:37%"></div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-success-subtle text-success">Active</span></td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-ripple px-3 rounded-pill btn-outline-primary" data-bs-toggle="modal" data-bs-target="#limitsModal">Limits</button>
+                                        <button class="btn btn-sm btn-ripple px-3 rounded-pill btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#detailsModal">Details</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">Primary Debit Card</div>
+                                        <div class="small text-body-secondary">**** 9087 • Physical</div>
+                                    </td>
+                                    <td>11 / 28</td>
+                                    <td>
+                                        <div class="small">₹1,00,000 → ₹1,20,000</div>
+                                        <div class="text-body-secondary small">Updated 01 Aug</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">₹64,320</div>
+                                        <div class="progress" style="height:6px;">
+                                        <div class="progress-bar bg-warning" style="width:54%"></div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-danger-subtle text-danger">Blocked</span></td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-ripple px-3 rounded-pill btn-outline-danger" data-bs-toggle="modal" data-bs-target="#blockModal">Unblock</button>
+                                        <button class="btn btn-sm btn-ripple px-3 rounded-pill btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#detailsModal">Details</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">Business Credit Card</div>
+                                        <div class="small text-body-secondary">**** 6754 • Corporate</div>
+                                    </td>
+                                    <td>03 / 29</td>
+                                    <td>
+                                        <div class="small">₹2,00,000 → ₹2,50,000</div>
+                                        <div class="text-body-secondary small">Updated 18 Sep</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">₹1,10,500</div>
+                                        <div class="progress" style="height:6px;">
+                                            <div class="progress-bar bg-info" style="width:44%"></div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-success-subtle text-success">Active</span></td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-ripple px-3 rounded-pill btn-outline-primary" data-bs-toggle="modal" data-bs-target="#limitsModal">Limits</button>
+                                        <button class="btn btn-sm btn-ripple px-3 rounded-pill btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#detailsModal">Details</button>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">Travel Rewards Card</div>
+                                        <div class="small text-body-secondary">**** 2219 • Physical</div>
+                                    </td>
+                                    <td>06 / 26</td>
+                                    <td>
+                                        <div class="small">₹75,000 → ₹90,000</div>
+                                        <div class="text-body-secondary small">Updated 22 Jul</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">₹48,750</div>
+                                        <div class="progress" style="height:6px;">
+                                            <div class="progress-bar bg-primary" style="width:65%"></div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-warning-subtle text-warning">Pending</span></td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-ripple px-3 rounded-pill btn-outline-warning" data-bs-toggle="modal" data-bs-target="#blockModal">Review</button>
+                                        <button class="btn btn-sm btn-ripple px-3 rounded-pill btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#detailsModal">Details</button>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">Online Subscription Card</div>
+                                        <div class="small text-body-secondary">**** 5568 • Virtual</div>
+                                    </td>
+                                    <td>01 / 30</td>
+                                    <td>
+                                        <div class="small">₹25,000 → ₹30,000</div>
+                                        <div class="text-body-secondary small">Updated 05 Sep</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">₹9,860</div>
+                                        <div class="progress" style="height:6px;">
+                                            <div class="progress-bar bg-success" style="width:33%"></div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-success-subtle text-success">Active</span></td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-ripple px-3 rounded-pill btn-outline-primary" data-bs-toggle="modal" data-bs-target="#limitsModal">Limits</button>
+                                        <button class="btn btn-sm btn-ripple px-3 rounded-pill btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#detailsModal">Details</button>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- begin::Footer -->
+        <footer class="py-2 px-lg-3">
+            <div class="container-fluid">
+                <div class="align-items-center d-flex flex-wrap gap-2 justify-content-between small">
+                    <p class="mb-0">© <script>document.write(new Date().getFullYear())</script> AirFlow. All rights reserved.</p>
+                    <ul class="list-unstyled mb-0 d-flex align-items-center justify-content-between gap-3">
+                        <li><a class="color-inherit text-decoration-none" href="documentation/documentation.html">Docs</a></li>
+                        <li><a class="color-inherit text-decoration-none" href="#" target="_blank" aria-label="License" rel="noreferrer">License</a></li>
+                    </ul>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Modal: Block Card -->
+    <div class="modal fade" id="blockModal" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content rounded-4">
+                <div class="modal-header bg-danger text-white rounded-top-4">
+                    <h6 class="modal-title">Block Card</h6>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Are you sure you want to block this card? You can unblock it anytime.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-ripple rounded-pill px-3 btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-ripple rounded-pill px-3 btn-danger">Block Card</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal: Card Details -->
+    <div class="modal fade" id="detailsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4">
+                <div class="modal-header bg-primary rounded-top-4 text-white">
+                    <h6 class="modal-title">Card Details</h6>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6"><small class="text-body-secondary">Card Number</small><div class="fw-semibold">**** **** **** 4321</div></div>
+                        <div class="col-md-3"><small class="text-body-secondary">Expiry</small><div class="fw-semibold">08 / 27</div></div>
+                        <div class="col-md-3"><small class="text-body-secondary">CVV</small><div class="fw-semibold">***</div></div>
+                        <div class="col-md-6"><small class="text-body-secondary">Card Holder</small><div class="fw-semibold">Chetan Kumar</div></div>
+                        <div class="col-md-6"><small class="text-body-secondary">Status</small><div class="fw-semibold text-success">Active</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal: Set Card Limits -->
+    <div class="modal fade" id="limitsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4">
+                <div class="modal-header bg-danger-subtle rounded-top-4 text-danger">
+                    <h6 class="modal-title">Set Card Limits</h6>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Daily Spending Limit</label>
+                        <input type="number" class="form-control" value="50000" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monthly Spending Limit</label>
+                        <input type="number" class="form-control" value="200000" />
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" checked />
+                        <label class="form-check-label">Enable Online Transactions</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-ripple rounded-pill px-3 btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-ripple rounded-pill px-3 btn-danger">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal: Create New Card -->
+    <div class="modal fade" id="addCardModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4">
+                <div class="modal-header">
+                    <h6 class="modal-title">Create New Card</h6>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Card Type</label>
+                        <select class="form-select" id="Select_card_type">
+                            <option>Virtual Card</option>
+                            <option>Physical Card</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Card Name</label>
+                        <input type="text" class="form-control" placeholder="e.g. Online Purchases" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-ripple rounded-pill btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-ripple rounded-pill btn-primary">Create Card</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- offcanvas: Chat Drawer -->
+    <div class="offcanvas m-md-4 rounded-4 offcanvas-end" tabindex="-1" id="chat_drawer">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title fs-6">Chat</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <div class="chat-card h-100 d-flex flex-column">
+                <!-- begin::Header -->
+                <div class="chat-header d-flex align-items-center justify-content-between border-bottom border-top p-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="avatar avatar-text" style="background:#fa8738;">DG</div>
+                        <div class="lh-1">
+                            <h6 class="chat-title mb-0">Design Team</h6>
+                            <span class="chat-subtitle text-muted small">Alex is typing…</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="d-flex align-items-center avatar-group ps-2">
+                            <img class="avatar avatar-sm me-n2 border border-2 border-white" src="assets/images/avatar/avatar-1.png" loading="lazy" alt="avatar-1">
+                            <img class="avatar avatar-sm me-n2 border border-2 border-white" src="assets/images/avatar/avatar-2.png" loading="lazy" alt="avatar-2">
+                            <div class="avatar avatar-sm border border-2 border-white d-flex align-items-center justify-content-center" style="background:#4dcf7d;">
+                                <span class="avatar-text" style="font-size:.7rem;">+5</span>
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-link btn-sm px-2 text-muted dropdown-toggle after-none" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-three-dots-vertical"></i></button>
+                            <ul class="dropdown-menu dropdown-menu-end p-3 rounded-4 shadow-sm">
+                                <li><button class="dropdown-item rounded-pill" type="button">Action</button></li>
+                                <li><button class="dropdown-item rounded-pill" type="button">Another action</button></li>
+                                <li><button class="dropdown-item rounded-pill" type="button">Something else here</button></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <!-- Body -->
+                <div class="chat-body h-100 overflow-y-auto p-3">
+                    <!-- Incoming message 1 -->
+                    <div class="d-flex align-items-start gap-2 mb-3">
+                        <img class="avatar" src="assets/images/avatar/avatar-3.png" loading="lazy" alt="avatar-3">
+                        <div>
+                            <div class="msg-bubble msg-in border mb-1">
+                                Good morning!
+                            </div>
+                            <div class="msg-bubble msg-in border">
+                                The new deployment went live. Can everyone confirm access?
+                            </div>
+                            <span class="msg-meta text-muted mt-1">09:12</span>
+                        </div>
+                    </div>
+                    <!-- Outgoing message -->
+                    <div class="d-flex align-items-end flex-row-reverse gap-2 mb-4">
+                        <img class="avatar avatar-sm" src="assets/images/avatar/avatar-4.png" loading="lazy" alt="avatar-4">
+                        <div class="text-end">
+                            <div class="msg-bubble msg-out ms-auto">
+                                Yes, logging in now.
+                            </div>
+                            <span class="msg-meta text-muted mt-1">
+                                09:14
+                                <span class="ms-1 text-success">✔✔</span>
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Incoming message 2 -->
+                    <div class="d-flex align-items-start gap-2 mb-3">
+                        <img class="avatar" src="assets/images/avatar/avatar-5.png" loading="lazy" alt="avatar-5">
+                        <div>
+                            <div class="msg-bubble msg-in border">
+                                I can access it. Some pages feel faster than before.
+                            </div>
+                            <span class="msg-meta text-muted mt-1">09:15</span>
+                        </div>
+                    </div>
+                    <!-- Incoming message 3 -->
+                    <div class="d-flex align-items-start gap-2 mb-3">
+                        <img class="avatar" src="assets/images/avatar/avatar-2.png" loading="lazy" alt="avatar-2">
+                        <div>
+                            <div class="msg-bubble msg-in border">
+                                Great! Please check billing and analytics modules as well.
+                            </div>
+                            <span class="msg-meta text-muted mt-1">09:16</span>
+                        </div>
+                    </div>
+                    <!-- Outgoing message 2 -->
+                    <div class="d-flex align-items-end flex-row-reverse gap-2 mb-2">
+                        <img class="avatar avatar-sm" src="assets/images/avatar/avatar-4.png" loading="lazy" alt="avatar-4">
+                        <div class="text-end">
+                            <div class="msg-bubble msg-out ms-auto">
+                                Billing looks fine. I'll test analytics next.
+                            </div>
+                            <span class="msg-meta text-muted mt-1">09:17</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Chat Footer -->
+                <div class="chat-footer mt-auto p-3 border-top bg-secondary-subtle rounded-bottom-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <img class="avatar" src="assets/images/avatar/avatar-4.png" loading="lazy" alt="avatar-4">
+                        <div class="flex-grow-1 d-flex align-items-center">
+                            <input type="text" class="form-control form-control-sm rounded-pill" placeholder="Write a message…">
+                        </div>
+                        <button class="btn btn-outline-secondary btn-sm rounded-circle"><i class="bi bi-upload"></i></button>
+                        <button class="btn btn-primary rounded-pill px-3 py-2 btn-sm">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- begin::AirFlow Vendors Scripts -->
+    <script src="assets/vendor/jquery/jquery.min.js"></script>
+    <script src="assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="assets/vendor/momentjs/moment.min.js"></script>
+    <script src="assets/vendor/daterangepicker/daterangepicker.min.js"></script>
+    <script src="assets/vendor/sortablejs/sortable.min.js"></script>
+
+    <!-- begin::AirFlow App Custom Scripts -->
+    <script src="assets/js/app.js"></script>
+    
+    <!-- begin::AirFlow page specific script -->
+
+</body>
+</html>

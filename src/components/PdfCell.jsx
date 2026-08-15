@@ -95,7 +95,7 @@ export default function PdfCell({ pdfUrl, onSave, onDelete, folder = 'general', 
         <button
           onClick={handleDownload}
           title="Download PDF"
-          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800/80 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white transition-colors text-xs font-medium shadow-sm"
+          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-[#1e1e2d] text-gray-500 dark:text-white dark:text-white border border-gray-200 dark:border-gray-800 hover:bg-slate-700 hover:text-white transition-colors text-xs font-medium shadow-sm"
         >
           <Download size={12} /> Download
         </button>
@@ -128,8 +128,8 @@ export default function PdfCell({ pdfUrl, onSave, onDelete, folder = 'general', 
       />
       <button
         onClick={() => inputRef.current?.click()}
-        title="Upload PDF (Admin only)"
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/80 text-slate-400 hover:bg-jio-blue-900/50 hover:text-jio-blue-300 transition-colors text-xs font-medium border border-slate-700 hover:border-jio-blue-700/60 shadow-sm"
+        title="Upload PDF"
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-[#1e1e2d] text-gray-500 dark:text-white dark:text-white hover:bg-jio-blue-900/50 hover:text-jio-blue-300 transition-colors text-xs font-medium border border-gray-200 dark:border-gray-800 hover:border-jio-blue-700/60 shadow-sm"
       >
         <Upload size={12} /> Upload PDF
       </button>
